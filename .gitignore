@@ -1,0 +1,75 @@
+# ===== 환경 변수 / 비밀 =====
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+
+# ===== Python (backend, ai) =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# ===== Node / Frontend =====
+node_modules/
+.next/
+out/
+build/
+dist/
+.npm/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp.*
+
+# ===== AI 모델 / 가중치 / 산출물 (용량 큼 — git 금지) =====
+models/
+weights/
+*.ckpt
+*.safetensors
+*.pth
+*.onnx
+*.gguf
+ai/**/outputs/
+ai/**/checkpoints/
+
+# ===== 미디어 산출물 (영상/음성 — git 금지) =====
+*.mp4
+*.mov
+*.wav
+*.mp3
+uploads/
+generated/
+
+# ===== Docker / DB =====
+*.sqlite3
+mongo-data/
+data/db/
+
+# ===== IDE / OS / 에이전트 =====
+.vscode/
+.idea/
+.claude/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== 예외: 문서용 샘플은 허용하려면 아래처럼 화이트리스트 =====
+# !docs/assets/sample.mp4

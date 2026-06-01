@@ -1,0 +1,14 @@
+# ===== 레인보우 브릿지 백엔드 의존성 =====
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.1
+motor==3.6.0            # MongoDB 비동기 드라이버
+python-dotenv==1.0.1
+httpx==0.28.1           # 외부 API(PERSO/AI 서버) 호출
+
+# ----- 개발/테스트 -----
+pytest==8.3.4
+pytest-asyncio==0.25.0
+black==24.10.0
+ruff==0.8.4
