@@ -77,27 +77,39 @@ cp .env.example .env        # Windows PowerShell: Copy-Item .env.example .env
 
 ## 4. 매일 작업하는 기본 흐름 ⭐
 
-**이 5단계가 전부입니다. 외우세요.**
+> 우리는 **인당 1브랜치**입니다. 내 이름 브랜치 하나에서만 작업해요.
+> (모세종=`mosejong`, 김윤한=`kimyunhan`, 반소람=`bansoram`, 정환주=`junghwanju`, 민경이=`mingyeongi`, 장민수=`jangminsu`)
+
+> 평소 작업은 **`dev`** 에 모읍니다. `main` 은 MVP 완성·서비스 가능 시점에만 써요.
+
+### 🥚 최초 1회 — 내 브랜치 만들기 (딱 한 번)
 
 ```bash
-# (1) main 최신 상태로 맞추기  ← 작업 시작 전 항상!
-git checkout main
-git pull origin main
+git checkout dev
+git pull origin dev
+git checkout -b mosejong          # ← 본인 영문 이름으로!
+git push -u origin mosejong       # 내 브랜치를 GitHub에도 올림
+```
 
-# (2) 내 작업 브랜치 만들기 (기능마다 새로)
-git checkout -b feature/profile-api
+### 🔁 매일 작업 — 이 4단계가 전부입니다
 
-# (3) 코드 작업... 그리고 저장(커밋)
+```bash
+# (1) 내 브랜치로 가서, dev 최신 내용 받아오기  ← 작업 시작 전 항상!
+git checkout mosejong
+git merge dev                     # (또는: git pull origin dev)
+
+# (2) 코드 작업... 그리고 저장(커밋)
 git add .                                  # 변경 파일 전부 무대에 올림
 git commit -m "feat: 반려동물 프로필 등록 API 추가"
 
-# (4) GitHub로 올리기
-git push origin feature/profile-api
+# (3) GitHub로 올리기
+git push                          # 최초 1회 -u 했으면 이후엔 git push 만
 
-# (5) GitHub 웹에서 Pull Request 생성 (아래 6번 참고)
+# (4) 기능 하나 끝났으면 GitHub 웹에서 Pull Request 생성 (base: dev, 아래 6번 참고)
 ```
 
-> 💡 작업이 길어지면 (3)~(4)를 여러 번 반복하세요. 커밋은 자주, 잘게.
+> 💡 커밋은 자주·잘게. PR은 "기능 하나 끝났을 때" 단위로, **`dev` 로** 올립니다.
+> 💡 PR이 머지된 뒤에도 **내 브랜치는 그대로 둡니다.** (1)번처럼 dev를 다시 받아와서 계속 쓰면 됩니다.
 
 ### `git add` 세분화
 
@@ -115,28 +127,30 @@ git diff                   # 뭐가 어떻게 바뀌었는지 코드로 확인
 ```bash
 git branch                 # 내 로컬 브랜치 목록 (현재 위치 * 표시)
 git branch -a              # 원격 포함 전체
-git checkout -b feature/x  # 새 브랜치 만들고 그쪽으로 이동
-git checkout main          # 기존 브랜치로 이동
-git branch -d feature/x    # 브랜치 삭제 (머지 끝난 것만)
+git checkout 내이름         # 내 브랜치로 이동 (예: git checkout mosejong)
+git checkout dev           # dev로 이동 (보기/최신화용, 직접 작업 ❌)
 ```
 
-### 브랜치 네이밍 (CONTRIBUTING 규칙 요약)
+> 🌳 브랜치 3종류: `main`(서비스 가능 시) · `dev`(평소 통합) · `내이름`(내 작업). 작업은 **내 이름 브랜치에서만.**
 
-```
-feature/<영역>-<설명>   예) feature/llm-memorial-message
-fix/<영역>-<설명>       예) fix/timeline-sort-bug
-docs/<설명>             예) docs/setup-guide
-```
+### 내 브랜치 = 내 영문 이름 (인당 1개)
 
-> 🔁 **기능 하나 = 브랜치 하나 = PR 하나.** 한 브랜치에 여러 기능 섞지 마세요.
+| 이름 | 브랜치 | 이름 | 브랜치 |
+|------|--------|------|--------|
+| 모세종 | `mosejong` | 정환주 | `junghwanju` |
+| 김윤한 | `kimyunhan` | 민경이 | `mingyeongi` |
+| 반소람 | `bansoram` | 장민수 | `jangminsu` |
 
-### 작업 도중 main이 업데이트됐다면 (최신 반영)
+> 🔁 **한 사람 = 한 브랜치.** 새 브랜치를 계속 만들지 않고, 내 이름 브랜치 하나만 씁니다.
+> PR이 머지돼도 **삭제하지 않습니다** — 같은 브랜치에서 계속 작업해요.
+
+### 작업 시작 전 / 도중에 dev가 업데이트됐다면 (최신 반영)
 
 ```bash
-git checkout main
-git pull origin main
-git checkout feature/내브랜치
-git merge main             # main의 최신 변경을 내 브랜치로 가져옴
+git checkout dev
+git pull origin dev
+git checkout 내이름         # 예: git checkout mosejong
+git merge dev              # dev의 최신 변경을 내 브랜치로 가져옴
 # (충돌나면 7번 참고)
 ```
 
@@ -144,16 +158,17 @@ git merge main             # main의 최신 변경을 내 브랜치로 가져옴
 
 ## 6. Pull Request 올리기
 
-1. `git push origin feature/내브랜치` 하면 터미널에 PR 생성 링크가 뜸 → 클릭
+1. `git push` 하면 터미널에 PR 생성 링크가 뜸 → 클릭
    (또는 GitHub 레포 페이지에 "Compare & pull request" 노란 버튼)
-2. **base: `main`** ← **compare: `feature/내브랜치`** 인지 확인
+2. **base: `dev`** ← **compare: `내이름`(예: mosejong)** 인지 확인 ⚠️ (base가 main 아님!)
 3. 제목: 커밋 컨벤션대로 (`feat: 추모 메시지 생성 API`)
 4. 본문 템플릿 채우기 (무엇을/왜/테스트 방법)
 5. 오른쪽 **Reviewers** 에 리뷰어 지정
 6. **Create pull request**
-7. 리뷰어 1명 승인 → **Squash and merge** → 브랜치 삭제
+7. 리뷰어 1명 승인 → **Squash and merge** (⚠️ 머지 후 **내 브랜치는 삭제하지 않음**)
 
-> 머지된 뒤엔 내 PC에서 `git checkout main && git pull origin main` 으로 다시 최신화.
+> 머지된 뒤엔 `git checkout 내이름 && git merge dev` 로 내 브랜치를 최신화하고 계속 작업.
+> 🚀 `main` 은 MVP 완성·서비스 가능 시점에 **PM이 `dev → main` PR**로 승격합니다.
 
 ---
 
@@ -202,7 +217,7 @@ git merge main             # main의 최신 변경을 내 브랜치로 가져옴
 
 ## 9. 절대 하면 안 되는 것 🚫
 
-1. ❌ **main 에 직접 push** → 항상 브랜치+PR
+1. ❌ **`main`·`dev` 에 직접 push** → 항상 내 이름 브랜치 + PR(`dev`로)
 2. ❌ `.env` / API 키 / 비밀번호 커밋 → `.gitignore` 확인, 실수 시 즉시 신고
 3. ❌ 모델 가중치·영상·음성 등 **대용량 파일 커밋** (`.mp4`, `.safetensors` 등 — 이미 .gitignore 처리됨)
 4. ❌ `git push -f` (강제 푸시) 를 공용 브랜치에
@@ -214,21 +229,19 @@ git merge main             # main의 최신 변경을 내 브랜치로 가져옴
 ## 10. 치트시트
 
 ```bash
-# 시작 전 항상
-git checkout main && git pull origin main
+# 최초 1회 — 내 브랜치 만들기 (영문 이름, dev에서 분기)
+git checkout dev && git pull origin dev
+git checkout -b 내이름 && git push -u origin 내이름   # 예: mosejong
 
-# 새 작업
-git checkout -b feature/기능명
+# 매일 작업 시작 — 내 브랜치 + dev 최신 반영
+git checkout 내이름
+git merge dev
 
 # 저장 & 올리기
 git status
 git add .
 git commit -m "feat: 한 일 한 줄"
-git push origin feature/기능명
-
-# main 최신 반영
-git checkout main && git pull origin main
-git checkout feature/기능명 && git merge main
+git push                              # 기능 하나 끝나면 → GitHub에서 PR (base: dev)
 
 # 현재 상태 확인용 (자주!)
 git status        # 변경 파일

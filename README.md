@@ -79,7 +79,7 @@ rainbow-bridge/
 │   ├── PROGRESS.md       # MVP 진행도
 │   ├── ARCHITECTURE.md   # 시스템 구조
 │   ├── SETUP.md          # 개발 환경 셋업
-│   └── devlog/           # 개발일지
+│   └── devlog/           # 개발일지 (통합 + members/사람별)
 └── scripts/          # 유틸 스크립트
 ```
 
