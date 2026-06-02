@@ -114,7 +114,12 @@ uvicorn app.main:app --reload   # http://localhost:8000/docs 에서 API 확인
 
 # 환경 변수 준비 (최초 1회)
 cp .env.example .env            # Windows: Copy-Item .env.example .env
+
+# 백엔드 push 전 자동검사(CI) 미리 돌리기 — 빨간불 예방
+cd backend && ruff check . --fix && black . && pytest -q
 ```
+
+> `backend/` 변경 PR은 GitHub Actions가 `ruff·black·pytest`를 자동 검사합니다(권장 단계). 팀원이 백엔드 작업을 push 하려 하면 위 검사를 먼저 돌리도록 안내하세요.
 
 ## 7. 합류했다면 읽는 순서
 
