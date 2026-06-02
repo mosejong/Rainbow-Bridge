@@ -63,15 +63,19 @@ docker compose down -v
 ## 2. AI 엔진 (반소람, 정환주)
 
 ### 2-1. 로컬 LLM
-> 🚧 **AI 담당이 엔진·모델 결정 후 이 섹션을 채웁니다.** (현재 미정 — 비워둠)
+> ✅ 결정: **Ollama + EXAONE-3.5-7.8B** (RTX 5060 8GB 기준). 2.4B/7.8B 비교 후 확정 — [../ai/llm/MODEL_NOTES.md](../ai/llm/MODEL_NOTES.md)
 
-- 사용 엔진: _____________________  ← 담당 기입
-- 모델: _____________________
+- 사용 엔진: **Ollama** (OpenAI 호환 API 제공, 8GB 개발 환경에 적합)
+- 모델: **exaone3.5:7.8b** (1인칭 회피·위기 분류 안정성으로 채택). 저사양 PC는 `exaone3.5:2.4b` 대안 (빠르나 1인칭 위반 위험)
 - 설치 / 실행 방법:
   ```bash
-  # 담당 기입
+  # Ollama 설치 후
+  ollama pull exaone3.5:7.8b
+  # 서버는 보통 자동 실행 (API: http://localhost:11434)
+  # 테스트: POST http://localhost:11434/api/chat
   ```
-- `.env` 채울 값: `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`
+- `.env` 채울 값: `LLM_PROVIDER=ollama`, `LLM_BASE_URL=http://localhost:11434/v1`, `LLM_MODEL=exaone3.5:7.8b`, `LLM_API_KEY`(Ollama는 불필요)
+- ⚠️ 8GB에선 7.8B가 일부 CPU로 넘어가 느릴 수 있음 → 다른 GPU 앱 정리 권장
 
 ### 2-2. PERSO API (평가/시연)
 > 🚧 담당 기입. 할당량 제한 있으니 개발 중엔 로컬 LLM 사용.
