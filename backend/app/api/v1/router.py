@@ -8,7 +8,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import timeline
+from app.api.v1.endpoints import admin, timeline
 
 api_router = APIRouter()
 
@@ -19,4 +19,5 @@ api_router = APIRouter()
 # api_router.include_router(messages.router,  prefix="/messages",  tags=["messages"])
 # api_router.include_router(missions.router,  prefix="/missions",  tags=["missions"])
 # api_router.include_router(media.router,     prefix="/media",     tags=["media"])
+api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(timeline.router, prefix="/timeline", tags=["timeline"])
