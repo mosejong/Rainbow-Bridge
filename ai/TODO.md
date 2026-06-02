@@ -122,29 +122,29 @@
 
 ---
 
-# 🎙️ ai/tts — MVP ④
+# 🎙️ ai/tts — MVP ④ (정환주)
 
-- [ ] 🎯 엔진 결정 (`.env` `TTS_PROVIDER`) + `../docs/SETUP.md §2-3` 채우기
-- [ ] 🎯 톤 옵션 정의 (메시지 톤과 1:1 매핑 테이블)
-- [ ] 🔧 `tts.synthesize(text, tone) -> {audio_path|bytes, duration, format}`
-  - [ ] 한국어 발음·억양 품질 점검
-  - [ ] 긴 텍스트 분할·합치기 처리
-- [ ] 🔌 출력 포맷·저장 위치 백엔드 `MediaAsset` 와 합의
-- [ ] 🧪 톤별 샘플 생성·청취 점검
-- [ ] 🔧 음성 파일 git 미포함(.gitignore) 확인
-- [ ] 📄 톤 매핑·사용법 문서화
+- [x] 🎯 엔진 결정(잠정): **Google Cloud TTS** (Gemini로 GPU 뗀 상황 → 클라우드가 8GB 안전)
+- [x] 🎯 톤 옵션 정의 — `TtsTone`(warm/calm/hopeful) + `_TONE_MAP`(속도·피치) → *반소람 ③ 톤과 값 합의 필요*
+- [x] 🔧 `tts.synthesize(text, tone)` 골격 + 긴 텍스트 분할(`_split_text`)
+- [ ] 🔧 **Google Cloud TTS 인증·키 설정** (`GOOGLE_APPLICATION_CREDENTIALS`) + `pip install google-cloud-texttospeech`
+- [ ] 🧪 한국어 발음·억양 품질 점검(음성 이름 `ko-KR-Neural2-*` 비교) + 톤별 샘플 청취
+- [ ] 🔧 `duration` 추정값 → 정확값(ffprobe 등)으로 교체, MP3 합치기 정밀화(pydub)
+- [ ] 🔌 출력 포맷·저장 위치 백엔드 `MediaAsset` 와 합의 / `POST /api/v1/tts` 스텁(**김윤한**과) → 장민수 플레이어 언블락
+- [ ] 🔧 `_output/` 음성 파일 `.gitignore` 등록 확인
+- [ ] 📄 톤 매핑·사용법 문서화 (`../tts/CLAUDE.md §6` 후기 포함)
 
 ---
 
-# 📊 ai/evaluation — MVP ⑧
+# 📊 ai/evaluation — MVP ⑧ (정환주)
 
-- [ ] 🎯 평가 지표 정의 (사용 횟수·감정 변화 추이·미션 완료율·재방문 등)
-- [ ] 🎯 집계 단위·기간 정의 (반려동물별/기간별)
-- [ ] 🔧 `evaluation.build_report(pet_id, period) -> report`
-  - [ ] 감정 체크인 시계열 집계
-  - [ ] 미션 완료율·메시지 생성 횟수 집계
-- [ ] 🔌 백엔드 `GET /report/{pet_id}` 데이터 형태 합의
-- [ ] 🎯 리포트 출력 스키마 정의(프론트 차트/요약 UI용)
+- [x] 🎯 평가 지표 정의 (사용 횟수·감정 추이·미션 완료율·재방문)
+- [x] 🔧 `llm_logs` 스키마(`LLMLog`) + 저장 헬퍼(`save_log`) — **원문 PII 미저장**, 비식별 지표만
+- [x] 🔧 `build_report(pet_id, period, *, llm_logs, emotion_checkins, missions)` 골격 — 순수 함수(DB 주입)
+- [ ] 🔌 LLM 호출부에 `save_log` 훅 연결 (반소람 provider 호출 지점과 협의)
+- [ ] 🔌 백엔드 `GET /api/v1/admin/usage`·`/report/{pet_id}` 가 `llm_logs` 읽도록 (**김윤한**과 컬렉션 합의)
+- [ ] 🎯 리포트 출력 스키마 프론트 차트와 확정 (**민경이**)
+- [ ] 🔧 재방문 지표 — 세션/접속 로그 스키마 확정 후 추가
 - [ ] 🧪 샘플 데이터로 집계 정확성 검증
 - [ ] 📄 지표 정의·스키마 문서화
 
