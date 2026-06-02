@@ -20,6 +20,8 @@ async def get_timeline(pet_id: str):
         records.append(doc)
 
     if not records:
-        raise HTTPException(status_code=404, detail="해당 반려동물의 타임라인 기록이 없습니다.")
+        raise HTTPException(
+            status_code=404, detail="해당 반려동물의 타임라인 기록이 없습니다."
+        )
 
     return records
