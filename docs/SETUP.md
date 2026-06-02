@@ -9,7 +9,7 @@
 
 ### 필수 설치
 - [Git](https://git-scm.com)
-- [Python 3.11+](https://www.python.org/downloads/) (백엔드/AI)
+- [Python 3.11](https://www.python.org/downloads/) (백엔드/AI) — **3.11 권장 (CI와 동일)**, 3.10~3.13도 대부분 동작하나 문제 발생 시 3.11로 맞출 것
 - VS Code (권장)
 
 ### 레포 받기
@@ -44,33 +44,38 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ### MongoDB (김윤한)
 ```bash
-# 로컬 테스트용 (Docker)
-docker run -d --name rainbow-mongo -p 27017:27017 mongo:7
+cd backend
+
+# MongoDB 실행 (docker-compose 사용)
+docker compose up -d
+
+# 종료 (데이터 유지)
+docker compose down
+
+# 종료 + 데이터 삭제
+docker compose down -v
 ```
 - `.env` 의 `MONGO_URI`, `MONGO_DB_NAME` 확인
 - 홈서버 연결 정보는 김윤한이 별도 공유
-
-### Docker / docker-compose (김윤한)
-> 통합 실행 환경. 작성 후 이 칸 갱신.
-```bash
-# docker compose up -d   (compose 파일 준비되면)
-```
-- [ ] docker-compose.yml 작성 — _담당: 김윤한, 작성 후 명령어 여기 채우기_
 
 ---
 
 ## 2. AI 엔진 (반소람, 정환주)
 
 ### 2-1. 로컬 LLM
-> 🚧 **AI 담당이 엔진·모델 결정 후 이 섹션을 채웁니다.** (현재 미정 — 비워둠)
+> ✅ 결정: **Ollama + EXAONE-3.5-7.8B** (RTX 5060 8GB 기준). 2.4B/7.8B 비교 후 확정 — [../ai/llm/MODEL_NOTES.md](../ai/llm/MODEL_NOTES.md)
 
-- 사용 엔진: _____________________  ← 담당 기입
-- 모델: _____________________
+- 사용 엔진: **Ollama** (OpenAI 호환 API 제공, 8GB 개발 환경에 적합)
+- 모델: **exaone3.5:7.8b** (1인칭 회피·위기 분류 안정성으로 채택). 저사양 PC는 `exaone3.5:2.4b` 대안 (빠르나 1인칭 위반 위험)
 - 설치 / 실행 방법:
   ```bash
-  # 담당 기입
+  # Ollama 설치 후
+  ollama pull exaone3.5:7.8b
+  # 서버는 보통 자동 실행 (API: http://localhost:11434)
+  # 테스트: POST http://localhost:11434/api/chat
   ```
-- `.env` 채울 값: `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`
+- `.env` 채울 값: `LLM_PROVIDER=ollama`, `LLM_BASE_URL=http://localhost:11434/v1`, `LLM_MODEL=exaone3.5:7.8b`, `LLM_API_KEY`(Ollama는 불필요)
+- ⚠️ 8GB에선 7.8B가 일부 CPU로 넘어가 느릴 수 있음 → 다른 GPU 앱 정리 권장
 
 ### 2-2. PERSO API (평가/시연)
 > 🚧 담당 기입. 할당량 제한 있으니 개발 중엔 로컬 LLM 사용.

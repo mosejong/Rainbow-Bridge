@@ -1,4 +1,5 @@
 """앱 전역 설정. .env 값을 읽어 옵니다."""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
