@@ -3,6 +3,11 @@
 > 담당: 민경이 · 장민수 | 작성: 2026-06-02 | 발표: 2026-06-19 (D-17)
 > 전체 협업 규칙: [CONTRIBUTING.md](../docs/CONTRIBUTING.md) | 아키텍처: [ARCHITECTURE.md](../docs/ARCHITECTURE.md)
 
+> **백엔드 API 주소 (ngrok, 서버 켜있는 동안 사용):**
+> `https://preacher-posing-lair.ngrok-free.dev`
+> 로컬 확인용: `http://localhost:8000/docs`
+> 민경이·장민수는 Docker 불필요 — 위 ngrok URL 바로 사용
+
 ---
 
 ## 1. 기술 스택 확정
@@ -24,15 +29,19 @@
 
 > 기준: "파일 단위로 담당이 갈리면 Git 충돌이 거의 없다" — 페이지 파일 = 담당자
 
-### 민경이 담당 (핵심 서비스 플로우)
+### 민경이 담당 (핵심 서비스 플로우 + LLM 연동)
+
+> 민경이 = **프론트-AI 연결 담당자**. 반소람님 프롬프트 완성되면 바로 붙이는 역할.
 
 | 기능 | 페이지 파일 | 우선순위 |
 |------|------------|---------|
+| ⑦ 위험 감정 경고 모달 | `SafetyModal.jsx` | **1순위 (최우선)** |
 | ① 반려동물 프로필 입력 | `ProfilePage.jsx` | 2순위 |
 | ② 감정 체크인 | `EmotionPage.jsx` | 3순위 |
-| ③ AI 추모 메시지 카드 | `MessagePage.jsx` | 4순위 |
-| ⑦ 위험 감정 경고 모달 | `SafetyModal.jsx` | **1순위 (최우선)** |
+| ③ AI 추모 메시지 카드 + **LLM API 연동** | `MessagePage.jsx` | 4순위 |
 | ⑧ 평가 리포트 | `ReportPage.jsx` | 마지막 |
+
+**추가된 역할:** `POST /api/v1/messages/generate` 호출 + 결과 카드 UI. 반소람님 프롬프트 완성되면 바로 연동.
 
 ### 장민수 담당 (미디어·미션·타임라인)
 
@@ -115,6 +124,20 @@ frontend/
 | 사진 업로드 | `POST` | `/api/v1/media/upload` | MediaPage |
 
 ### Mock 데이터 예시 (백엔드 전 임시 사용)
+
+```js
+// src/api/axiosInstance.js
+import axios from 'axios';
+
+const api = axios.create({
+  // 백엔드 서버가 켜있을 때: ngrok URL
+  // 꺼있을 때: Mock 데이터로 대체
+  baseURL: 'https://preacher-posing-lair.ngrok-free.dev',
+  headers: { 'Content-Type': 'application/json' },
+});
+
+export default api;
+```
 
 ```js
 // src/api/mock.js
