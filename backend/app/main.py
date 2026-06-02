@@ -1,4 +1,5 @@
 """레인보우 브릿지 백엔드 진입점."""
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
