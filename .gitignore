@@ -56,6 +56,7 @@ ai/**/checkpoints/
 *.mp3
 uploads/
 generated/
+ai/tts/_output/
 
 # ===== Docker / DB =====
 *.sqlite3
