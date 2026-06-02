@@ -29,7 +29,7 @@
 | 0-2 | FastAPI 프로젝트 뼈대 | 모세종 | ✅ | main.py/config/db/health (06-01) |
 | 0-3 | MongoDB 연결 + 홈서버 | 김윤한 | ⬜ | Ubuntu+Docker |
 | 0-4 | Docker / docker-compose | 김윤한 | ⬜ | |
-| 0-5 | 로컬 LLM 엔진 결정·세팅 | 반소람·정환주 | ⬜ | 엔진 미정(담당 결정) |
+| 0-5 | 개발 LLM 결정·세팅 | 반소람·정환주 | 🟡 | **Gemini 전환**(강사 권고+8GB). EXAONE는 로컬 폴백 |
 | 0-6 | PERSO API 연동 테스트 | 반소람 | ⬜ | 할당량 주의 |
 | 0-7 | GPU 서버 셋업 (RTX 5060) | 정환주 | ⬜ | LivePortrait/추론용 |
 | 0-8 | 프론트 프레임워크 결정·세팅 | 민경이 | ⬜ | |
