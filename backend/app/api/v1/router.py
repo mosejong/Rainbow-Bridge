@@ -8,10 +8,9 @@
 
 from fastapi import APIRouter
 
-api_router = APIRouter()
-
-# ===== 기능별 라우터 등록 (담당자가 추가) =====
 from app.api.v1.endpoints import emotions, missions, pets
+
+api_router = APIRouter()
 
 api_router.include_router(pets.router, prefix="/pets", tags=["pets"])
 api_router.include_router(emotions.router, prefix="/emotions", tags=["emotions"])

@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 
-from bson import ObjectId
 
 from app.db.mongodb import mongodb
 from app.schemas.emotion import EmotionCreate, EmotionResponse
