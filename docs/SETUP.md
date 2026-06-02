@@ -9,7 +9,7 @@
 
 ### 필수 설치
 - [Git](https://git-scm.com)
-- [Python 3.11+](https://www.python.org/downloads/) (백엔드/AI)
+- [Python 3.11](https://www.python.org/downloads/) (백엔드/AI) — **3.11 권장 (CI와 동일)**, 3.10~3.13도 대부분 동작하나 문제 발생 시 3.11로 맞출 것
 - VS Code (권장)
 
 ### 레포 받기
@@ -44,18 +44,19 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ### MongoDB (김윤한)
 ```bash
-# 로컬 테스트용 (Docker)
-docker run -d --name rainbow-mongo -p 27017:27017 mongo:7
+cd backend
+
+# MongoDB 실행 (docker-compose 사용)
+docker compose up -d
+
+# 종료 (데이터 유지)
+docker compose down
+
+# 종료 + 데이터 삭제
+docker compose down -v
 ```
 - `.env` 의 `MONGO_URI`, `MONGO_DB_NAME` 확인
 - 홈서버 연결 정보는 김윤한이 별도 공유
-
-### Docker / docker-compose (김윤한)
-> 통합 실행 환경. 작성 후 이 칸 갱신.
-```bash
-# docker compose up -d   (compose 파일 준비되면)
-```
-- [ ] docker-compose.yml 작성 — _담당: 김윤한, 작성 후 명령어 여기 채우기_
 
 ---
 
