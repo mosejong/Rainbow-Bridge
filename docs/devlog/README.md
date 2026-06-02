@@ -113,7 +113,7 @@
 |------|------------|------|
 | 모세종 | 반려동물·감정·미션 API 완성, 위기감지 1393 연동, 서비스 시나리오 3단계 확정, PR 5건 머지 | [→](members/모세종.md#2026-06-02-day-2) |
 | 김윤한 | 타임라인·어드민 API 완성, PR #12 제출 | [→](members/김윤한.md) |
-| 반소람 | 위기 감지 규칙 레이어 + 골든셋 20개 완성, PR #11 제출 | [→](members/반소람.md) |
+| 반소람 | 위기 감지 규칙+골든셋(PR #11), 추모 메시지(③) 프롬프트·생성 로직·테스트(가드레일 포함) 작성·일지 정리, PR 제출 | [→](members/반소람.md#2026-06-02-day-2) |
 | 정환주 | EXAONE→Gemini 전환 연구, smoke_gemini.py, 서비스 시나리오 문서, PR #17 제출 | [→](members/정환주.md) |
 | 민경이 | Vite+React+Tailwind 셋업, SafetyModal(1393) 구현, PR #14 제출 | [→](members/민경이.md) |
 | 장민수 | LivePortrait 동물 모드 실험, EXPERIMENT.md 작성 | [→](members/장민수.md) |
