@@ -5,6 +5,7 @@
     from app.api.v1.endpoints import pets
     api_router.include_router(pets.router, prefix="/pets", tags=["pets"])
 """
+
 from fastapi import APIRouter
 
 api_router = APIRouter()
