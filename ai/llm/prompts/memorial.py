@@ -58,7 +58,7 @@ _USER_TEMPLATE: Final[str] = """\
 [반려동물]
 - 이름: {name}
 - 종: {species}
-- 함께한 기간: {years}년
+- 함께한 기간: {period}
 {memories_block}
 [보호자 감정]
 - 감정 점수: {score}/10 (1=많이 힘듦 · 10=평온)
@@ -82,7 +82,7 @@ def build_user_prompt(
     *,
     name: str,
     species: str,
-    years: float,
+    period: str,
     score: int,
     note: str = "",
     memories: Optional[list[str]] = None,
@@ -93,7 +93,7 @@ def build_user_prompt(
     Args:
         name: 반려동물 이름.
         species: 종(강아지·고양이 등).
-        years: 함께한 기간(년).
+        period: 함께한 기간(백엔드 pet.period 문자열, 예 "12년"/"2018~2026").
         score: 보호자 감정 점수(1~10, 낮을수록 힘듦).
         note: 보호자가 남긴 메모(자유 입력).
         memories: 함께한 추억 키워드 목록(선택).
@@ -106,7 +106,7 @@ def build_user_prompt(
     return _USER_TEMPLATE.format(
         name=name,
         species=species,
-        years=years,
+        period=period,
         score=score,
         note=note.strip() or "(없음)",
         memories_block=_format_memories(memories),
