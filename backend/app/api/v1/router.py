@@ -8,7 +8,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import admin, emotions, missions, pets, timeline
+from app.api.v1.endpoints import admin, emotions, missions, pets, timeline, llm_logs
 
 api_router = APIRouter()
 
@@ -18,6 +18,7 @@ api_router.include_router(emotions.router, prefix="/emotions", tags=["emotions"]
 api_router.include_router(missions.router, prefix="/missions", tags=["missions"])
 api_router.include_router(timeline.router, prefix="/timeline", tags=["timeline"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
+api_router.include_router(llm_logs.router, prefix="/llm-logs", tags=["llm_logs"])
 
 # from app.api.v1.endpoints import messages, media
 # api_router.include_router(messages.router,  prefix="/messages",  tags=["messages"])

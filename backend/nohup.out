@@ -5,3 +5,16 @@ INFO:     Started server process [9653]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     127.0.0.1:34712 - "GET / HTTP/1.1" 200 OK
+INFO:     34.116.39.105:0 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     2600:1900:0:2d0e::400:0 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     34.116.39.99:0 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     34.116.39.103:0 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     2600:1900:0:2d10::1000:0 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     183.98.215.159:0 - "GET / HTTP/1.1" 200 OK
+INFO:     183.98.215.159:0 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [9653]
+INFO:     Stopping reloader process [9651]
