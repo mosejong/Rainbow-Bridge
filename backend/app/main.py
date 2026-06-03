@@ -1,9 +1,11 @@
 """레인보우 브릿지 백엔드 진입점."""
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.core.config import settings
@@ -37,6 +39,11 @@ app.add_middleware(
 
 # v1 라우터 등록
 app.include_router(api_router, prefix="/api/v1")
+
+# 업로드 파일 정적 서빙 (사진·TTS 음성)
+_UPLOAD_DIR = "uploads"
+os.makedirs(_UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=_UPLOAD_DIR), name="uploads")
 
 
 @app.get("/health", tags=["system"])
