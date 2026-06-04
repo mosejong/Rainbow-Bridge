@@ -18,7 +18,7 @@ from ..safety import CRISIS_HOTLINE
 PET = {
     "name": "봄이",
     "species": "강아지",
-    "years": 12,
+    "period": "12년",
     "memories": ["아침마다 현관에서 기다림", "노란 공놀이"],
 }
 
@@ -28,7 +28,7 @@ PET = {
 
 def test_prompt_fills_inputs():
     prompt = memorial_prompt.build_user_prompt(
-        name="봄이", species="강아지", years=12, score=3, note="산책을 좋아했어요"
+        name="봄이", species="강아지", period="12년", score=3, note="산책을 좋아했어요"
     )
     assert "봄이" in prompt
     assert "강아지" in prompt
@@ -39,21 +39,21 @@ def test_prompt_fills_inputs():
 
 def test_prompt_includes_memories_when_given():
     prompt = memorial_prompt.build_user_prompt(
-        name="봄이", species="강아지", years=12, score=5, memories=["노란 공놀이"]
+        name="봄이", species="강아지", period="12년", score=5, memories=["노란 공놀이"]
     )
     assert "노란 공놀이" in prompt
 
 
 def test_prompt_omits_memory_block_when_empty():
     prompt = memorial_prompt.build_user_prompt(
-        name="봄이", species="강아지", years=12, score=5, memories=[]
+        name="봄이", species="강아지", period="12년", score=5, memories=[]
     )
     assert "함께한 추억" not in prompt
 
 
 def test_unknown_tone_falls_back_to_default():
     prompt = memorial_prompt.build_user_prompt(
-        name="봄이", species="강아지", years=12, score=5, tone="존재하지않는톤"
+        name="봄이", species="강아지", period="12년", score=5, tone="존재하지않는톤"
     )
     assert memorial_prompt.TONE_GUIDE[memorial_prompt.DEFAULT_TONE] in prompt
 
@@ -67,7 +67,7 @@ def test_system_prompt_has_ethics_guardrails():
 
 def test_build_messages_has_system_and_user():
     messages = memorial_prompt.build_messages(
-        name="봄이", species="강아지", years=12, score=5
+        name="봄이", species="강아지", period="12년", score=5
     )
     assert [m["role"] for m in messages] == ["system", "user"]
 
@@ -84,7 +84,7 @@ def test_generate_message_uses_injected_generate():
         return fake_output
 
     result = generate_message(
-        PET, {"score": 3, "note": "너무 보고 싶어요"}, generate=fake_generate
+        PET, {"emotion_score": 3, "note": "너무 보고 싶어요"}, generate=fake_generate
     )
     assert result["content"] == fake_output
     assert result["source"] == "local"
@@ -105,11 +105,11 @@ def test_crisis_input_returns_hotline_not_message():
 
     result = generate_message(
         PET,
-        {"score": 1, "note": "봄이 곁으로 나도 따라가고 싶어요"},
+        {"emotion_score": 1, "note": "봄이 곁으로 나도 따라가고 싶어요"},
         generate=fake_generate,
     )
     assert called is False  # 위기 시 생성 자체를 건너뜀
-    assert result["hotline"] == CRISIS_HOTLINE
+    assert CRISIS_HOTLINE in result["crisis_message"]
     assert CRISIS_HOTLINE in result["content"]
 
 
@@ -122,7 +122,7 @@ def test_resurrection_output_is_blocked():
 
     with pytest.raises(GuardrailViolation):
         generate_message(
-            PET, {"score": 5, "note": "보고 싶어요"}, generate=bad_generate
+            PET, {"emotion_score": 5, "note": "보고 싶어요"}, generate=bad_generate
         )
 
 
@@ -139,6 +139,6 @@ def test_guard_retries_then_succeeds():
         return next(outputs)
 
     result = generate_message(
-        PET, {"score": 4, "note": "보고 싶어요"}, generate=flaky_generate
+        PET, {"emotion_score": 4, "note": "보고 싶어요"}, generate=flaky_generate
     )
     assert "부활" not in result["content"].replace(" ", "")

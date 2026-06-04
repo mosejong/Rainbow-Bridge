@@ -78,14 +78,19 @@ docker compose down -v
 - 발급/엔드포인트: _____________________
 - `.env` 채울 값: `PERSO_API_KEY`, `PERSO_API_BASE_URL`
 
-### 2-3. TTS
-> 🚧 담당 기입.
+### 2-3. TTS (정환주)
+> ✅ 엔진(잠정): **Google Cloud Text-to-Speech** (한국어 Neural2, GPU 불필요). 상세 코드 `ai/tts/tts.py`
 
-- 엔진: _____________________
+- 엔진: **Google Cloud TTS** — 메시지 톤(③)과 1:1 매핑(`TtsTone`: warm/calm/hopeful)
+- 키/인증:
+  1. [Google Cloud Console](https://console.cloud.google.com/) → 프로젝트 생성 → **Text-to-Speech API 사용 설정**
+  2. 서비스 계정 키(JSON) 발급 → 환경변수 `GOOGLE_APPLICATION_CREDENTIALS=<키.json 경로>`
 - 설치/실행:
   ```bash
-  # 담당 기입
+  pip install -r ai/requirements.txt          # google-cloud-texttospeech 포함
+  python -c "from ai.tts import synthesize; print(synthesize('안녕하세요', ))"  # 인증 후 음성 1회 테스트
   ```
+- ⚠️ 보호자 대상 낭독만 (반려동물 목소리 ❌). 음성 파일은 git 미포함(`ai/tts/_output/`)
 
 ---
 

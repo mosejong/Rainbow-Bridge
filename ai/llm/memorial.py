@@ -104,15 +104,15 @@ def generate_message(
     """추모 메시지를 생성합니다.
 
     Args:
-        pet: 반려동물 정보 ``{name, species, years|period, memories?}``.
-        emotion: 보호자 감정 ``{score, note?}`` (score 1~10, 낮을수록 힘듦).
+        pet: 반려동물 정보 ``{name, species, period, memories?}`` (백엔드 pet 스키마).
+        emotion: 보호자 감정 ``{emotion_score, note?}`` (emotion_score 1~10, 낮을수록 힘듦).
         tone: 메시지 톤(warm·calm·hopeful). prompts.TONE_GUIDE 키.
         generate: LLM 호출 함수(provider.generate 또는 테스트용 가짜). **주입 필수.**
         source: 결과 출처 표기(local·perso 등).
         max_retries: 가드 위반 시 재생성 횟수(소진되면 안내문으로 대체).
 
     Returns:
-        ``{content, tone, source}``. 위기 시에는 안내문과 ``hotline`` 을 포함.
+        ``{content, tone, source}``. 위기 시에는 ``crisis_message`` 와 ``risk_level`` 포함.
     """
     note = str(emotion.get("note", "") or "")
 
@@ -123,17 +123,16 @@ def generate_message(
             "content": _CRISIS_NOTICE,
             "tone": tone,
             "source": "safety",
-            "hotline": CRISIS_HOTLINE,
+            "crisis_message": _CRISIS_NOTICE,
             "risk_level": int(crisis.risk_level),
         }
 
-    # (2) 프롬프트 조립 — years 키가 없으면 period 로 대체.
-    years = pet.get("years", pet.get("period", ""))
+    # (2) 프롬프트 조립 — 키 이름은 백엔드 스키마와 합의(pet.period, emotion_score).
     prompt_kwargs = dict(
         name=pet.get("name", ""),
         species=pet.get("species", ""),
-        years=years,
-        score=int(emotion.get("score", 5)),
+        period=pet.get("period", ""),
+        score=int(emotion.get("emotion_score", 5)),
         note=note,
         memories=pet.get("memories"),
         tone=tone,
