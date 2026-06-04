@@ -17,7 +17,7 @@ class EmotionResponse(BaseModel):
     pet_id: str
     score: int
     note: Optional[str]
-    risk_flag: bool = Field(..., description="위기 감정 여부")
+    risk_level: int = Field(..., description="위기 수준 (0=정상, 1=주의, 2=위기)")
     created_at: datetime
     crisis_message: Optional[str] = Field(
         None, description="위기 감지 시 1393 안내 메시지"

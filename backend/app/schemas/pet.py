@@ -8,9 +8,16 @@ class PetCreate(BaseModel):
     name: str = Field(..., description="반려동물 이름")
     species: str = Field(..., description="종 (예: 강아지, 고양이)")
     breed: Optional[str] = Field(None, description="품종")
-    years_together: float = Field(..., description="함께한 기간 (년)")
-    memories: Optional[str] = Field(None, description="기억·추억 메모")
+    period: Optional[str] = Field(
+        None, description="함께한 기간 문자열 (예: 2018-01-01 ~ 2026-06-01)"
+    )
+    memories: Optional[list[str]] = Field(None, description="추억 키워드 목록")
     photo_url: Optional[str] = Field(None, description="사진 URL")
+
+
+class PetPhotoResponse(BaseModel):
+    id: str = Field(..., description="반려동물 ID")
+    photo_url: str = Field(..., description="저장된 사진 URL")
 
 
 class PetResponse(BaseModel):
@@ -18,7 +25,8 @@ class PetResponse(BaseModel):
     name: str
     species: str
     breed: Optional[str]
-    years_together: float
-    memories: Optional[str]
+    period: Optional[str]
+    memories: Optional[list[str]]
     photo_url: Optional[str]
+    memorial_mode: bool = Field(False, description="추모 모드 전환 여부")
     created_at: datetime

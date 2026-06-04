@@ -62,20 +62,15 @@ docker compose down -v
 
 ## 2. AI 엔진 (반소람, 정환주)
 
-### 2-1. 로컬 LLM
-> ✅ 결정: **Ollama + EXAONE-3.5-7.8B** (RTX 5060 8GB 기준). 2.4B/7.8B 비교 후 확정 — [../ai/llm/MODEL_NOTES.md](../ai/llm/MODEL_NOTES.md)
+### 2-1. 개발용 LLM (Gemini)
+> 🔄 결정 변경(2026-06-02): 로컬 EXAONE → **Gemini API** (강사 권고 + 8GB GPU 제약). 상세 — [../ai/llm/MODEL_NOTES.md](../ai/llm/MODEL_NOTES.md)
 
-- 사용 엔진: **Ollama** (OpenAI 호환 API 제공, 8GB 개발 환경에 적합)
-- 모델: **exaone3.5:7.8b** (1인칭 회피·위기 분류 안정성으로 채택). 저사양 PC는 `exaone3.5:2.4b` 대안 (빠르나 1인칭 위반 위험)
-- 설치 / 실행 방법:
-  ```bash
-  # Ollama 설치 후
-  ollama pull exaone3.5:7.8b
-  # 서버는 보통 자동 실행 (API: http://localhost:11434)
-  # 테스트: POST http://localhost:11434/api/chat
-  ```
-- `.env` 채울 값: `LLM_PROVIDER=ollama`, `LLM_BASE_URL=http://localhost:11434/v1`, `LLM_MODEL=exaone3.5:7.8b`, `LLM_API_KEY`(Ollama는 불필요)
-- ⚠️ 8GB에선 7.8B가 일부 CPU로 넘어가 느릴 수 있음 → 다른 GPU 앱 정리 권장
+- 사용: **Gemini API** (OpenAI 호환 엔드포인트 제공, GPU 불필요)
+- 키 발급: [Google AI Studio](https://aistudio.google.com/apikey) → API 키 생성
+- 모델: **gemini-2.5-flash** (빠르고 한국어 양호. 정확한 태그는 AI Studio에서 확인)
+- `.env` 채울 값: `LLM_PROVIDER=gemini`, `LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/`, `LLM_MODEL=gemini-2.5-flash`, `LLM_API_KEY=<발급키>`
+- 연결 확인: `python ai/llm/smoke_gemini.py`
+- (선택) **로컬 폴백** — 오프라인/프라이버시 시: Ollama + `exaone3.5:7.8b` (`LLM_PROVIDER=ollama`, `LLM_BASE_URL=http://localhost:11434/v1`)
 
 ### 2-2. PERSO API (평가/시연)
 > 🚧 담당 기입. 할당량 제한 있으니 개발 중엔 로컬 LLM 사용.
@@ -83,14 +78,19 @@ docker compose down -v
 - 발급/엔드포인트: _____________________
 - `.env` 채울 값: `PERSO_API_KEY`, `PERSO_API_BASE_URL`
 
-### 2-3. TTS
-> 🚧 담당 기입.
+### 2-3. TTS (정환주)
+> ✅ 엔진(잠정): **Google Cloud Text-to-Speech** (한국어 Neural2, GPU 불필요). 상세 코드 `ai/tts/tts.py`
 
-- 엔진: _____________________
+- 엔진: **Google Cloud TTS** — 메시지 톤(③)과 1:1 매핑(`TtsTone`: warm/calm/hopeful)
+- 키/인증:
+  1. [Google Cloud Console](https://console.cloud.google.com/) → 프로젝트 생성 → **Text-to-Speech API 사용 설정**
+  2. 서비스 계정 키(JSON) 발급 → 환경변수 `GOOGLE_APPLICATION_CREDENTIALS=<키.json 경로>`
 - 설치/실행:
   ```bash
-  # 담당 기입
+  pip install -r ai/requirements.txt          # google-cloud-texttospeech 포함
+  python -c "from ai.tts import synthesize; print(synthesize('안녕하세요', ))"  # 인증 후 음성 1회 테스트
   ```
+- ⚠️ 보호자 대상 낭독만 (반려동물 목소리 ❌). 음성 파일은 git 미포함(`ai/tts/_output/`)
 
 ---
 

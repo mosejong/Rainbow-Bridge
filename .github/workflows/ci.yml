@@ -1,17 +1,37 @@
 name: CI
 
-# 백엔드 코드가 바뀐 PR에서만 가볍게 돌립니다 (ruff · black · pytest).
-# 지금은 "권장" 단계 — 빨간불이어도 머지를 막지는 않습니다.
-# 테스트가 충분히 쌓이면 브랜치 보호의 required status check 로 승격하세요.
 on:
   pull_request:
     branches: [dev, main]
-    paths:
-      - "backend/**"
 
 jobs:
+  # ── 변경된 경로 감지 ──────────────────────────────────────────────
+  # paths: 필터를 워크플로 트리거에 걸면 docs/frontend PR이
+  # "Waiting for status" 상태로 영구 차단됩니다.
+  # dorny/paths-filter로 job 단위 필터를 걸어 이 문제를 해결합니다.
+  changes:
+    name: 변경 경로 감지
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      ai: ${{ steps.filter.outputs.ai }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            ai:
+              - 'ai/**'
+
+  # ── 백엔드 ───────────────────────────────────────────────────────
+  # backend/** 변경 시에만 실행. 그 외 PR은 자동 skip → required 통과.
   backend:
     name: 백엔드 검사 (ruff · black · pytest)
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -34,14 +54,36 @@ jobs:
       - name: black (포맷 확인)
         run: black --check .
 
-      - name: pytest (테스트)
+      - name: pytest
         run: |
           set +e
           pytest -q
           code=$?
-          # exit 5 = 수집된 테스트 없음 → 아직 테스트 전이므로 통과 처리
+          # exit 5 = 수집된 테스트 없음 → 스모크 테스트 추가 전까지 통과 처리
           if [ "$code" -eq 5 ]; then
-            echo "::notice::아직 테스트가 없습니다 — 통과 처리합니다."
+            echo "::warning::테스트가 없습니다. backend/tests/ 에 추가해 주세요."
             exit 0
           fi
           exit "$code"
+
+  # ── AI ───────────────────────────────────────────────────────────
+  # ai/** 변경 시에만 실행. continue-on-error: true (optional 단계).
+  ai:
+    name: AI 테스트 (pytest) — optional
+    needs: changes
+    if: needs.changes.outputs.ai == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 의존성 설치
+        run: pip install pytest httpx openai python-dotenv
+
+      - name: pytest (ai/llm)
+        working-directory: ai
+        run: python -m pytest llm/tests/ -q

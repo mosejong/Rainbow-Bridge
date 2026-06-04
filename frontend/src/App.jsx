@@ -1,23 +1,40 @@
-import { useState } from 'react';
-import SafetyModal from './components/SafetyModal';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import ProfilePage from './pages/ProfilePage';
+import EmotionPage from './pages/EmotionPage';
+import MessagePage from './pages/MessagePage';
+import ReportPage from './pages/ReportPage';
+import MissionPage from './pages/MissionPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+
+function ComingSoon({ name }) {
+  return (
+    <div className="min-h-screen bg-purple-50 flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-4xl mb-3">🚧</p>
+        <p className="text-violet-600 font-bold text-lg">{name}</p>
+        <p className="text-gray-400 text-sm mt-1">준비 중이에요</p>
+      </div>
+    </div>
+  );
+}
 
 function App() {
-  const [safetyOpen, setSafetyOpen] = useState(false);
-
   return (
-    <div className="min-h-screen bg-purple-50 flex flex-col items-center justify-center p-4">
-      <h1 className="text-3xl font-bold text-violet-600 mb-2">🌈 레인보우 브릿지</h1>
-      <p className="text-gray-500 mb-8">반려동물 펫로스 회복 서비스</p>
-
-      <button
-        onClick={() => setSafetyOpen(true)}
-        className="bg-red-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-red-600"
-      >
-        1393 모달 테스트
-      </button>
-
-      <SafetyModal isOpen={safetyOpen} onClose={() => setSafetyOpen(false)} />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/emotion" element={<EmotionPage />} />
+        <Route path="/message" element={<MessagePage />} />
+        <Route path="/tts" element={<ComingSoon name="TTS 음성 낭독" />} />
+        <Route path="/mission" element={<MissionPage />} />
+        <Route path="/timeline" element={<ComingSoon name="추모 타임라인" />} />
+        <Route path="/report" element={<ReportPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

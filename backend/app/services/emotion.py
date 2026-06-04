@@ -1,32 +1,27 @@
 from datetime import datetime, timezone
-
-
+import app.core.ai_path  # noqa: F401  프로젝트 루트를 sys.path에 추가
+from ai.llm.safety import assess_crisis
 from app.db.mongodb import mongodb
 from app.schemas.emotion import EmotionCreate, EmotionResponse
 
-# 위기 감지 키워드 — 반소람님 AI 로직으로 교체 예정
-_RISK_KEYWORDS = ["죽고싶", "따라가고싶", "없어지고싶", "살기싫", "포기"]
-
+CRISIS_HOTLINE = "1393"
 
 def _collection():
     return mongodb.db["emotions"]
 
-
-def _detect_risk(score: int, note: str | None) -> bool:
-    if score <= 2:
-        return True
-    if note and any(kw in note for kw in _RISK_KEYWORDS):
-        return True
-    return False
-
-
 async def create_emotion(data: EmotionCreate) -> EmotionResponse:
-    risk_flag = _detect_risk(data.score, data.note)
-
+    # 반소람님 assess_crisis() — 규칙 레이어(L0). 나중에 LLM 레이어 추가해도 이 호출은 그대로.
+    crisis = assess_crisis(data.note or "")
+    risk_level = int(crisis.risk_level)
     doc = data.model_dump()
-    doc["risk_flag"] = risk_flag
+    doc["risk_level"] = risk_level
     doc["created_at"] = datetime.now(timezone.utc)
-
     result = await _collection().insert_one(doc)
     doc["id"] = str(result.inserted_id)
-    return EmotionResponse(**doc)
+    response = EmotionResponse(**doc)
+    if crisis.hotline_required:
+        response.crisis_message = (
+            f"많이 힘드시군요. 혼자 감당하기 어려울 때는 "
+            f"자살예방상담전화 {CRISIS_HOTLINE}로 연락해 주세요. 24시간 운영합니다."
+        )
+    return response
