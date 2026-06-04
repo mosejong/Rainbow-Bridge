@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProfilePage from './pages/ProfilePage';
 import EmotionPage from './pages/EmotionPage';
 import MessagePage from './pages/MessagePage';
+import ReportPage from './pages/ReportPage';
 
 function ComingSoon({ name }) {
   return (
@@ -26,7 +27,7 @@ function App() {
         <Route path="/tts" element={<ComingSoon name="TTS 음성 낭독" />} />
         <Route path="/mission" element={<ComingSoon name="미션 카드" />} />
         <Route path="/timeline" element={<ComingSoon name="추모 타임라인" />} />
-        <Route path="/report" element={<ComingSoon name="평가 리포트" />} />
+        <Route path="/report" element={<ReportPage />} />
       </Routes>
     </BrowserRouter>
   );
