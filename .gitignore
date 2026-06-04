@@ -39,7 +39,8 @@ yarn-error.log*
 .pnp.*
 
 # ===== AI 모델 / 가중치 / 산출물 (용량 큼 — git 금지) =====
-models/
+/models/
+ai/**/models/
 weights/
 *.ckpt
 *.safetensors
