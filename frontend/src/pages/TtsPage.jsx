@@ -33,8 +33,11 @@ export default function TtsPage() {
     setError(null);
     try {
       const res = await generateTts({ pet_id: petId, text: messageText, tone: selectedTone });
-      setAudioUrl(API_BASE + res.audio_url);
-    } catch (e) {
+      const url = res.audio_url.startsWith('http')
+        ? res.audio_url
+        : `${API_BASE}${res.audio_url}`;
+      setAudioUrl(url);
+    } catch {
       setError('음성 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
