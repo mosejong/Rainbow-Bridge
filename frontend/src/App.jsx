@@ -3,6 +3,7 @@ import ProfilePage from './pages/ProfilePage';
 import EmotionPage from './pages/EmotionPage';
 import MessagePage from './pages/MessagePage';
 import ReportPage from './pages/ReportPage';
+import MissionPage from './pages/MissionPage';
 
 function ComingSoon({ name }) {
   return (
@@ -25,7 +26,7 @@ function App() {
         <Route path="/emotion" element={<EmotionPage />} />
         <Route path="/message" element={<MessagePage />} />
         <Route path="/tts" element={<ComingSoon name="TTS 음성 낭독" />} />
-        <Route path="/mission" element={<ComingSoon name="미션 카드" />} />
+        <Route path="/mission" element={<MissionPage />} />
         <Route path="/timeline" element={<ComingSoon name="추모 타임라인" />} />
         <Route path="/report" element={<ReportPage />} />
       </Routes>
