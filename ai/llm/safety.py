@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Final, Optional
+from typing import Final, Optional, Protocol
+
+from .prompts import safety as safety_prompt
 
 # 🚨 위기 안내 번호 — 어떤 경우에도 변경/누락 금지 (자살예방 상담전화).
 CRISIS_HOTLINE: Final[str] = "1393"
@@ -104,6 +107,10 @@ _SIGNAL_TABLE: Final[tuple[tuple[str, str, RiskLevel], ...]] = (
     ("약을모아", "means", RiskLevel.L3_EMERGENCY),
     ("오늘밤죽", "means", RiskLevel.L3_EMERGENCY),
     ("내일죽을", "means", RiskLevel.L3_EMERGENCY),
+    ("방법다정해", "means", RiskLevel.L3_EMERGENCY),
+    ("방법정해놨", "means", RiskLevel.L3_EMERGENCY),
+    ("방법도정해", "means", RiskLevel.L3_EMERGENCY),
+    ("방법도다정해", "means", RiskLevel.L3_EMERGENCY),
     # 🟠 경고(L2) — 본인의 사망 욕구 (따라감 포함)
     ("죽고싶", "direct", RiskLevel.L2_WARNING),
     ("죽어버리고싶", "direct", RiskLevel.L2_WARNING),
@@ -121,6 +128,10 @@ _SIGNAL_TABLE: Final[tuple[tuple[str, str, RiskLevel], ...]] = (
     ("나도따라가", "following", RiskLevel.L2_WARNING),
     ("나도데려가", "following", RiskLevel.L2_WARNING),
     ("곁으로가고싶", "following", RiskLevel.L2_WARNING),
+    ("깨지않았으면", "direct", RiskLevel.L2_WARNING),
+    ("깨어나지않았으면", "direct", RiskLevel.L2_WARNING),
+    ("끝났으면좋겠", "direct", RiskLevel.L2_WARNING),
+    ("다끝나버렸으면", "direct", RiskLevel.L2_WARNING),
     # 🟡 우려(L1) — 수동적 신호: 살 이유/의미 상실, 무기력
     ("살이유가없", "passive", RiskLevel.L1_CONCERN),
     ("살이유없", "passive", RiskLevel.L1_CONCERN),
@@ -426,22 +437,120 @@ def detect_crisis(text: str, context: Optional[dict] = None) -> CrisisResult:
     )
 
 
-def assess_crisis(text: str, context: Optional[dict] = None) -> CrisisResult:
+# --------------------------------------------------------------------------- #
+# LLM 분류 레이어(L1) — 규칙이 놓치는 완곡·맥락 표현 보완
+# --------------------------------------------------------------------------- #
+# 규칙(L0)과 **보수적으로 융합**(max)합니다. 미탐(놓침)이 가장 치명적이라,
+# 융합은 등급을 절대 내리지 않습니다. LLM 호출은 주입(generate)받아, 엔진 미연결
+# 이나 호출 실패 시 규칙 결과로 graceful 폴백합니다.
+
+
+class GenerateFn(Protocol):
+    """provider.generate 와 맞춘 호출 시그니처 (주입용)."""
+
+    def __call__(
+        self,
+        prompt: str,
+        *,
+        max_tokens: int = 256,
+        temperature: float = 0.0,
+        json_mode: bool = False,
+    ) -> str: ...
+
+
+@dataclass(frozen=True)
+class LLMVerdict:
+    """L1 분류 결과."""
+
+    risk_level: RiskLevel
+    subject: str
+    reason: str
+
+
+_VALID_SUBJECTS: Final[frozenset[str]] = frozenset(
+    {Subject.SELF, Subject.PET, Subject.OTHER, Subject.NONE}
+)
+
+
+def classify_with_llm(text: str, generate: GenerateFn) -> Optional[LLMVerdict]:
+    """LLM(L1)으로 위기 등급을 분류합니다(JSON 강제).
+
+    prompts/safety.py 의 분류 프롬프트로 generate 를 호출하고, JSON 을 파싱해
+    LLMVerdict 로 돌려줍니다. 호출·파싱 실패는 None 으로 흡수(상위에서 규칙 폴백).
+
+    Args:
+        text: 보호자가 입력한 문장.
+        generate: provider.generate 호환 함수(json_mode 지원).
+
+    Returns:
+        LLMVerdict 또는 None(실패 시).
+    """
+    messages = safety_prompt.build_messages(text)
+    prompt = f"{messages[0]['content']}\n\n{messages[1]['content']}"
+    try:
+        raw = generate(prompt, max_tokens=256, temperature=0.0, json_mode=True)
+        data = json.loads(raw)
+        level = int(data.get("risk_level", 0))
+        level = min(int(RiskLevel.L3_EMERGENCY), max(int(RiskLevel.L0_NORMAL), level))
+        subject = data.get("subject", Subject.NONE)
+        if subject not in _VALID_SUBJECTS:
+            subject = Subject.NONE
+        return LLMVerdict(
+            risk_level=RiskLevel(level),
+            subject=subject,
+            reason=str(data.get("reason", "")),
+        )
+    except Exception:  # noqa: BLE001 — 호출·파싱 실패는 규칙 폴백으로 흡수(graceful)
+        return None
+
+
+def assess_crisis(
+    text: str,
+    context: Optional[dict] = None,
+    *,
+    generate: Optional[GenerateFn] = None,
+) -> CrisisResult:
     """위기 감지 **공식 창구** — 백엔드는 이 함수만 호출하세요.
 
     백엔드가 의존하는 단 하나의 진입점입니다. 함수 이름과 반환 타입
     (CrisisResult / as_dict)을 고정해 두면, 내부 구현이 바뀌어도 백엔드
     코드는 그대로 둘 수 있습니다.
 
-    - **현재**: 규칙 레이어(L0) detect_crisis 결과를 그대로 반환.
-    - **향후**: 이 함수 안에서 LLM 레이어(L1) 분류를 호출하고
-      보수적으로 융합("애매하면 한 단계 ↑")해 반환. 백엔드 변경 불필요.
+    - **generate 미주입(기본)**: 규칙 레이어(L0) `detect_crisis` 결과만 반환.
+      (백엔드 현재 호출 `assess_crisis(note)` 는 이 경로 — 동작 그대로 유지.)
+    - **generate 주입**: L0 + LLM 레이어(L1)를 **보수적 융합**(max — "애매하면 ↑").
+      미탐 0은 규칙이 보장하므로 융합은 등급을 내리지 않습니다. L1 실패 시 규칙 폴백.
 
     Args:
         text: 보호자가 입력한 문장.
-        context: 향후 LLM 융합용(이전 대화·반려동물 이름 등). 현재 미사용.
+        context: 향후 확장용(이전 대화 등). 현재 미사용.
+        generate: 주입 시 L1 활성화(provider.generate). None 이면 규칙만.
 
     Returns:
         CrisisResult — risk_level·hotline_required 등 (detect_crisis와 동일 타입).
     """
-    return detect_crisis(text, context)
+    rule = detect_crisis(text, context)
+    if generate is None:
+        return rule
+
+    verdict = classify_with_llm(text, generate)
+    if verdict is None:  # L1 실패 → 규칙 결과로 폴백
+        return rule
+
+    # 보수적 융합: 등급은 더 높은 쪽(절대 내리지 않음).
+    fused = max(rule.risk_level, verdict.risk_level)
+    # 대상(subject): L1이 등급을 올렸으면 L1 판단을, 아니면 규칙 판단을 따름.
+    subject = verdict.subject if verdict.risk_level > rule.risk_level else rule.subject
+    reason = (
+        f"융합(L0={rule.risk_level.name}, L1={verdict.risk_level.name}) "
+        f"→ {fused.name}; L1근거: {verdict.reason}"
+    )
+    return CrisisResult(
+        risk_level=fused,
+        subject=subject,
+        signals=rule.signals,
+        hotline_required=fused >= HOTLINE_REQUIRED_FROM,
+        reason=reason,
+        score=rule.score,
+        context_markers=rule.context_markers,
+    )

@@ -24,10 +24,14 @@ export default function MessagePage() {
       const data = await generateMessage({ pet_id: petId });
       setMessage(data);
       localStorage.setItem('message_id', data._id);
+      localStorage.setItem('message_content', data.content);
+      localStorage.setItem('message_tone', data.tone || 'warm');
     } catch {
       // 백엔드 연결 전 mock 처리
       setMessage(mockMessage);
       localStorage.setItem('message_id', mockMessage._id);
+      localStorage.setItem('message_content', mockMessage.content);
+      localStorage.setItem('message_tone', mockMessage.tone || 'warm');
     } finally {
       setLoading(false);
     }
