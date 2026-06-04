@@ -4,9 +4,7 @@ from datetime import datetime, timezone
 from bson import ObjectId
 from openai import APIError, OpenAI
 
-from ai.llm.safety import (
-    detect_crisis as assess_crisis,
-)  # assess_crisis PR 머지 후 교체
+from ai.llm.safety import assess_crisis
 
 from app.db.mongodb import mongodb
 from app.schemas.message import MessageCreate, MessageResponse
