@@ -6,17 +6,29 @@
 """
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import admin, emotions, missions, pets, timeline
+from app.api.v1.endpoints import (
+    admin,
+    auth,
+    emotions,
+    llm_logs,
+    messages,
+    missions,
+    pets,
+    report,
+    timeline,
+    tts,
+)
 
 api_router = APIRouter()
 
 # ===== 기능별 라우터 등록 =====
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(pets.router, prefix="/pets", tags=["pets"])
 api_router.include_router(emotions.router, prefix="/emotions", tags=["emotions"])
 api_router.include_router(missions.router, prefix="/missions", tags=["missions"])
+api_router.include_router(messages.router, prefix="/messages", tags=["messages"])
+api_router.include_router(tts.router, prefix="/tts", tags=["tts"])
+api_router.include_router(report.router, prefix="/report", tags=["report"])
 api_router.include_router(timeline.router, prefix="/timeline", tags=["timeline"])
+api_router.include_router(llm_logs.router, prefix="/llm-logs", tags=["llm_logs"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
-
-# from app.api.v1.endpoints import messages, media
-# api_router.include_router(messages.router,  prefix="/messages",  tags=["messages"])
-# api_router.include_router(media.router,     prefix="/media",     tags=["media"])

@@ -1,0 +1,12 @@
+# 레인보우 브릿지 AI 파트 의존성
+# 설치: pip install -r ai/requirements.txt
+
+# 개발용 LLM (Gemini — OpenAI 호환 호출: provider / smoke_gemini.py)
+openai>=1.40
+python-dotenv>=1.0
+
+# ④ TTS (Google Cloud Text-to-Speech)
+google-cloud-texttospeech>=2.16
+
+# 테스트
+pytest>=8.0
