@@ -9,33 +9,174 @@
 
 | 항목 | 값 |
 |------|----|
-| OS | |
-| Python | |
-| CUDA | |
-| GPU | |
-| LivePortrait 버전 | |
+| OS | Windows 11 Pro |
+| Python | 3.11 (conda: liveportrait) |
+| CUDA Toolkit | 13.2 (nvcc) |
+| GPU | RTX 3060 12GB |
+| PyTorch | 2.13.0.dev nightly + cu132 |
+| onnxruntime | 1.26.0 (CPU, cuDNN 없어서 GPU 버전 교체) |
+| LivePortrait | KwaiVGI/LivePortrait (2025-06-01 기준 최신) |
+| 클론 위치 | `c:\JMS\2_project\LivePortrait\` (레포 밖) |
 
 ---
 
 ## 실험 기록
 
-### YYYY-MM-DD — 실험 제목
+### 2026-06-02 — Humans 모드 기본 동작 확인
 
-**목표:**
+**목표:** 로컬 환경에서 LivePortrait 기본 파이프라인 동작 확인
 
 **방법:**
+```bash
+python inference.py -s assets/examples/source/s0.jpg -d assets/examples/driving/d0.mp4
+```
 
 **결과:**
-- [ ] Animals 모드 동작 여부
-- [ ] 입력 사진 조건 (정면/측면/해상도)
-- [ ] 생성 영상 품질 (자연스러움 1~5점)
-- [ ] 처리 시간 (초)
-
-**샘플 입력 조건:**
+- [x] 동작 여부: ✅ 성공
+- [x] 생성 파일: `animations/s0--d0.mp4`, `animations/s0--d0_concat.mp4`
+- [x] 처리 시간: 약 11초 (RTX 3060)
 
 **이슈 / 메모:**
+- onnxruntime-gpu → CPU 버전으로 교체 필요 (cuDNN DLL 없음)
+- 인코딩 경고(LF→CRLF)는 무시
+
+---
+
+### 2026-06-02 — Animals 모드 고양이 사진 변환 (팀장 지시 테스트)
+
+**목표:** 고양이 사진에서 animals 모드가 동작하는지 확인 (강사님 지시)
+
+**방법:**
+```bash
+python inference_animals.py \
+  -s assets/examples/source/s39.jpg \
+  -d assets/examples/driving/d0.mp4 \
+  --no_flag_stitching
+```
+
+**결과:**
+- [x] Animals 모드 동작 여부: ✅ 성공
+- [x] 입력 사진: 고양이 정면, 고해상도, 얼굴 또렷
+- [x] 생성 파일: `animations/s39--d0.mp4`, `animations/s39--d0.gif`
+- [x] 생성 영상 품질: 눈·코·입 자연스럽게 움직임, 털 디테일 유지
+- [x] 처리 시간: 약 1분 내외 (CPU onnxruntime 영향)
+
+**해결한 이슈 목록:**
+
+| 이슈 | 해결 방법 |
+|------|-----------|
+| PyTorch CUDA 버전 불일치 (cu124 vs 시스템 13.2) | nightly cu132로 강제 재설치 |
+| onnxruntime-gpu cuDNN DLL 로드 실패 | CPU 버전(1.26.0)으로 교체 |
+| Visual C++ Build Tools 없음 | 수동 설치 |
+| cpp_extension.py OEM 인코딩 에러 | `('oem',)` → `('utf-8', 'ignore')` 패치 |
+| CUDA 전처리기 에러 (C1189) | setup.py cxx·nvcc 플래그 추가 |
+| ninja 없음 | `pip install ninja` |
+| MultiScaleDeformableAttention 모듈 미인식 | `pip install -e . --no-build-isolation` |
 
 **다음 할 것:**
+- driving 템플릿 퀄리티 개선 (잔잔한 눈 깜빡임·끄덕임 전용 영상 준비)
+- onnxruntime-gpu GPU 가속 활성화 시도 (cuDNN 설치 또는 다른 방법)
+- 실제 반려동물 사진(강아지·다양한 품종)으로 추가 테스트
+
+---
+
+### 2026-06-04 — 강아지 테스트 + 옵션별 품질 비교
+
+**목표:** 강아지 종 동작 확인 + 입·혀 왜곡 해결, 추모용 잔잔한 모션 찾기
+
+**방법:** 시바견 `s32.jpg`로 옵션을 바꿔가며 비교. 결과는 `output/비교_강아지/` (A~F).
+
+**결과:**
+- [x] 강아지(시바견) 동작 확인 → 고양이·강아지 둘 다 됨 (종 일반화 OK)
+- [x] 입 벌리고 혀 내민 사진은 전체 모드(`all`)에서 **혀 왜곡** 발생
+- [x] `--animation_region eyes` (눈만 움직임) → 입·혀 고정되어 왜곡 사라짐
+- [ ] 단, driving 영상이 추모용으론 모션 과함 → 1초쯤 부자연스러움 (미해결)
+
+**옵션별 비교 (output/비교_강아지/):**
+
+| 파일 | 설정 | 결과 |
+|------|------|------|
+| A | `all` 전체 모드 | 혀 왜곡 (기준) |
+| B | `eyes` 눈만 | 왜곡 없음, 1초쯤 어색 |
+| C | `eyes` + `driving_multiplier 0.5` | 모션 절반, 더 잔잔 |
+| D | `eyes` + driving=d18 | 다른 모션 비교용 |
+| E~F | `all` + d6/d18 | 전체 모드 모션 비교 |
+
+**핵심 발견:**
+- 추모 서비스는 다양한 사진(혀 내민 강아지 등)이 올라옴 → **`eyes` 모드를 기본값으로** 두면 어떤 사진이든 왜곡 없이 안정적. 강사님 "눈·코·입 정도면 충분"과도 일치.
+- 영상 자연스러움의 핵심 변수 = **driving 템플릿 품질** (강사님 "베이스 영상 퀄리티 중요"). 기본 예제(d0 등)는 사람이 말하는 모션이라 추모용 아님.
+
+**다음 할 것:**
+- driving 영상 다듬기 (ffmpeg 속도↓·차분한 구간만) → 추모 전용 템플릿 제작
+- 최적 설정 확정 후 `pipeline.py` 기본값 반영
+
+> ⚠️ **정정(아래 참고):** 이 항목의 "`eyes` 모드로 해결" 결론은 **틀렸음.** `animation_region`은
+> 동물 파이프라인에서 무시됨. 단일 프레임만 보고 잘못 판단한 것. 정정 실험은 아래.
+
+---
+
+### 2026-06-04 (정정) — eyes 모드 무효 확인, driving_multiplier로 해결
+
+**계기:** 강아지·고양이 대표 검증(`output/검증_종별/`) 중, `eyes` 모드인데도 **결과에서 입이 벌어짐** 발견.
+
+**원인 규명:**
+- `live_portrait_pipeline_animal.py`에 `animation_region` 코드 **자체가 없음** → eyes/lip 등 부위 제한은 **humans 전용, 동물엔 무효.**
+- 동물은 driving 영상의 **전체 표정(입 포함)을 그대로 적용.** 입이 움직인 건 driving(d0)에서 사람이 웃고 말해서.
+
+**해결 (검증 `output/검증_강도/`):**
+- 동물엔 부위 제한이 없으므로 **`driving_multiplier`로 전체 모션 강도를 낮춰** 입 움직임 억제.
+- 고양이 `s39` 기준: 강도 1.0(입 벌어짐) → **0.5(입 거의 닫힘 + 눈/고개 살짝)** → 0.3(더 잔잔).
+- **팀 결정: 0.5 채택** (입 닫힘 + 적당한 생동감).
+
+**확정 스펙 (pipeline.py 반영):**
+```bash
+python inference_animals.py -s <pet> -d <driving> --no_flag_stitching --driving_multiplier 0.5
+```
+- `animation_region`은 동물에 쓰지 않음
+- 장기적으로 입 다문 잔잔한 driving 템플릿을 쓰면 강도를 더 올려도 됨
+
+**교훈:** 단일 프레임이 아니라 **영상 전체 + 코드 확인**으로 검증해야 함.
+
+---
+
+### 2026-06-04 — 종별·조건별 검증 (강도 0.5)
+
+증거 영상: `output/cat/`, `output/dog/` (concat = 원본|결과 나란히)
+
+**종·품종·입 상태별:**
+
+| 사진 | 종/품종 | 입 상태 | 결과 |
+|------|---------|---------|------|
+| s39 | 고양이(랙돌) | 다뭄 | ✅ 깨끗 |
+| s33 | 강아지(골든) | 다뭄 | ✅ 깨끗 |
+| s31 | 강아지(시바) | 살짝 벌림 | ✅ OK |
+| s32 | 강아지(시바) | 혀 내밈 | ⚠️ 코 옆 분홍 잔상 (소스 한계) |
+
+→ **결론: 변수는 설정이 아니라 소스 사진.** 입 다문 차분한 사진은 종 무관 깨끗,
+   혀 내민 사진은 어떤 설정으로도 한계 → **업로드 가이드 필요.**
+
+**까다로운 조건 (골든 s33 변형, `output/dog/hard_cases/`):**
+
+| 조건 | 결과 |
+|------|------|
+| 어두운 사진 (밝기 -0.35) | ✅ 얼굴 검출됨 |
+| 저화질 (96px→512 뭉갬) | ✅ 검출됨 |
+| 작은 얼굴 (160px 중앙 배치) | ✅ 검출됨 |
+
+→ 까다로운 조건도 검출은 버팀 (화질은 입력 따라감).
+
+**🚨 한글 경로 버그 (중요 — 백엔드 연동 필수 반영):**
+- 소스 사진 경로에 **한글이 있으면** `cv2.error: !_src.empty()` 로 **실패.**
+- 원인: OpenCV `cv2.imread`가 Windows에서 비ASCII(한글) 경로를 못 읽음.
+- **대응: 업로드 사진은 영문 경로/파일명으로 저장** (예: 반려동물 이름 "콩이" → `pet_001.jpg`).
+- pipeline.py·백엔드 저장 로직에 반영 필요.
+
+**업로드 사진 가이드 (MediaPage UI 문구용):**
+- 정면을 바라보는 사진
+- 입을 다물거나 살짝 다문 차분한 표정
+- 얼굴이 또렷하고 밝은 사진
+
+**미검증 (추후 실제 사진 필요):** 측면/큰 각도, 여러 마리 동시.
 
 ---
 
@@ -43,8 +184,11 @@
 
 | 모드 | 상태 | 비고 |
 |------|------|------|
-| Humans | ✅ 동작 확인 | animations/s0--d0.mp4 생성 |
-| Animals | ⏳ 진행 중 | XPose CUDA 컴파일 필요 |
+| Humans | ✅ 동작 확인 | `s0--d0.mp4` 생성 |
+| Animals (고양이) | ✅ 동작 확인 | `s39`, 강도 0.5에서 입 닫힘 |
+| Animals (강아지) | ✅ 동작 확인 | 시바견 `s31`/`s32` |
+| 추모 톤 (입 억제) | ✅ 해결 | `driving_multiplier 0.5` (eyes 모드 ❌ 동물 무효) |
+| 잔잔한 driving 템플릿 | ⏳ 진행 중 | 입 다문 영상 제작 시 품질↑ |
 
 ---
 
@@ -52,13 +196,13 @@
 
 | 방법 | 장점 | 단점 | 검토 결과 |
 |------|------|------|----------|
-| 로컬 Animals 모드 | 무료, 빠름 | CUDA Toolkit 설치 필요 | |
-| Replicate API | 바로 테스트 가능 | 유료, 네트워크 의존 | |
+| 로컬 Animals 모드 | 무료, 빠름 (GPU) | 세팅 복잡, cuDNN 미설치 시 CPU fallback | ✅ 채택 (세팅 완료) |
+| Replicate API (`fofr/live-portrait`) | 즉시 사용, 복잡한 세팅 불필요 | 유료($0.04/회, ~56초), animals 파라미터 확인 필요 | ⬜ fallback으로 구현 예정 |
 
 ---
 
 ## 최종 결론 (확정 후 작성)
 
-- **선택한 방법:**
-- **이유:**
-- **레포에 붙일 코드 범위:**
+- **선택한 방법:** 로컬 animals 모드 (주) + Replicate fallback (보조)
+- **이유:** 로컬 동작 확인 완료. GPU 서버 꺼져 있을 때 Replicate로 전환.
+- **레포에 붙일 코드 범위:** `ai/liveportrait/pipeline.py` — 모드 스위칭, 사진 입력 → MP4 출력

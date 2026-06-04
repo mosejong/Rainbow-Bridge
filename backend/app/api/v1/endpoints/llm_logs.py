@@ -1,7 +1,5 @@
 from datetime import datetime, timezone
-
 from fastapi import APIRouter, HTTPException
-
 from app.db.mongodb import mongodb
 from app.schemas.llm_log import LlmLogCreate
 

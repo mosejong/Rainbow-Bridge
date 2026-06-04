@@ -4,6 +4,9 @@ import EmotionPage from './pages/EmotionPage';
 import MessagePage from './pages/MessagePage';
 import ReportPage from './pages/ReportPage';
 import MissionPage from './pages/MissionPage';
+import TtsPage from './pages/TtsPage';
+import TimelinePage from './pages/TimelinePage';
+import MediaPage from './pages/MediaPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 
@@ -29,9 +32,10 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/emotion" element={<EmotionPage />} />
         <Route path="/message" element={<MessagePage />} />
-        <Route path="/tts" element={<ComingSoon name="TTS 음성 낭독" />} />
+        <Route path="/tts" element={<TtsPage />} />
         <Route path="/mission" element={<MissionPage />} />
-        <Route path="/timeline" element={<ComingSoon name="추모 타임라인" />} />
+        <Route path="/timeline" element={<TimelinePage />} />
+        <Route path="/media" element={<MediaPage />} />
         <Route path="/report" element={<ReportPage />} />
       </Routes>
     </BrowserRouter>
