@@ -24,12 +24,6 @@ class MissionRecommendRequest(BaseModel):
     day_since: Optional[int] = None
 
 
-class MissionItem(BaseModel):
-    title: str
-    description: str = ""
-    category: str = "activity"
-
-
 class MissionRecommendResponse(BaseModel):
-    missions: list[MissionItem]
+    missions: list[str]
     source: str = "stub"
