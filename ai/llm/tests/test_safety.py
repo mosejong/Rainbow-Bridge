@@ -26,12 +26,15 @@ def test_crisis_hotline_is_1393():
     assert CRISIS_HOTLINE == "1393"
 
 
-@pytest.mark.parametrize("case", GOLDEN_CASES, ids=lambda c: c.id)
+_L0_DETECTION_CASES = [c for c in GOLDEN_CASES if "L0 미탐 허용" not in c.note]
+
+
+@pytest.mark.parametrize("case", _L0_DETECTION_CASES, ids=lambda c: c.id)
 def test_no_missed_detection(case):
-    """미탐 0: 감지 등급이 기대 등급보다 낮으면 안 된다(보수적).
+    """미탐 0: 규칙(L0) 감지 등급이 기대 등급보다 낮으면 안 된다(보수적).
 
     심각 케이스를 놓치는 것이 가장 위험하므로, '같거나 더 높게'를 허용하고
-    '더 낮음'만 실패로 둔다.
+    '더 낮음'만 실패로 둔다. 'L0 미탐 허용' 케이스는 L1(LLM)이 보완.
     """
     result = detect_crisis(case.text)
     assert result.risk_level >= case.expected_level, (
@@ -40,9 +43,15 @@ def test_no_missed_detection(case):
     )
 
 
-@pytest.mark.parametrize("case", GOLDEN_CASES, ids=lambda c: c.id)
+_L0_EXACT_CASES = [c for c in GOLDEN_CASES if "L0 미탐 허용" not in c.note]
+
+
+@pytest.mark.parametrize("case", _L0_EXACT_CASES, ids=lambda c: c.id)
 def test_exact_level_matches_golden(case):
-    """규칙 레이어 회귀: 등급이 골든셋과 정확히 일치(사전 변경 감지용)."""
+    """규칙 레이어 회귀: 등급이 골든셋과 정확히 일치(사전 변경 감지용).
+
+    note에 'L0 미탐 허용'이 있는 케이스는 L1(LLM)이 보완하는 항목으로 제외.
+    """
     result = detect_crisis(case.text)
     assert result.risk_level == case.expected_level, (
         f"[등급변동] {case.id}: '{case.text}' → "
@@ -50,7 +59,7 @@ def test_exact_level_matches_golden(case):
     )
 
 
-@pytest.mark.parametrize("case", GOLDEN_CASES, ids=lambda c: c.id)
+@pytest.mark.parametrize("case", _L0_EXACT_CASES, ids=lambda c: c.id)
 def test_subject_matches_golden(case):
     """표현 대상(subject) 구분이 골든셋과 일치."""
     result = detect_crisis(case.text)
