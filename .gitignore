@@ -61,6 +61,10 @@ ai/tts/_output/
 # 개인 작업중 스크래치 메모 (devlog 정식 일지 아님)
 docs/devlog/members/_*.md
 
+# TTS 서비스 계정 키 (절대 커밋 금지 — 비밀)
+ai/tts/*.json
+gcp-tts-key.json
+
 # ===== Docker / DB =====
 *.sqlite3
 mongo-data/
