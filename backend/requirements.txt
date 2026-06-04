@@ -12,6 +12,7 @@ sqlalchemy==2.0.36        # RDB ORM (로그인용 SQLite)
 aiosqlite==0.20.0         # SQLite 비동기 드라이버
 passlib[bcrypt]==1.7.4    # 비밀번호 해싱
 python-jose[cryptography]==3.3.0  # JWT 토큰
+google-cloud-texttospeech==2.36.0  # ④ TTS 음성 합성 (ai/tts 연동)
 
 # ----- 개발/테스트 -----
 pytest==8.3.4
