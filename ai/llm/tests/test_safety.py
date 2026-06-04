@@ -15,6 +15,7 @@ from ..safety import (
     HOTLINE_REQUIRED_FROM,
     RiskLevel,
     Subject,
+    assess_crisis,
     detect_crisis,
 )
 from .golden_crisis import GOLDEN_CASES
@@ -86,3 +87,20 @@ def test_self_desire_overrides_pet_mention():
     result = detect_crisis("봄이 따라 나도 죽고 싶어요")
     assert result.subject == Subject.SELF
     assert result.risk_level >= RiskLevel.L2_WARNING
+
+
+@pytest.mark.parametrize("case", GOLDEN_CASES, ids=lambda c: c.id)
+def test_assess_crisis_matches_detect_for_now(case):
+    """창구 함수 계약: 현재(LLM 융합 전)는 detect_crisis 와 동일 결과.
+
+    백엔드는 assess_crisis 만 호출합니다. 향후 이 함수에 LLM 융합이 붙으면
+    결과가 달라질 수 있으나, 그때 이 테스트를 함께 갱신합니다(계약 변경 신호).
+    """
+    assert assess_crisis(case.text).risk_level == detect_crisis(case.text).risk_level
+
+
+def test_assess_crisis_returns_crisis_result():
+    """백엔드 연동 계약: CrisisResult 타입·as_dict 키를 보장."""
+    result = assess_crisis("봄이 곁으로 따라가고 싶어요")
+    assert result.risk_level >= RiskLevel.L2_WARNING
+    assert result.as_dict()["hotline"] == CRISIS_HOTLINE
