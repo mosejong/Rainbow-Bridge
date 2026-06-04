@@ -51,9 +51,20 @@ class LLMLog:
     risk_level: Optional[int] = None  # ⑦ 위기 등급(L0~L3)만 — 원문은 저장 ❌
     created_at: datetime = field(default_factory=_now)
 
+    @property
+    def total_tokens(self) -> int:
+        """입력+출력 토큰 합 — 백엔드 admin/usage 의 `$sum: total_tokens` 와 정합."""
+        return self.tokens_in + self.tokens_out
+
     def to_doc(self) -> dict[str, Any]:
-        """MongoDB 저장용 dict. None 필드는 그대로 둬 스키마를 일정하게 유지."""
-        return asdict(self)
+        """MongoDB 저장용 dict.
+
+        admin/usage 집계가 `total_tokens` 로 합산하므로 그 필드를 포함합니다.
+        ⚠️ 대화 원문(prompt/응답 텍스트)은 저장하지 않습니다(개인정보 최소화).
+        """
+        doc = asdict(self)
+        doc["total_tokens"] = self.total_tokens
+        return doc
 
 
 def save_log(collection: Any, log: LLMLog) -> Any:

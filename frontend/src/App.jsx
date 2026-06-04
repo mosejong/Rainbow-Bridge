@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProfilePage from './pages/ProfilePage';
+import EmotionPage from './pages/EmotionPage';
+import MessagePage from './pages/MessagePage';
 
 function ComingSoon({ name }) {
   return (
@@ -19,8 +21,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/profile" replace />} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/emotion" element={<ComingSoon name="감정 체크인" />} />
-        <Route path="/message" element={<ComingSoon name="AI 추모 메시지" />} />
+        <Route path="/emotion" element={<EmotionPage />} />
+        <Route path="/message" element={<MessagePage />} />
         <Route path="/tts" element={<ComingSoon name="TTS 음성 낭독" />} />
         <Route path="/mission" element={<ComingSoon name="미션 카드" />} />
         <Route path="/timeline" element={<ComingSoon name="추모 타임라인" />} />
