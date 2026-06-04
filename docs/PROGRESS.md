@@ -28,7 +28,7 @@
 | 0-3 | MongoDB 연결 + 실서버 | 김윤한·모세종 | ✅ | NCP Docker MongoDB 운영 중 (06-04) |
 | 0-4 | Docker / docker-compose | 김윤한 | ⬜ | 다음 작업 |
 | 0-5 | LLM 결정·세팅 | 반소람·정환주 | ✅ | Gemini 실연동 완료 (06-03) |
-| 0-6 | PERSO API 연동 테스트 | 반소람 | 🟡 | API 키 수령, 연동 진행 중 |
+| 0-6 | PERSO API 연동 테스트 | 장민수 | 🟡 | 영상 더빙·립싱크 전용. LLM·TTS 기능 없음 확인 |
 | 0-7 | GPU 서버 셋업 (RTX 5060) | 정환주 | ✅ | LivePortrait·추론용 완료 |
 | 0-8 | 프론트 프레임워크 결정·세팅 | 민경이 | ✅ | Vite+React+Tailwind (06-02) |
 
