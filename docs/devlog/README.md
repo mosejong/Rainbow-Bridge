@@ -148,19 +148,4 @@
 | 민경이 | — | [→](members/민경이.md) |
 | 장민수 | — | [→](members/장민수.md) |
 
-**팀 전체:** 로그인(RDB) 구현 완료(강사 필수 요구사항). AI 외부 연동(Gemini·Google Cloud TTS) 실동작 확인.
-
----
-
-## 2026-06-04 (Day 4)
-
-| 이름 | 한 일 (요약) | 상세 |
-|------|------------|------|
-| 모세종 | — | [→](members/모세종.md) |
-| 김윤한 | — | [→](members/김윤한.md) |
-| 반소람 | — | [→](members/반소람.md) |
-| 정환주 | Gemini 실연결 확인(smoke 정상 응답) + Google Cloud TTS 키 발급·인증 → 실제 음성 합성 성공, `.env.example`/`.gitignore` 정합(PR #35) | [→](members/정환주.md#2026-06-04-day-4) |
-| 민경이 | — | [→](members/민경이.md) |
-| 장민수 | — | [→](members/장민수.md) |
-
-**팀 전체:** AI 파트 외부 연동(Gemini·Google Cloud TTS) 실연결 완료 — 키 발급 후 실제 LLM 응답·음성 합성 동작 확인.
+**팀 전체:** 로그인(RDB) 구현 완료(강사 필수 요구사항). AI 외부 연동(Gemini·Google Cloud TTS) 실동작 확인. 프론트 ReportPage 구현.

@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from bson import ObjectId
 from openai import APIError, OpenAI
 
+from ai.llm.safety import assess_crisis
+
 from app.db.mongodb import mongodb
 from app.schemas.message import MessageCreate, MessageResponse
 
@@ -13,9 +15,6 @@ _CRISIS_NOTICE = (
     f"많이 힘드시군요. 혼자 감당하기 어려울 때는 "
     f"자살예방상담전화 {CRISIS_HOTLINE}로 연락해 주세요. 24시간 운영합니다."
 )
-
-# 위기 키워드 (반소람님 L2+ 기준)
-_CRISIS_KEYWORDS = ["죽고싶", "따라가고싶", "없어지고싶", "살기싫", "유서", "뛰어내리"]
 
 _TONE_GUIDE = {
     "warm": "따뜻하고 다정하게, 보호자의 슬픔을 부드럽게 감싸 안듯이.",
@@ -40,11 +39,6 @@ _SYSTEM_PROMPT = """\
 
 def _collection():
     return mongodb.db["messages"]
-
-
-def _is_crisis(note: str | None) -> bool:
-    note_str = note or ""
-    return any(kw in note_str for kw in _CRISIS_KEYWORDS)
 
 
 def _build_prompt(pet: dict, tone: str, score: int, note: str) -> str:
@@ -105,13 +99,14 @@ _FALLBACK = {
 
 
 async def create_message(data: MessageCreate) -> MessageResponse:
-    if _is_crisis(data.note):
+    crisis = assess_crisis(data.note or "")
+    if crisis.hotline_required:
         doc = {
             "pet_id": data.pet_id,
             "content": _CRISIS_NOTICE,
             "tone": data.tone,
             "source": "safety",
-            "risk_level": 2,
+            "risk_level": int(crisis.risk_level),
             "created_at": datetime.now(timezone.utc),
         }
         result = await _collection().insert_one(doc)
