@@ -4,6 +4,7 @@
     from app.api.v1.endpoints import pets
     api_router.include_router(pets.router, prefix="/pets", tags=["pets"])
 """
+
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     admin,
@@ -19,6 +20,7 @@ from app.api.v1.endpoints import (
     timeline,
     tts,
 )
+
 api_router = APIRouter()
 # ===== 기능별 라우터 등록 =====
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])

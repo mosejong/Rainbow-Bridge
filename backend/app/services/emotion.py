@@ -4,9 +4,14 @@ from ai.llm.safety import assess_crisis
 from ai.llm.provider import generate
 from app.db.mongodb import mongodb
 from app.schemas.emotion import EmotionCreate, EmotionResponse
+
 CRISIS_HOTLINE = "1393"
+
+
 def _collection():
     return mongodb.db["emotions"]
+
+
 async def create_emotion(data: EmotionCreate) -> EmotionResponse:
     # 반소람님 assess_crisis() — L1 LLM 레이어 연동
     crisis = assess_crisis(data.note or "", generate=generate)
