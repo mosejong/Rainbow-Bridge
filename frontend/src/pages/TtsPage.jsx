@@ -5,6 +5,8 @@ import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { generateTts } from '../api/tts';
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 const TONES = [
   { value: 'warm', label: '따뜻하게', emoji: '🌸' },
   { value: 'calm', label: '차분하게', emoji: '🌿' },
@@ -29,7 +31,10 @@ export default function TtsPage() {
     setAudioUrl(null);
     try {
       const res = await generateTts({ pet_id: petId, text: messageText, tone: selectedTone });
-      setAudioUrl(res.audio_url);
+      const url = res.audio_url.startsWith('http')
+        ? res.audio_url
+        : `${BASE_URL}${res.audio_url}`;
+      setAudioUrl(url);
     } catch {
       // 백엔드 미연결 시 안내만
     } finally {
