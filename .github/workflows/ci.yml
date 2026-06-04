@@ -81,8 +81,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: pytest 설치
-        run: pip install pytest
+      - name: 의존성 설치
+        run: pip install pytest httpx openai python-dotenv
 
       - name: pytest (ai/llm)
         working-directory: ai
