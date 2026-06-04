@@ -161,6 +161,6 @@
 | 반소람 | ⑤ 미션 추천+규칙 풀 확장(30개), ⑦ L1+골든셋 30개 보강, ③ 품질 검증(Gemini 6종 통과), 159종 통과 | [→](members/반소람.md#2026-06-04-day-4) |
 | 정환주 | Gemini·Google Cloud TTS 키 발급·실연결, **백엔드 TTS 실연결(PR #40)** — ④ TTS 가짜→진짜, 환경 정합(PR #35), 팀 PR 리뷰 3건(#33·#36·#38), 추모 윤리 경계 정리, PROGRESS 갱신·build_report 핸드오프(PR #58) | [→](members/정환주.md#2026-06-04-day-4) |
 | 민경이 | EmotionPage score 매핑·MissionPage·ReportPage·LoginPage·RegisterPage 구현, 실서버 연결 테스트 완료 | [→](members/민경이.md#2026-06-04-day-4) |
-| 장민수 | LivePortrait 모션 강도 0.4 확정, 비전형 동물 7종 검증(토끼·햄스터·앵무새 등 no-error), 홈서버 HDD 연결 | [→](members/장민수.md) |
+| 장민수 | TtsPage·TimelinePage·MediaPage 구현(PR #53), LivePortrait 비전형 동물 7종 검증·추모 강도 0.4 확정(PR #65), 홈서버 HDD 연결 | [→](members/장민수.md#2026-06-04-day-4) |
 
 **팀 전체:** 로그인(RDB) 구현 완료(강사 필수 요구사항). AI·프론트 MVP 8개 기능 완성. NCP 실서버 배포·자동배포 구축. LivePortrait 7종 동물 검증.
