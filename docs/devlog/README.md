@@ -26,7 +26,7 @@
 > **부족한 곳을 한눈에** 보기 위한 파트 기준 롤업입니다.
 > 상세 체크·각자 갱신은 [PROGRESS.md](../PROGRESS.md)가 원본 — 여기는 파트별로 묶어서 봅니다.
 > 상태: ⬜ 시작 전 · 🟡 진행 중 · 🔵 리뷰 중 · ✅ 완료 · ⛔ 막힘
-> **최종 갱신:** 2026-06-03
+> **최종 갱신:** 2026-06-04
 
 ### 파트별 요약
 
@@ -68,7 +68,7 @@
 | ③ 추모 메시지 프롬프트/LLM | 반소람 | ⬜ |
 | ⑤ 미션 추천 로직 | 반소람 | ⬜ |
 | ⑦ 위기 감정 감지 로직 | 반소람 | ⬜ |
-| ④ TTS 엔진 | 정환주 | ⬜ |
+| ④ TTS 엔진 | 정환주 | ✅ |
 | ⑧ 평가 지표/집계 | 정환주 | ⬜ |
 
 ### 🟪 프론트 화면 (민경이)
@@ -111,24 +111,56 @@
 
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
-| 모세종 | 반려동물·감정·미션 API 완성, 위기감지 1393 연동, 서비스 시나리오 3단계 확정, PR 5건 머지 | [→](members/모세종.md#2026-06-02-day-2) |
-| 김윤한 | 타임라인·어드민 API 완성, PR #12 제출 | [→](members/김윤한.md) |
-| 반소람 | 위기 감지 규칙+골든셋(PR #11), 추모 메시지(③) 프롬프트·생성 로직·테스트(가드레일 포함) 작성·일지 정리, PR 제출 | [→](members/반소람.md#2026-06-02-day-2) |
-| 정환주 | EXAONE→Gemini 전환 연구, smoke_gemini.py, 서비스 시나리오 문서, PR #17 제출 | [→](members/정환주.md) |
-| 민경이 | Vite+React+Tailwind 셋업, SafetyModal·공통 컴포넌트·ProfilePage 구현, API 인스턴스 세팅 | [→](members/민경이.md#2026-06-02-day-2) |
-| 장민수 | LivePortrait 동물 모드 실험, EXPERIMENT.md 작성 | [→](members/장민수.md) |
+| 모세종 | 반려동물·감정·미션 API 완성, 위기감지+1393, CI 강화(paths-filter·required), 서비스 시나리오 HTML, PR 10건+ 머지 | [→](members/모세종.md#2026-06-02-day-2) |
+| 김윤한 | 홈서버 FastAPI+MongoDB 연동, 타임라인·어드민 API 완성, PR #12 제출 | [→](members/김윤한.md) |
+| 반소람 | 위기 감지 규칙 레이어+골든셋 20종(PR #11), 추모 메시지 프롬프트·생성 로직·가드레일 테스트 10종(PR #21) | [→](members/반소람.md#2026-06-02-day-2) |
+| 정환주 | LLM 비교 후 EXAONE→Gemini 전환 결정, smoke_gemini.py, 서비스 시나리오 3단계 문서(PR #17), TTS·평가 골격 스텁(PR #19) | [→](members/정환주.md#2026-06-02-day-2) |
+| 민경이 | Vite+React+Tailwind 셋업, SafetyModal·Button·Card·Spinner 공통 컴포넌트, ProfilePage+API 모듈 구현(PR #14·#26·#27) | [→](members/민경이.md#2026-06-02-day-2) |
+| 장민수 | 레포 구조 파악, LivePortrait animals 모드 conda 환경 세팅·동작 확인, 파이프라인 README 작성(PR #22) | [→](members/장민수.md#2026-06-02-day-2) |
 
-**팀 전체:** 백엔드 핵심 API 4종 완성 + AI 위기감지·프론트 기반 구축. 강사님 스크럼 피드백(서비스 시나리오 구체화·Gemini 전환) 반영.
+**팀 전체:** 백엔드 핵심 API 완성 + AI 위기감지·추모 메시지·TTS/평가 골격 + 프론트 기반 구축. 강사님 스크럼(서비스 시나리오 구체화·Gemini 전환) 반영. CI required 승격.
 
 ---
 
-## 2026-06-03 (Day 3)
+## 2026-06-03 (Day 3 — 휴일)
+
+| 이름 | 한 일 (요약) | 상세 |
+|------|------------|------|
+| 모세종 | PR #28~#32 리뷰·머지, risk_level 0~3·Gemini 실연동·CI AI 의존성 수정(PR #31) | [→](members/모세종.md) |
+| 김윤한 | llm_logs 컬렉션 연결 작업 (backend/kyh 브랜치 푸시, PR 미제출) | [→](members/김윤한.md) |
+| 반소람 | Gemini provider.py 연동 완성, 84종 테스트 통과, 백엔드 스키마 키 정렬(PR #29) | [→](members/반소람.md) |
+| 정환주 | TTS·평가 골격 테스트 10종, ai/requirements.txt, SETUP TTS 셋업 문서(PR #32) | [→](members/정환주.md) |
+| 민경이 | EmotionPage·MessagePage 구현, PR #28 Approve(PR #30) | [→](members/민경이.md#2026-06-03-day-3) |
+| 장민수 | — | [→](members/장민수.md) |
+
+**팀 전체:** AI provider.py Gemini 실연동 완료. 프론트 감정·메시지 화면 구현. 로그인(RDB) 필수 요구사항 확인.
+
+---
+
+## 2026-06-04 (Day 4)
+
+| 이름 | 한 일 (요약) | 상세 |
+|------|------------|------|
+| 모세종 | 로그인·회원가입 API(SQLite RDB) 구현, llm_logs 통합, CI 수정 다수, PR #33~#36 관리 | [→](members/모세종.md) |
+| 김윤한 | llm_logs API PR #34 제출·수정 (PII 원문 제거, router 충돌 해소) | [→](members/김윤한.md) |
+| 반소람 | — | [→](members/반소람.md) |
+| 정환주 | Gemini 키 발급·실연결 확인, Google Cloud TTS 키 발급·음성 합성 성공, .env.example 정합(PR #35) | [→](members/정환주.md#2026-06-04-day-4) |
+| 민경이 | — | [→](members/민경이.md) |
+| 장민수 | — | [→](members/장민수.md) |
+
+**팀 전체:** 로그인(RDB) 구현 완료(강사 필수 요구사항). AI 외부 연동(Gemini·Google Cloud TTS) 실동작 확인.
+
+---
+
+## 2026-06-04 (Day 4)
 
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
 | 모세종 | — | [→](members/모세종.md) |
 | 김윤한 | — | [→](members/김윤한.md) |
 | 반소람 | — | [→](members/반소람.md) |
-| 정환주 | — | [→](members/정환주.md) |
-| 민경이 | EmotionPage·MessagePage 구현, axiosInstance 환경변수 전환, PR #28 Approve | [→](members/민경이.md#2026-06-03-day-3) |
+| 정환주 | Gemini 실연결 확인(smoke 정상 응답) + Google Cloud TTS 키 발급·인증 → 실제 음성 합성 성공, `.env.example`/`.gitignore` 정합(PR #35) | [→](members/정환주.md#2026-06-04-day-4) |
+| 민경이 | — | [→](members/민경이.md) |
 | 장민수 | — | [→](members/장민수.md) |
+
+**팀 전체:** AI 파트 외부 연동(Gemini·Google Cloud TTS) 실연결 완료 — 키 발급 후 실제 LLM 응답·음성 합성 동작 확인.
