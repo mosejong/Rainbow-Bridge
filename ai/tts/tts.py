@@ -13,15 +13,18 @@
 🚧 미완성(키·인증 필요):
   - Google Cloud TTS 인증(서비스 계정 `GOOGLE_APPLICATION_CREDENTIALS` 또는 API 키)
   - 음성 이름(`ko-KR-Neural2-*`)·요금 한도 확인
-  - duration(재생 길이)은 현재 추정값 — 정확값 필요하면 ffprobe 등으로 측정
+  - duration(재생 길이)은 ffprobe 실측(`_probe_duration`), 실패 시 글자수 추정 폴백
 
 의존성: pip install google-cloud-texttospeech
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
+import shutil
+import subprocess
 from dataclasses import dataclass
 from enum import Enum
 from typing import Final, Optional
@@ -87,8 +90,30 @@ def _split_text(text: str, max_chars: int = _MAX_CHARS) -> list[str]:
 
 
 def _estimate_duration(text: str) -> float:
-    """재생 길이(초) 대략 추정. 정확값 필요 시 ffprobe 로 교체(TODO)."""
+    """재생 길이(초) 대략 추정 — ffprobe 실측 실패 시 폴백."""
     return round(len(text.replace(" ", "")) / _CHARS_PER_SEC, 1)
+
+
+def _probe_duration(path: str) -> Optional[float]:
+    """ffprobe 로 음성 파일의 실제 재생 길이(초)를 측정. 측정 불가면 None.
+
+    ffprobe 미설치·실행 실패·파싱 실패는 모두 None 으로 흡수해, 길이 측정
+    실패가 합성 자체를 막지 않도록 합니다(호출부에서 추정값으로 폴백).
+    """
+    if shutil.which("ffprobe") is None:
+        return None
+    try:
+        out = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", path],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if out.returncode != 0:
+            return None
+        return round(float(json.loads(out.stdout)["format"]["duration"]), 1)
+    except (subprocess.SubprocessError, ValueError, KeyError):
+        return None
 
 
 def synthesize(
@@ -128,7 +153,7 @@ def synthesize(
 
     return {
         "audio_path": path,
-        "duration": _estimate_duration(text),
+        "duration": _probe_duration(path) or _estimate_duration(text),
         "format": "mp3",
     }
 
