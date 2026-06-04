@@ -1,13 +1,10 @@
 """v1 API 라우터 통합.
-
 각 기능 담당이 endpoints/ 아래에 라우터를 만들고 여기에 등록합니다.
 예시:
     from app.api.v1.endpoints import pets
     api_router.include_router(pets.router, prefix="/pets", tags=["pets"])
 """
-
 from fastapi import APIRouter
-
 from app.api.v1.endpoints import (
     admin,
     auth,
@@ -21,9 +18,7 @@ from app.api.v1.endpoints import (
     timeline,
     tts,
 )
-
 api_router = APIRouter()
-
 # ===== 기능별 라우터 등록 =====
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(pets.router, prefix="/pets", tags=["pets"])
