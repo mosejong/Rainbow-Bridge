@@ -19,15 +19,16 @@ export default function TtsPage() {
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef(null);
 
-  const messageId = localStorage.getItem('message_id');
+  const petId = localStorage.getItem('pet_id');
   const petName = localStorage.getItem('pet_name') || '소중한 친구';
+  const messageText = localStorage.getItem('message_content'); // MessagePage에서 저장 필요
 
   async function handleGenerate() {
-    if (!messageId) return;
+    if (!messageText) return;
     setLoading(true);
     setAudioUrl(null);
     try {
-      const res = await generateTts({ message_id: messageId, tone: selectedTone });
+      const res = await generateTts({ pet_id: petId, text: messageText, tone: selectedTone });
       setAudioUrl(res.audio_url);
     } catch {
       // 백엔드 미연결 시 안내만
@@ -108,12 +109,12 @@ export default function TtsPage() {
         {loading ? (
           <LoadingSpinner message="음성을 생성하고 있어요..." />
         ) : (
-          <Button variant="primary" onClick={handleGenerate} disabled={!messageId}>
+          <Button variant="primary" onClick={handleGenerate} disabled={!messageText}>
             {audioUrl ? '다시 생성하기' : '낭독 시작'}
           </Button>
         )}
 
-        {!messageId && (
+        {!messageText && (
           <p className="text-center text-gray-400 text-sm mt-3">
             먼저 추모 메시지를 생성해주세요.
           </p>
