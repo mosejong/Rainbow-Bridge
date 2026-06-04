@@ -12,6 +12,7 @@ from app.api.v1.endpoints import (
     admin,
     auth,
     emotions,
+    hospitals,
     llm_logs,
     messages,
     missions,
@@ -33,4 +34,5 @@ api_router.include_router(tts.router, prefix="/tts", tags=["tts"])
 api_router.include_router(report.router, prefix="/report", tags=["report"])
 api_router.include_router(timeline.router, prefix="/timeline", tags=["timeline"])
 api_router.include_router(llm_logs.router, prefix="/llm-logs", tags=["llm_logs"])
+api_router.include_router(hospitals.router, prefix="/hospitals", tags=["hospitals"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
