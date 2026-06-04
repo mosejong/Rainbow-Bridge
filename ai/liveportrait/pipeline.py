@@ -1,0 +1,140 @@
+"""LivePortrait 추모 영상 생성 파이프라인.
+
+반려동물 사진(source) + 모션 영상(driving) → 잔잔히 움직이는 추모 영상(MP4).
+
+- 외부 LivePortrait 설치본(레포 밖)을 감싸는 얇은 래퍼입니다.
+  모델 가중치·생성 영상은 이 레포에 포함하지 않습니다.
+- `LIVEPORTRAIT_MODE` 로 로컬 GPU ↔ Replicate API 를 전환합니다.
+  (AI 파트 provider 추상화와 같은 원칙 — 한쪽이 막히면 즉시 다른 쪽으로 시연)
+
+⚠️ 윤리 경계: 반려동물이 말하는/대화하는 영상 ❌. 눈·코·입 미세 움직임 정도의
+   상징적 추모 영상만 생성합니다. (README §0)
+
+환경 변수(.env):
+    LIVEPORTRAIT_MODE      local | replicate   (기본 local)
+    LIVEPORTRAIT_HOME      외부 LivePortrait 클론 경로
+    LIVEPORTRAIT_CONDA_ENV conda 환경 이름      (기본 liveportrait)
+    REPLICATE_API_TOKEN    replicate 모드일 때만
+"""
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
+# ---------- 설정 (환경 변수 → 기본값) ----------
+MODE = os.getenv("LIVEPORTRAIT_MODE", "local")
+LP_HOME = Path(os.getenv("LIVEPORTRAIT_HOME", r"c:\JMS\2_project\LivePortrait"))
+CONDA_ENV = os.getenv("LIVEPORTRAIT_CONDA_ENV", "liveportrait")
+REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
+
+# 추모 영상에 어울리는 기본 모션(잔잔한 움직임). 추후 전용 템플릿으로 교체 예정.
+DEFAULT_DRIVING = LP_HOME / "assets" / "examples" / "driving" / "d0.mp4"
+
+# 모션 강도. 동물은 animation_region(eyes 등)이 무시되므로, driving_multiplier를
+# 낮춰서 입 움직임을 억제하고 잔잔한 ambient 느낌을 냄. 0.5 = 입 거의 닫힘 + 눈/고개 살짝.
+# (검증 2026-06-04: 강아지·고양이 모두 0.5에서 입 닫힘 확인)
+DRIVING_MULTIPLIER = float(os.getenv("LIVEPORTRAIT_MULTIPLIER", "0.5"))
+
+
+class LivePortraitError(RuntimeError):
+    """파이프라인 실행 실패."""
+
+
+def generate_video(
+    source_image: str | Path,
+    driving_video: str | Path | None = None,
+    output_dir: str | Path = "output",
+) -> Path:
+    """사진 → 추모 영상(MP4) 생성. 생성된 MP4 경로를 반환.
+
+    Args:
+        source_image: 반려동물 사진 경로
+        driving_video: 모션 영상 경로 (None이면 기본 잔잔한 모션)
+        output_dir: 결과 저장 폴더
+    """
+    source_image = Path(source_image)
+    driving_video = Path(driving_video) if driving_video else DEFAULT_DRIVING
+    output_dir = Path(output_dir)
+
+    if not source_image.exists():
+        raise FileNotFoundError(f"source 사진 없음: {source_image}")
+    if not driving_video.exists():
+        raise FileNotFoundError(f"driving 영상 없음: {driving_video}")
+
+    if MODE == "replicate":
+        return _generate_replicate(source_image, driving_video, output_dir)
+    return _generate_local(source_image, driving_video, output_dir)
+
+
+def _generate_local(source: Path, driving: Path, output_dir: Path) -> Path:
+    """로컬 GPU(외부 LivePortrait animals 모드)로 생성."""
+    if not LP_HOME.exists():
+        raise LivePortraitError(
+            f"LivePortrait 설치본을 찾을 수 없음: {LP_HOME}\n"
+            f"LIVEPORTRAIT_HOME 환경변수를 확인하세요."
+        )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    out_abs = output_dir.resolve()
+
+    # animals 모드는 stitching 미학습 → --no_flag_stitching 필수
+    # driving_multiplier로 모션 강도 억제 (입 움직임 줄여 "말하는 영상" 방지)
+    cmd = [
+        "conda", "run", "-n", CONDA_ENV, "python", "inference_animals.py",
+        "-s", str(source.resolve()),
+        "-d", str(driving.resolve()),
+        "-o", str(out_abs),
+        "--no_flag_stitching",
+        "--driving_multiplier", str(DRIVING_MULTIPLIER),
+    ]
+
+    result = subprocess.run(
+        cmd, cwd=str(LP_HOME), capture_output=True, text=True, encoding="utf-8", errors="ignore"
+    )
+    if result.returncode != 0:
+        raise LivePortraitError(f"LivePortrait 실행 실패:\n{result.stderr[-2000:]}")
+
+    # 출력 파일명: {source_stem}--{driving_stem}.mp4
+    expected = out_abs / f"{source.stem}--{driving.stem}.mp4"
+    if not expected.exists():
+        raise LivePortraitError(f"생성 영상을 찾을 수 없음: {expected}")
+    return expected
+
+
+def _generate_replicate(source: Path, driving: Path, output_dir: Path) -> Path:
+    """Replicate API(fofr/live-portrait)로 생성. 로컬 GPU fallback."""
+    if not REPLICATE_TOKEN:
+        raise LivePortraitError("REPLICATE_API_TOKEN 이 설정되지 않았습니다.")
+
+    try:
+        import replicate  # 로컬 모드에선 불필요하므로 지연 import
+    except ImportError as e:
+        raise LivePortraitError("replicate 패키지 미설치: pip install replicate") from e
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    with open(source, "rb") as img, open(driving, "rb") as vid:
+        output_url = replicate.run(
+            "fofr/live-portrait",  # animals 파라미터 지원 여부 확인 필요
+            input={"face_image": img, "driving_video": vid},
+        )
+
+    # 결과 URL 다운로드
+    import httpx
+
+    out_path = output_dir / f"{source.stem}--replicate.mp4"
+    resp = httpx.get(str(output_url), timeout=120)
+    resp.raise_for_status()
+    out_path.write_bytes(resp.content)
+    return out_path
+
+
+if __name__ == "__main__":
+    # 스모크 테스트: 샘플 고양이 사진으로 생성
+    sample = LP_HOME / "assets" / "examples" / "source" / "s39.jpg"
+    print(f"[모드] {MODE}")
+    print(f"[입력] {sample}")
+    result = generate_video(sample, output_dir="output")
+    print(f"[성공] 생성됨 → {result}")
