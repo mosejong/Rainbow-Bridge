@@ -77,13 +77,14 @@
 | ① 프로필 입력 | ✅ | | ⑤ 미션 추천 | ✅ |
 | ② 감정 체크인 | ✅ | | ⑥ 타임라인 | ⬜ |
 | ③ 추모 메시지 | ✅ | | ⑦ 안전 안내 UI | ✅ |
-| ④ TTS 재생 | 🟡 | | ⑧ 평가 리포트 | ✅ |
+| ④ TTS 재생(장민수) | ✅ | | ⑧ 평가 리포트 | ✅ |
+| ⑥ 타임라인(장민수) | ✅ | | 미디어 업로드(장민수) | ✅ |
 
 ### 🟧 멀티모달 — 사진→영상 (장민수)
 | 항목 | 담당 | 상태 |
 |------|------|------|
 | 사진 업로드 API | 모세종 | ⬜ |
-| LivePortrait 파이프라인 | 장민수 | ⬜ |
+| LivePortrait 파이프라인 | 장민수 | 🟡 |
 | 영상+TTS 합치기 (FFmpeg) | 장민수 | ⬜ |
 | 다운로드 제공 | 김윤한 | ⬜ |
 
@@ -161,6 +162,6 @@
 | 반소람 | ⑤ 미션 추천+규칙 풀 확장(30개), ⑦ L1+골든셋 30개 보강, ③ 품질 검증(Gemini 6종 통과), 159종 통과 | [→](members/반소람.md#2026-06-04-day-4) |
 | 정환주 | Gemini·Google Cloud TTS 키 발급·실연결, **백엔드 TTS 실연결(PR #40)** — ④ TTS 가짜→진짜, 환경 정합(PR #35), 팀 PR 리뷰 3건(#33·#36·#38), 추모 윤리 경계 정리, PROGRESS 갱신·build_report 핸드오프(PR #58) | [→](members/정환주.md#2026-06-04-day-4) |
 | 민경이 | EmotionPage score 매핑·MissionPage·ReportPage·LoginPage·RegisterPage 구현, 실서버 연결 테스트 완료 | [→](members/민경이.md#2026-06-04-day-4) |
-| 장민수 | — | [→](members/장민수.md) |
+| 장민수 | TtsPage·TimelinePage·MediaPage 구현(PR #53), LivePortrait 비전형 동물 7종 검증·추모 강도 0.4 확정(PR #65) | [→](members/장민수.md#2026-06-04-day-4) |
 
-**팀 전체:** 로그인(RDB) 구현 완료(강사 필수 요구사항). AI 외부 연동(Gemini·Google Cloud TTS) 실동작 확인. 프론트 MVP 화면 6/8 완료(①②③⑤⑦⑧).
+**팀 전체:** 로그인(RDB) 구현 완료(강사 필수 요구사항). AI 외부 연동(Gemini·Google Cloud TTS) 실동작 확인. 프론트 MVP 화면 6/8 완료(①②③⑤⑦⑧), LivePortrait 멀티모달 검증.
