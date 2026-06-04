@@ -18,6 +18,7 @@ provider.generate 를 그대로 넘기면 됩니다(결정 A/B).
 
 from __future__ import annotations
 
+import re
 from typing import Optional, Protocol
 
 from .prompts import memorial as memorial_prompt
@@ -69,14 +70,31 @@ _RESURRECTION_MARKERS: tuple[str, ...] = (
 )
 
 
-def _violates_guardrail(content: str) -> Optional[str]:
+# 반려동물 1인칭 표현 — 보호자 시점("나는 봄이가 그리워요")과 구분하기 위해
+# 반려동물 이름과 같은 문장에 등장할 때만 차단합니다.
+_FIRST_PERSON_MARKERS: tuple[str, ...] = (
+    "나는", "저는", "내가", "제가", "나예요", "저예요", "나야", "나랍니다",
+)
+
+_SENTENCE_SPLIT: re.Pattern = re.compile(r"[.!?。\n]")
+
+
+def _has_pet_first_person(content: str, pet_name: str) -> bool:
+    """반려동물 이름과 1인칭 표현이 같은 문장에 있으면 반려동물 화법으로 판단."""
+    if not pet_name:
+        return False
+    for sentence in _SENTENCE_SPLIT.split(content):
+        if pet_name in sentence and any(w in sentence for w in _FIRST_PERSON_MARKERS):
+            return True
+    return False
+
+
+def _violates_guardrail(content: str, pet_name: str = "") -> Optional[str]:
     """경계 위반 사유를 반환(없으면 None).
 
     - 부활/환생 단정 표현
-    - 반려동물 1인칭 화법(예: "<이름>이가: ..." 또는 따옴표로 반려동물이 말함)
-
-    1인칭은 형태가 다양해 규칙만으로 완벽히 못 잡습니다. 여기서는 **명백한**
-    경우만 차단하고, 정교한 판별은 향후 LLM 검수 단계로 미룹니다(보수적 2차망).
+    - 반려동물 이름 + 1인칭이 같은 문장에 등장 (반려동물 화법)
+      → 보호자가 "나는 봄이가 그리워요"라고 하는 경우는 차단하지 않습니다.
     """
     normalized = content.replace(" ", "")
 
@@ -84,10 +102,8 @@ def _violates_guardrail(content: str) -> Optional[str]:
         if marker in normalized:
             return f"부활/환생 표현 감지: '{marker}'"
 
-    # 반려동물이 보호자를 부르며 1인칭으로 말하는 전형적 패턴.
-    first_person_hints = ("엄마나", "아빠나", "보호자님나")
-    if any(hint in normalized for hint in first_person_hints):
-        return "반려동물 1인칭 화법으로 의심되는 표현 감지"
+    if _has_pet_first_person(content, pet_name):
+        return f"반려동물({pet_name}) 1인칭 화법 감지"
 
     return None
 
@@ -146,7 +162,7 @@ def generate_message(
         content = generate(
             prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE
         ).strip()
-        violation = _violates_guardrail(content)
+        violation = _violates_guardrail(content, pet_name=pet.get("name", ""))
         if violation is None:
             return {"content": content, "tone": tone, "source": source}
         last_violation = violation
