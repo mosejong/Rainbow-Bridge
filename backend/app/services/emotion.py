@@ -6,8 +6,10 @@ from app.schemas.emotion import EmotionCreate, EmotionResponse
 
 CRISIS_HOTLINE = "1393"
 
+
 def _collection():
     return mongodb.db["emotions"]
+
 
 async def create_emotion(data: EmotionCreate) -> EmotionResponse:
     # 반소람님 assess_crisis() — 규칙 레이어(L0). 나중에 LLM 레이어 추가해도 이 호출은 그대로.

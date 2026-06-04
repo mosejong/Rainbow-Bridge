@@ -11,6 +11,7 @@ from ..tts import (
     TtsTone,
     _TONE_MAP,
     _estimate_duration,
+    _probe_duration,
     _split_text,
     synthesize,
 )
@@ -40,3 +41,8 @@ def test_synthesize_empty_text_raises():
 
 def test_estimate_duration_positive():
     assert _estimate_duration("안녕하세요 반갑습니다") > 0
+
+
+def test_probe_duration_missing_file_returns_none():
+    """없는 파일은 측정 불가 → None (호출부는 추정값으로 폴백)."""
+    assert _probe_duration("ai/tts/_output/__no_such_file__.mp3") is None
