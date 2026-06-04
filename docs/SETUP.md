@@ -2,6 +2,7 @@
 
 > 내 PC에 개발 환경을 세팅하는 문서입니다. 영역별로 본인 파트만 보면 됩니다.
 > 막히면 [GIT_GUIDE.md](GIT_GUIDE.md) → 그래도 안 되면 팀 채널.
+> **최종 수정:** 2026-06-04
 
 ---
 
@@ -9,16 +10,23 @@
 
 ### 필수 설치
 - [Git](https://git-scm.com)
-- [Python 3.11](https://www.python.org/downloads/) (백엔드/AI) — **3.11 권장 (CI와 동일)**, 3.10~3.13도 대부분 동작하나 문제 발생 시 3.11로 맞출 것
+- [Python 3.12](https://www.python.org/downloads/) (백엔드/AI)
+- [Node.js 20+](https://nodejs.org/) (프론트엔드)
 - VS Code (권장)
 
 ### 레포 받기
 ```bash
-git clone <레포_주소>
-cd rainbow-bridge
+git clone https://github.com/mosejong/Rainbow-Bridge.git
+cd Rainbow-Bridge
+
+# 루트 환경변수
 cp .env.example .env       # Windows: Copy-Item .env.example .env
+
+# 프론트엔드 환경변수
+cp frontend/.env.example frontend/.env
 ```
-→ `.env` 열어서 값 채우기 (각 파트 담당이 안내)
+
+> `.env` 열어서 Gemini API 키, Google Cloud TTS 키 등 본인 파트 값 채우기.
 
 ---
 
@@ -28,10 +36,10 @@ cp .env.example .env       # Windows: Copy-Item .env.example .env
 cd backend
 
 # 가상환경
-python -m venv .venv
+python -m venv venv
 # 활성화
-#   Windows PowerShell:  .venv\Scripts\Activate.ps1
-#   Mac/Linux:           source .venv/bin/activate
+#   Windows PowerShell:  venv\Scripts\Activate.ps1
+#   Mac/Linux:           source venv/bin/activate
 
 pip install -r requirements.txt
 
@@ -42,91 +50,134 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - 확인: 브라우저 `http://localhost:8000/docs` (자동 API 문서)
 - 헬스체크: `http://localhost:8000/health`
 
-### MongoDB (김윤한)
+### push 전 CI 검사 (필수)
 ```bash
 cd backend
-
-# MongoDB 실행 (docker-compose 사용)
-docker compose up -d
-
-# 종료 (데이터 유지)
-docker compose down
-
-# 종료 + 데이터 삭제
-docker compose down -v
+ruff check . --fix && black . && pytest -q
 ```
-- `.env` 의 `MONGO_URI`, `MONGO_DB_NAME` 확인
-- 홈서버 연결 정보는 김윤한이 별도 공유
+
+### MongoDB (NCP 실서버)
+- NCP 서버(`101.79.19.87`)에서 MongoDB Docker로 운영 중
+- `.env`의 `MONGO_URI` 를 NCP 서버 주소로 설정하면 바로 연결됨
+- 로컬 MongoDB가 필요하면: `docker compose up -d`
 
 ---
 
-## 2. AI 엔진 (반소람, 정환주)
+## 2. 프론트엔드 (민경이, 장민수)
 
-### 2-1. 개발용 LLM (Gemini)
-> 🔄 결정 변경(2026-06-02): 로컬 EXAONE → **Gemini API** (강사 권고 + 8GB GPU 제약). 상세 — [../ai/llm/MODEL_NOTES.md](../ai/llm/MODEL_NOTES.md)
+```bash
+cd frontend
+npm install
 
-- 사용: **Gemini API** (OpenAI 호환 엔드포인트 제공, GPU 불필요)
+# 개발 서버 실행
+npm run dev
+# → http://localhost:5173
+```
+
+### 백엔드 연결 설정
+`frontend/.env` 파일:
+```
+# NCP 실서버 (팀 공용)
+VITE_API_BASE_URL=http://101.79.19.87:8000
+
+# 로컬 백엔드 쓸 때
+# VITE_API_BASE_URL=http://localhost:8000
+```
+
+### 빌드
+```bash
+npm run build
+# dist/ 폴더 생성 → NCP nginx로 서빙
+```
+
+---
+
+## 3. AI 엔진 (반소람, 정환주)
+
+### 3-1. Gemini API (LLM)
 - 키 발급: [Google AI Studio](https://aistudio.google.com/apikey) → API 키 생성
-- 모델: **gemini-2.5-flash** (빠르고 한국어 양호. 정확한 태그는 AI Studio에서 확인)
-- `.env` 채울 값: `LLM_PROVIDER=gemini`, `LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/`, `LLM_MODEL=gemini-2.5-flash`, `LLM_API_KEY=<발급키>`
+- `.env` 채울 값:
+  ```
+  LLM_PROVIDER=gemini
+  LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+  LLM_MODEL=gemini-2.5-flash
+  LLM_API_KEY=<발급키>
+  ```
 - 연결 확인: `python ai/llm/smoke_gemini.py`
-- (선택) **로컬 폴백** — 오프라인/프라이버시 시: Ollama + `exaone3.5:7.8b` (`LLM_PROVIDER=ollama`, `LLM_BASE_URL=http://localhost:11434/v1`)
 
-### 2-2. PERSO API (평가/시연)
-> 🚧 담당 기입. 할당량 제한 있으니 개발 중엔 로컬 LLM 사용.
+### 3-2. Google Cloud TTS (정환주)
+- 키 발급: Google Cloud Console → Text-to-Speech API 사용설정 → 서비스 계정 JSON 발급
+- `.env` 채울 값:
+  ```
+  GOOGLE_APPLICATION_CREDENTIALS=./ai/tts/gcp-tts-key.json
+  TTS_VOICE=ko-KR-Neural2-A
+  ```
+- 설치: `pip install -r ai/requirements.txt`
+- ⚠️ 보호자 대상 낭독만. 반려동물 목소리 흉내 금지.
 
-- 발급/엔드포인트: _____________________
+### 3-3. PERSO API (장민수 — 영상 더빙 전용)
+- LLM·TTS 기능 없음 확인. 영상 더빙·립싱크 전용.
 - `.env` 채울 값: `PERSO_API_KEY`, `PERSO_API_BASE_URL`
 
-### 2-3. TTS (정환주)
-> ✅ 엔진(잠정): **Google Cloud Text-to-Speech** (한국어 Neural2, GPU 불필요). 상세 코드 `ai/tts/tts.py`
-
-- 엔진: **Google Cloud TTS** — 메시지 톤(③)과 1:1 매핑(`TtsTone`: warm/calm/hopeful)
-- 키/인증:
-  1. [Google Cloud Console](https://console.cloud.google.com/) → 프로젝트 생성 → **Text-to-Speech API 사용 설정**
-  2. 서비스 계정 키(JSON) 발급 → 환경변수 `GOOGLE_APPLICATION_CREDENTIALS=<키.json 경로>`
-- 설치/실행:
-  ```bash
-  pip install -r ai/requirements.txt          # google-cloud-texttospeech 포함
-  python -c "from ai.tts import synthesize; print(synthesize('안녕하세요', ))"  # 인증 후 음성 1회 테스트
-  ```
-- ⚠️ 보호자 대상 낭독만 (반려동물 목소리 ❌). 음성 파일은 git 미포함(`ai/tts/_output/`)
+### AI 테스트 실행
+```bash
+cd backend
+pytest ai/llm/tests/ -v     # 위기감지 골든셋 등
+```
 
 ---
 
-## 3. 멀티모달 — LivePortrait (장민수, 정환주)
+## 4. 멀티모달 — LivePortrait (장민수, 정환주)
 
-> 🚧 GPU 서버(RTX 5060) 기준. 담당이 설치 절차 확정 후 채우기.
-
-- LivePortrait 설치/모델 다운로드: _____________________
-- 로컬 실행 방법:
+- GPU 서버 (RTX 5060, 정환주) 또는 홈서버 HDD (`/mnt/hdd`, 김윤한) 활용
+- conda 환경 세팅:
   ```bash
-  # 담당 기입
+  conda create -n liveportrait python=3.10
+  conda activate liveportrait
+  cd ai/liveportrait
+  pip install -r requirements.txt
   ```
-- Replicate fallback 사용 시: `.env` 의 `REPLICATE_API_TOKEN` 설정, `LIVEPORTRAIT_MODE=replicate`
-- FFmpeg 설치 필요 (영상+음성 합성): [ffmpeg.org](https://ffmpeg.org)
+- 실행: `python ai/liveportrait/pipeline.py --input <사진> --output <결과>`
+- 기본 강도: `driving_multiplier=0.4` (추모 톤 최적화 완료)
+- Replicate fallback: `.env`의 `REPLICATE_API_TOKEN`, `LIVEPORTRAIT_MODE=replicate`
+- FFmpeg 필요 (영상+음성 합성): [ffmpeg.org](https://ffmpeg.org)
 
 ---
 
-## 4. 프론트엔드 (민경이)
+## 5. NCP 실서버 접속 (모세종·김윤한)
 
-> 🚧 프레임워크 결정 후 채우기.
+```bash
+# SSH 접속 (인증키 필요 — 모세종에게 문의)
+ssh -i rainbow-bridge.pem root@101.79.19.87
 
-- 프레임워크: _____________________
-- 설치/실행:
-  ```bash
-  # 담당 기입
-  ```
-- 백엔드 API 주소: 기본 `http://localhost:8000`
+# 서버 상태 확인
+sudo systemctl status rainbow-bridge
+
+# 서버 재시작
+sudo systemctl restart rainbow-bridge
+
+# 로그 확인
+sudo journalctl -u rainbow-bridge -n 50 --no-pager
+
+# dev 최신 코드 반영 (GitHub Actions 자동배포로 보통 불필요)
+cd /root/Rainbow-Bridge && git pull origin dev
+```
+
+- 프론트: `http://101.79.19.87` (nginx 서빙)
+- 백엔드: `http://101.79.19.87:8000`
+- API 문서: `http://101.79.19.87:8000/docs`
 
 ---
 
-## 5. 트러블슈팅
+## 6. 트러블슈팅
 
 | 증상 | 해결 |
 |------|------|
 | `uvicorn` 명령 없음 | 가상환경 활성화했는지 확인 |
-| PowerShell 가상환경 활성화 막힘 | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` 후 재시도 |
-| MongoDB 연결 실패 | 도커 컨테이너 켜졌는지 `docker ps` 확인, `MONGO_URI` 확인 |
+| PowerShell 가상환경 활성화 막힘 | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
+| MongoDB 연결 실패 | `MONGO_URI` 확인, Docker 컨테이너 상태 `docker ps` |
 | `.env` 값 반영 안 됨 | 서버 재시작 |
-| 포트 8000 이미 사용중 | `--port 8001` 등으로 변경 |
+| 포트 8000 이미 사용중 | `--port 8001` 또는 기존 프로세스 종료 |
+| 회원가입·로그인 실패 (localhost) | 프론트 `.env`의 `VITE_API_BASE_URL` 확인 |
+| TTS 음성 안 나옴 | `GOOGLE_APPLICATION_CREDENTIALS` 경로·권한 확인 |
+| NCP 서버 응답 없음 | `sudo systemctl status rainbow-bridge` 로 서버 상태 확인 |
