@@ -6,6 +6,9 @@ output/
 *.wav
 *.mp3
 
+# 실제 반려동물 사진 (개인정보)
+real_input/
+
 # 모델 가중치 (레포 밖에서 관리)
 *.pth
 *.safetensors

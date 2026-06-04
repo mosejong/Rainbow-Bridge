@@ -33,9 +33,9 @@ REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 DEFAULT_DRIVING = LP_HOME / "assets" / "examples" / "driving" / "d0.mp4"
 
 # 모션 강도. 동물은 animation_region(eyes 등)이 무시되므로, driving_multiplier를
-# 낮춰서 입 움직임을 억제하고 잔잔한 ambient 느낌을 냄. 0.5 = 입 거의 닫힘 + 눈/고개 살짝.
-# (검증 2026-06-04: 강아지·고양이 모두 0.5에서 입 닫힘 확인)
-DRIVING_MULTIPLIER = float(os.getenv("LIVEPORTRAIT_MULTIPLIER", "0.5"))
+# 낮춰서 입 움직임을 억제하고 잔잔한 ambient 느낌을 냄. 0.4 = 입 거의 닫힘 + 눈/고개 미세.
+# (검증 2026-06-04: 강아지·고양이·기타 7종 모두 0.4에서 잔잔한 추모 톤 확인)
+DRIVING_MULTIPLIER = float(os.getenv("LIVEPORTRAIT_MULTIPLIER", "0.4"))
 
 
 class LivePortraitError(RuntimeError):
