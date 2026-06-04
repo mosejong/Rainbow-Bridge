@@ -16,3 +16,14 @@ class MissionResponse(BaseModel):
 
 class MissionComplete(BaseModel):
     completed: bool = True
+
+
+class MissionRecommendRequest(BaseModel):
+    pet_id: str
+    emotion_score: Optional[int] = None
+    day_since: Optional[int] = None
+
+
+class MissionRecommendResponse(BaseModel):
+    missions: list[str]
+    source: str = "stub"
