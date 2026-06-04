@@ -6,6 +6,8 @@ pydantic-settings==2.7.1
 motor==3.6.0            # MongoDB 비동기 드라이버
 python-dotenv==1.0.1
 httpx==0.28.1           # 외부 API(PERSO/AI 서버) 호출
+python-multipart==0.0.20  # 파일 업로드(UploadFile) 지원
+openai==1.82.0            # Gemini OpenAI 호환 엔드포인트 호출
 
 # ----- 개발/테스트 -----
 pytest==8.3.4
