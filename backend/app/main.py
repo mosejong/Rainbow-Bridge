@@ -10,11 +10,13 @@ from fastapi.staticfiles import StaticFiles
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.db.mongodb import mongodb
+from app.db.rdb import init_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 시작 시
+    await init_db()  # SQLite users 테이블 생성
     mongodb.connect()
     yield
     # 종료 시
