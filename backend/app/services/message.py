@@ -5,6 +5,7 @@ from bson import ObjectId
 from openai import APIError, OpenAI
 
 from ai.llm.safety import assess_crisis
+from ai.llm.provider import generate
 
 from app.db.mongodb import mongodb
 from app.schemas.message import MessageCreate, MessageResponse
@@ -99,7 +100,7 @@ _FALLBACK = {
 
 
 async def create_message(data: MessageCreate) -> MessageResponse:
-    crisis = assess_crisis(data.note or "")
+    crisis = assess_crisis(data.note or "", generate=generate)
     if crisis.hotline_required:
         doc = {
             "pet_id": data.pet_id,
