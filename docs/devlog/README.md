@@ -156,10 +156,10 @@
 
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
-| 모세종 | 로그인·회원가입 API(SQLite RDB) 구현, llm_logs 통합, CI 수정 다수, PR #33~#36 관리 | [→](members/모세종.md) |
+| 모세종 | NCP 실서버 배포(systemd·nginx·GitHub Actions 자동배포), 로그인·미디어 API 구현, 버그 수정 3건, PR #48~#59 관리 | [→](members/모세종.md) |
 | 김윤한 | llm_logs API PR #34 제출·수정 (PII 원문 제거, router 충돌 해소) | [→](members/김윤한.md) |
 | 반소람 | ⑤ 미션 추천(LLM+규칙 폴백), ⑦ LLM 분류 레이어(L1)+보수적 융합, 전체 125종 통과 | [→](members/반소람.md#2026-06-04-day-4) |
-| 정환주 | Gemini·Google Cloud TTS 키 발급·실연결, **백엔드 TTS 실연결(PR #40)** — ④ TTS 가짜→진짜, 환경 정합(PR #35), 팀 PR 리뷰 3건(#33·#36·#38), 추모 윤리 경계 정리 | [→](members/정환주.md#2026-06-04-day-4) |
+| 정환주 | Gemini·Google Cloud TTS 키 발급·실연결, **백엔드 TTS 실연결(PR #40)** — ④ TTS 가짜→진짜, 환경 정합(PR #35), 팀 PR 리뷰 3건(#33·#36·#38), 추모 윤리 경계 정리, PROGRESS 갱신·build_report 핸드오프(PR #58) | [→](members/정환주.md#2026-06-04-day-4) |
 | 민경이 | EmotionPage score 매핑·MissionPage·ReportPage·LoginPage·RegisterPage 구현, 실서버 연결 테스트 완료 | [→](members/민경이.md#2026-06-04-day-4) |
 | 장민수 | — | [→](members/장민수.md) |
 
