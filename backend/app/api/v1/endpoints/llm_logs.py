@@ -1,13 +1,10 @@
 from datetime import datetime, timezone
-
 from fastapi import APIRouter, HTTPException
-
 from app.db.mongodb import mongodb
 from app.schemas.llm_log import LlmLogCreate
 
 router = APIRouter()
 COLLECTION = "llm_logs"
-
 
 @router.post("", status_code=201)
 async def create_llm_log(payload: LlmLogCreate):
@@ -18,7 +15,6 @@ async def create_llm_log(payload: LlmLogCreate):
     if not result.inserted_id:
         raise HTTPException(status_code=500, detail="로그 저장 실패")
     return {"inserted_id": str(result.inserted_id), "message": "로그 저장 완료"}
-
 
 @router.get("")
 async def get_llm_logs(pet_id: str | None = None, limit: int = 20):
