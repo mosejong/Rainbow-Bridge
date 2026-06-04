@@ -1,6 +1,6 @@
 # 🌈 레인보우 브릿지 (Rainbow Bridge)
 
-> 반려동물 장례 이후, 보호자의 **추모 기록과 일상 복귀**를 돕는 PERSO 기반 애프터케어 서비스
+> 반려동물을 떠나보낸 보호자의 **펫로스(Pet Loss) 회복**을 돕는 AI 기반 애프터케어 서비스
 
 [![Status](https://img.shields.io/badge/status-developing-yellow)]()
 [![Period](https://img.shields.io/badge/period-2026.06.01~06.19-blue)]()
@@ -23,16 +23,16 @@ AI로 반려동물을 "부활"시키거나 대신 말하게 하는 서비스가 
 
 ## ✨ 핵심 기능 (MVP)
 
-| # | 기능 | 설명 |
-|---|------|------|
-| 1 | 반려동물 프로필 입력 | 이름·종·함께한 기간·추억 등 |
-| 2 | 보호자 감정 체크인 | 오늘의 감정 상태 기록 |
-| 3 | 기억 기반 추모 메시지 생성 | PERSO API로 위로 메시지 생성 |
-| 4 | 음성 톤 선택 + TTS 낭독 | 메시지를 음성으로 들려줌 |
-| 5 | 일상 복귀 미션 추천 | 작은 회복 활동 제안 |
-| 6 | 추모 타임라인 저장 | 기록을 시간순으로 보관 |
-| 7 | 위험 감정 안전 라우팅 | 위기 감지 시 1393 연결 |
-| 8 | 평가 리포트 | 사용 데이터 기반 리포트 |
+| # | 기능 | 설명 | 상태 |
+|---|------|------|------|
+| 1 | 반려동물 프로필 입력 | 이름·종·함께한 기간·추억 등 | ✅ |
+| 2 | 보호자 감정 체크인 | 오늘의 감정 상태 기록 | ✅ |
+| 3 | 기억 기반 추모 메시지 생성 | Gemini AI로 개인화 위로 메시지 생성 | ✅ |
+| 4 | 음성 톤 선택 + TTS 낭독 | Google Cloud TTS로 메시지 낭독 | ✅ |
+| 5 | 일상 복귀 미션 추천 | AI 맞춤 회복 활동 제안 | ✅ |
+| 6 | 추모 타임라인 저장 | 기록을 시간순으로 보관 | ✅ |
+| 7 | 위험 감정 안전 라우팅 | 위기 감지 시 1393 즉시 안내 | ✅ |
+| 8 | 평가 리포트 | 감정 추이·미션 완료율 시각화 | 🟡 |
 
 **가산점(멀티모달):** 사진 업로드 → LivePortrait → MP4 영상 생성 → 다운로드
 
@@ -44,11 +44,12 @@ AI로 반려동물을 "부활"시키거나 대신 말하게 하는 서비스가 
 
 | 영역 | 기술 |
 |------|------|
-| Backend | FastAPI (Python), MongoDB |
-| Frontend | (프론트팀 결정) |
-| AI / LLM | PERSO API (평가·시연), 로컬 LLM (개발) |
-| 멀티모달 | LivePortrait (로컬 / Replicate fallback), TTS |
-| Infra | Docker, Ubuntu 홈서버(김윤한), GPU 서버 RTX 5060(정환주) |
+| Backend | FastAPI (Python), MongoDB, SQLite (인증) |
+| Frontend | Vite + React + Tailwind CSS |
+| AI / LLM | Gemini API (`gemini-2.5-flash`) |
+| TTS | Google Cloud Text-to-Speech (ko-KR-Neural2-A) |
+| 멀티모달 | LivePortrait (animals 모드), PERSO API (영상 더빙) |
+| Infra | NCP Cloud Server, Docker, GitHub Actions 자동 배포 |
 
 자세한 구조는 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) 참고.
 
@@ -97,17 +98,22 @@ rainbow-bridge/
 
 ```bash
 # 1. 레포 클론
-git clone <레포_주소>
-cd rainbow-bridge
+git clone https://github.com/mosejong/Rainbow-Bridge.git
+cd Rainbow-Bridge
 
 # 2. 환경 변수 준비
-cp .env.example .env   # Windows: Copy-Item .env.example .env
+cp .env.example .env
+cp frontend/.env.example frontend/.env
 
-# 3. (백엔드) 의존성 설치 & 실행
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+# 3. 백엔드 실행
+cd backend && pip install -r requirements.txt
+uvicorn app.main:app --reload   # http://localhost:8000/docs
+
+# 4. 프론트엔드 실행
+cd frontend && npm install && npm run dev  # http://localhost:5173
 ```
+
+> 실서버: http://101.79.19.87 (프론트) · http://101.79.19.87:8000 (API)
 
 ---
 
