@@ -1,23 +1,27 @@
-import sys
 from datetime import datetime, timezone
+import app.core.ai_path  # noqa: F401  프로젝트 루트를 sys.path에 추가
+from ai.llm.safety import assess_crisis
 from app.db.mongodb import mongodb
 from app.schemas.emotion import EmotionCreate, EmotionResponse
 
-sys.path.append("/home/kyh/Rainbow-Bridge")
-from ai.llm.safety import assess_crisis
-
+CRISIS_HOTLINE = "1393"
 
 def _collection():
     return mongodb.db["emotions"]
 
-
 async def create_emotion(data: EmotionCreate) -> EmotionResponse:
-    result = assess_crisis(data.note or "")
-    risk_level = int(result.risk_level)
-
+    # 반소람님 assess_crisis() — 규칙 레이어(L0). 나중에 LLM 레이어 추가해도 이 호출은 그대로.
+    crisis = assess_crisis(data.note or "")
+    risk_level = int(crisis.risk_level)
     doc = data.model_dump()
     doc["risk_level"] = risk_level
     doc["created_at"] = datetime.now(timezone.utc)
-    db_result = await _collection().insert_one(doc)
-    doc["id"] = str(db_result.inserted_id)
-    return EmotionResponse(**doc)
+    result = await _collection().insert_one(doc)
+    doc["id"] = str(result.inserted_id)
+    response = EmotionResponse(**doc)
+    if crisis.hotline_required:
+        response.crisis_message = (
+            f"많이 힘드시군요. 혼자 감당하기 어려울 때는 "
+            f"자살예방상담전화 {CRISIS_HOTLINE}로 연락해 주세요. 24시간 운영합니다."
+        )
+    return response

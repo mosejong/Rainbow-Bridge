@@ -427,10 +427,21 @@ def detect_crisis(text: str, context: Optional[dict] = None) -> CrisisResult:
 
 
 def assess_crisis(text: str, context: Optional[dict] = None) -> CrisisResult:
-    """백엔드가 부르는 공식 창구. 지금은 규칙(L0)만, 나중에 LLM 융합 추가.
+    """위기 감지 **공식 창구** — 백엔드는 이 함수만 호출하세요.
 
-    백엔드는 이 함수만 호출하면 됩니다. 내부 구현이 바뀌어도
-    백엔드 코드는 수정할 필요가 없습니다.
+    백엔드가 의존하는 단 하나의 진입점입니다. 함수 이름과 반환 타입
+    (CrisisResult / as_dict)을 고정해 두면, 내부 구현이 바뀌어도 백엔드
+    코드는 그대로 둘 수 있습니다.
+
+    - **현재**: 규칙 레이어(L0) detect_crisis 결과를 그대로 반환.
+    - **향후**: 이 함수 안에서 LLM 레이어(L1) 분류를 호출하고
+      보수적으로 융합("애매하면 한 단계 ↑")해 반환. 백엔드 변경 불필요.
+
+    Args:
+        text: 보호자가 입력한 문장.
+        context: 향후 LLM 융합용(이전 대화·반려동물 이름 등). 현재 미사용.
+
+    Returns:
+        CrisisResult — risk_level·hotline_required 등 (detect_crisis와 동일 타입).
     """
     return detect_crisis(text, context)
-    # TODO: 나중에 여기서 LLM 레이어(L1) 호출 + 융합해서 한 단계 ↑ 처리

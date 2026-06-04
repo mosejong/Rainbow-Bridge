@@ -2,6 +2,7 @@ import os
 import httpx
 from fastapi import APIRouter, HTTPException, Query
 from dotenv import load_dotenv
+import app.core.ai_path  # noqa: F401  프로젝트 루트를 sys.path에 추가
 
 load_dotenv()
 
