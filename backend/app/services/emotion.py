@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 
-from ai.llm.safety import detect_crisis as assess_crisis  # assess_crisis PR 머지 후 교체
+from ai.llm.safety import (
+    detect_crisis as assess_crisis,
+)  # assess_crisis PR 머지 후 교체
 
 from app.db.mongodb import mongodb
 from app.schemas.emotion import EmotionCreate, EmotionResponse
