@@ -144,7 +144,7 @@
 | 모세종 | 로그인·회원가입 API(SQLite RDB) 구현, llm_logs 통합, CI 수정 다수, PR #33~#36 관리 | [→](members/모세종.md) |
 | 김윤한 | llm_logs API PR #34 제출·수정 (PII 원문 제거, router 충돌 해소) | [→](members/김윤한.md) |
 | 반소람 | ⑤ 미션 추천 로직 구현(LLM 개인화+규칙 폴백), 테스트 10종·전체 115종 통과, dev 머지(백엔드 detect_crisis 연동 확인) | [→](members/반소람.md#2026-06-04--⑤-미션-추천-로직-구현-마지막-ai-조각) |
-| 정환주 | Gemini 키 발급·실연결 확인, Google Cloud TTS 키 발급·음성 합성 성공, .env.example 정합(PR #35) | [→](members/정환주.md#2026-06-04-day-4) |
+| 정환주 | Gemini·Google Cloud TTS 키 발급·실연결, **백엔드 TTS 실연결(PR #40)** — ④ TTS 가짜→진짜, 환경 정합(PR #35), 팀 PR 리뷰 3건(#33·#36·#38), 추모 윤리 경계 정리 | [→](members/정환주.md#2026-06-04-day-4) |
 | 민경이 | — | [→](members/민경이.md) |
 | 장민수 | — | [→](members/장민수.md) |
 
