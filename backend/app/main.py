@@ -3,6 +3,7 @@
 import os
 from contextlib import asynccontextmanager
 
+import app.core.ai_path  # noqa: F401 — ai/ sys.path 등록 (import 순서 중요)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
