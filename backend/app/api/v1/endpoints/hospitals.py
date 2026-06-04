@@ -9,6 +9,7 @@ router = APIRouter()
 KAKAO_API_KEY = os.getenv("KAKAO_REST_API_KEY")
 KAKAO_LOCAL_URL = "https://dapi.kakao.com/v2/local/search/keyword.json"
 
+
 @router.get("")
 async def get_hospitals(
     query: str = Query(default="동물병원", description="검색어"),

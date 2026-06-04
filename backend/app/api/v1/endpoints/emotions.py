@@ -5,6 +5,7 @@ from app.services.emotion import create_emotion
 router = APIRouter()
 CRISIS_HOTLINE = "1393"
 
+
 @router.post("", response_model=EmotionResponse, status_code=201)
 async def checkin_emotion(body: EmotionCreate):
     emotion = await create_emotion(body)
