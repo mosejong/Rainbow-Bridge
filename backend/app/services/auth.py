@@ -9,7 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User
 from app.schemas.auth import RegisterRequest, TokenResponse, UserResponse
 
-_pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+_pwd_ctx = CryptContext(
+    schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12, truncate_error=False
+)
 
 _SECRET_KEY = os.getenv("JWT_SECRET_KEY", "rainbow-bridge-secret-change-in-prod")
 _ALGORITHM = "HS256"
@@ -17,11 +19,13 @@ _EXPIRE_HOURS = int(os.getenv("JWT_EXPIRE_HOURS", "24"))
 
 
 def _hash_password(password: str) -> str:
-    return _pwd_ctx.hash(password)
+    return _pwd_ctx.hash(password.encode("utf-8")[:72].decode("utf-8", errors="ignore"))
 
 
 def _verify_password(plain: str, hashed: str) -> bool:
-    return _pwd_ctx.verify(plain, hashed)
+    return _pwd_ctx.verify(
+        plain.encode("utf-8")[:72].decode("utf-8", errors="ignore"), hashed
+    )
 
 
 def _create_token(user_id: int, email: str) -> str:
