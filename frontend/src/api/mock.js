@@ -33,3 +33,18 @@ export const mockTimeline = [
   { _id: 'tl_001', type: 'emotion', ref_id: 'emo_001', created_at: '2026-06-01' },
   { _id: 'tl_002', type: 'message', ref_id: 'msg_001', created_at: '2026-06-02' },
 ];
+
+export const mockReport = {
+  pet_id: 'pet_001',
+  period: '2026-06',
+  usage: { messages: 3, emotions: 5, missions: 2 },
+  emotion_trend: [
+    { created_at: '06-01', score: 6 },
+    { created_at: '06-02', score: 4 },
+    { created_at: '06-03', score: 7 },
+    { created_at: '06-04', score: 5 },
+    { created_at: '06-05', score: 8 },
+  ],
+  mission_completion_rate: 0.6,
+  revisit: 5,
+};

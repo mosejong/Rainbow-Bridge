@@ -5,11 +5,11 @@ import Button from '../components/Button';
 import { postEmotion } from '../api/emotions';
 
 const MOODS = [
-  { emoji: '😊', label: '괜찮아요' },
-  { emoji: '😔', label: '슬퍼요' },
-  { emoji: '😢', label: '많이 힘들어요' },
-  { emoji: '😰', label: '너무 힘들어요' },
-  { emoji: '😶', label: '잘 모르겠어요' },
+  { emoji: '😊', label: '괜찮아요',     score: 9 },
+  { emoji: '😔', label: '슬퍼요',       score: 6 },
+  { emoji: '😢', label: '많이 힘들어요', score: 3 },
+  { emoji: '😰', label: '너무 힘들어요', score: 1 },
+  { emoji: '😶', label: '잘 모르겠어요', score: 5 },
 ];
 
 const RISK_MOODS = ['너무 힘들어요'];
@@ -32,7 +32,8 @@ export default function EmotionPage() {
 
     try {
       const petId = localStorage.getItem('pet_id');
-      const response = await postEmotion({ pet_id: petId, mood: selectedMood, note });
+      const moodScore = MOODS.find((m) => m.label === selectedMood)?.score ?? 5;
+      const response = await postEmotion({ pet_id: petId, score: moodScore, note });
 
       if (response.risk_level >= 2 || RISK_MOODS.includes(selectedMood)) {
         setSafetyOpen(true);
