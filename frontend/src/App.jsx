@@ -4,6 +4,8 @@ import EmotionPage from './pages/EmotionPage';
 import MessagePage from './pages/MessagePage';
 import ReportPage from './pages/ReportPage';
 import MissionPage from './pages/MissionPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 
 function ComingSoon({ name }) {
   return (
@@ -21,7 +23,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/profile" replace />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/emotion" element={<EmotionPage />} />
         <Route path="/message" element={<MessagePage />} />
