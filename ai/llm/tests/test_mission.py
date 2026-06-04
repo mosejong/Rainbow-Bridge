@@ -1,0 +1,115 @@
+"""⑤ 미션 추천 테스트 — LLM 없이 규칙·폴백·주입 경로를 검증.
+
+  1. 규칙 기반(LLM 미주입) — 난이도 매핑·개수·중복 회피·구조
+  2. LLM 주입 — 정상 JSON 사용 / 깨진 출력·실패 시 폴백
+  3. 가드 — 부활 표현 미션 제외
+"""
+
+from __future__ import annotations
+
+import json
+
+from ..mission import recommend
+from ..prompts import mission as mission_prompt
+
+
+# --- 1. 규칙 기반 (generate 미주입) ----------------------------------------- #
+
+
+def test_rule_based_returns_count():
+    result = recommend(emotion_score=2, count=3)
+    assert len(result) == 3
+    for m in result:
+        assert set(m) == {"title", "description", "category"}
+        assert m["category"] in mission_prompt.CATEGORIES
+
+
+def test_low_score_gives_gentle_missions():
+    """감정 점수가 낮으면(무기력) gentle 풀에서 나온다."""
+    result = recommend(emotion_score=1, count=5)
+    titles = {m["title"] for m in result}
+    assert "물 한 잔 마시기" in titles or "창문 열고 바람 쐬기" in titles
+
+
+def test_high_score_gives_active_missions():
+    result = recommend(emotion_score=9, count=5)
+    titles = {m["title"] for m in result}
+    assert "친구와 짧은 통화" in titles or "가까운 곳 다녀오기" in titles
+
+
+def test_none_score_defaults_to_small():
+    result = recommend(emotion_score=None, count=3)
+    assert len(result) == 3
+
+
+def test_history_avoided():
+    """history 에 있는 미션은 추천에서 제외된다."""
+    first = recommend(emotion_score=2, count=2)
+    avoid = [first[0]["title"]]
+    again = recommend(emotion_score=2, history=avoid, count=2)
+    assert avoid[0] not in {m["title"] for m in again}
+
+
+# --- 2. LLM 주입 ------------------------------------------------------------ #
+
+
+def _fake_llm(missions):
+    payload = json.dumps({"missions": missions}, ensure_ascii=False)
+
+    def gen(prompt, *, max_tokens=512, temperature=0.8, json_mode=False):
+        assert json_mode is True  # 미션은 JSON 강제
+        return payload
+
+    return gen
+
+
+def test_llm_output_used_when_valid():
+    fake = _fake_llm(
+        [
+            {"title": "편지 한 줄 쓰기", "description": "짧게 적어보세요.", "category": "record"},
+            {"title": "창밖 보기", "description": "잠시 바깥을 보세요.", "category": "rest"},
+            {"title": "차 한 잔", "description": "따뜻하게.", "category": "rest"},
+        ]
+    )
+    result = recommend(emotion_score=5, generate=fake, count=3)
+    assert {m["title"] for m in result} == {"편지 한 줄 쓰기", "창밖 보기", "차 한 잔"}
+
+
+def test_llm_broken_output_falls_back_to_rule():
+    def bad_gen(prompt, *, max_tokens=512, temperature=0.8, json_mode=False):
+        return "이건 JSON 이 아닙니다"
+
+    result = recommend(emotion_score=2, generate=bad_gen, count=3)
+    assert len(result) == 3  # 폴백으로 채워짐
+
+
+def test_llm_failure_falls_back_to_rule():
+    def boom(prompt, *, max_tokens=512, temperature=0.8, json_mode=False):
+        raise RuntimeError("LLM 다운")
+
+    result = recommend(emotion_score=2, generate=boom, count=3)
+    assert len(result) == 3
+
+
+def test_llm_short_output_topped_up_by_rule():
+    """LLM 이 1개만 주면 나머지는 규칙 풀로 보충해 count 를 채운다."""
+    fake = _fake_llm(
+        [{"title": "딱 하나", "description": "유일한 미션.", "category": "rest"}]
+    )
+    result = recommend(emotion_score=2, generate=fake, count=3)
+    assert len(result) == 3
+    assert result[0]["title"] == "딱 하나"
+
+
+# --- 3. 가드 ---------------------------------------------------------------- #
+
+
+def test_resurrection_mission_filtered():
+    fake = _fake_llm(
+        [
+            {"title": "봄이 부활시키기", "description": "다시 살아나길.", "category": "rest"},
+            {"title": "산책 가기", "description": "5분만.", "category": "activity"},
+        ]
+    )
+    result = recommend(emotion_score=5, generate=fake, count=3)
+    assert all("부활" not in m["title"] for m in result)
