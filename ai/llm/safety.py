@@ -424,3 +424,13 @@ def detect_crisis(text: str, context: Optional[dict] = None) -> CrisisResult:
         score=score,
         context_markers=markers,
     )
+
+
+def assess_crisis(text: str, context: Optional[dict] = None) -> CrisisResult:
+    """백엔드가 부르는 공식 창구. 지금은 규칙(L0)만, 나중에 LLM 융합 추가.
+
+    백엔드는 이 함수만 호출하면 됩니다. 내부 구현이 바뀌어도
+    백엔드 코드는 수정할 필요가 없습니다.
+    """
+    return detect_crisis(text, context)
+    # TODO: 나중에 여기서 LLM 레이어(L1) 호출 + 융합해서 한 단계 ↑ 처리
