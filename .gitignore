@@ -68,6 +68,7 @@ gcp-tts-key.json
 
 # ===== Docker / DB =====
 *.sqlite3
+*.db
 mongo-data/
 data/db/
 
