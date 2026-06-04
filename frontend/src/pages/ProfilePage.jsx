@@ -69,7 +69,7 @@ function ProfilePage() {
         memories: form.memories,
       };
       const pet = await createPet(payload);
-      localStorage.setItem('pet_id', pet._id);
+      localStorage.setItem('pet_id', pet.id || pet._id);
       localStorage.setItem('pet_name', pet.name);
       navigate('/emotion');
     } catch (err) {
