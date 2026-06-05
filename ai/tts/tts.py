@@ -36,6 +36,19 @@ _OUTPUT_DIR: Final[str] = os.environ.get("TTS_OUTPUT_DIR", "ai/tts/_output")
 _LANGUAGE_CODE: Final[str] = "ko-KR"
 _VOICE_NAME: Final[str] = os.environ.get("TTS_VOICE", "ko-KR-Neural2-A")
 
+# 선택 가능한 목소리 레지스트리 — 친숙한 키 → Google Cloud voice 이름.
+# UI 노출(목소리 고르기)은 백엔드 스키마(tone만 받음)·프론트 추가가 필요 → 핸드오프.
+# 여기서는 ai/tts 단에서 voice 선택 "능력"만 추가하고 기본값은 현재 그대로 둔다.
+_VOICES: Final[dict[str, str]] = {
+    "female_a": "ko-KR-Neural2-A",  # 여성, 기본(현재 사용)
+    "female_b": "ko-KR-Neural2-B",  # 여성, 다른 결
+    "male_c": "ko-KR-Neural2-C",  # 남성
+    "female_wavenet": "ko-KR-Wavenet-A",  # 여성, 저가 폴백(요금 절감)
+}
+
+# 호출부가 고를 수 있는 목소리 키 목록(공개).
+AVAILABLE_VOICES: Final[tuple[str, ...]] = tuple(_VOICES)
+
 # Google Cloud TTS 단일 요청 입력 길이 제한(바이트) — 길면 분할.
 _MAX_CHARS: Final[int] = 4500
 
@@ -53,6 +66,7 @@ class TtsTone(str, Enum):
     WARM = "warm"  # 따뜻함 — 부드럽고 약간 느리게
     CALM = "calm"  # 담담함 — 평이하게
     HOPEFUL = "hopeful"  # 희망 — 약간 밝고 보통 속도
+    SOFT = "soft"  # 나직이 — 가장 부드럽고 낮게(프론트 '부드럽게' 대응)
 
 
 @dataclass(frozen=True)
@@ -66,7 +80,24 @@ _TONE_MAP: Final[dict[TtsTone, _VoiceParams]] = {
     TtsTone.WARM: _VoiceParams(speaking_rate=0.92, pitch=-1.0),
     TtsTone.CALM: _VoiceParams(speaking_rate=0.95, pitch=0.0),
     TtsTone.HOPEFUL: _VoiceParams(speaking_rate=1.0, pitch=1.0),
+    TtsTone.SOFT: _VoiceParams(speaking_rate=0.88, pitch=-2.0),
 }
+
+
+def _resolve_voice(voice: Optional[str]) -> str:
+    """목소리 키(또는 None)를 실제 Google voice 이름으로 변환.
+
+    None → 현재 기본값(`_VOICE_NAME`). 알려진 키 → 해당 voice 이름.
+    미지원 키 → ValueError(호출부에서 폴백/안내 처리).
+    """
+    if voice is None:
+        return _VOICE_NAME
+    try:
+        return _VOICES[voice]
+    except KeyError as e:
+        raise ValueError(
+            f"지원하지 않는 목소리: {voice!r}. 가능: {', '.join(_VOICES)}"
+        ) from e
 
 _SENTENCE_SPLIT_RE: Final[re.Pattern[str]] = re.compile(r"(?<=[.!?。…\n])\s+")
 
@@ -120,6 +151,7 @@ def synthesize(
     text: str,
     tone: TtsTone = TtsTone.WARM,
     *,
+    voice: Optional[str] = None,
     filename: Optional[str] = None,
 ) -> dict:
     """텍스트를 음성으로 합성해 파일로 저장하고 메타데이터를 돌려줍니다.
@@ -127,6 +159,7 @@ def synthesize(
     Args:
         text: 낭독할 보호자 대상 위로 메시지. (반려동물 1인칭 ❌)
         tone: 발화 톤(메시지 톤과 매핑).
+        voice: 목소리 키(`AVAILABLE_VOICES` 중 하나). None이면 현재 기본 목소리.
         filename: 저장 파일명(미지정 시 자동).
 
     Returns:
@@ -142,8 +175,9 @@ def synthesize(
         raise ValueError("합성할 텍스트가 비어 있습니다.")
 
     params = _TONE_MAP[tone]
+    voice_name = _resolve_voice(voice)
     chunks = _split_text(text)
-    audio = _synthesize_google(chunks, params)
+    audio = _synthesize_google(chunks, params, voice_name)
 
     os.makedirs(_OUTPUT_DIR, exist_ok=True)
     name = filename or f"tts_{tone.value}_{abs(hash(text)) % 10_000_000}.mp3"
@@ -158,7 +192,9 @@ def synthesize(
     }
 
 
-def _synthesize_google(chunks: list[str], params: _VoiceParams) -> bytes:
+def _synthesize_google(
+    chunks: list[str], params: _VoiceParams, voice_name: str = _VOICE_NAME
+) -> bytes:
     """Google Cloud TTS 로 청크별 합성 후 MP3 바이트를 이어 붙입니다.
 
     🚧 인증(GOOGLE_APPLICATION_CREDENTIALS 등)이 없으면 명확한 에러를 냅니다.
@@ -175,7 +211,7 @@ def _synthesize_google(chunks: list[str], params: _VoiceParams) -> bytes:
 
     client = texttospeech.TextToSpeechClient()
     voice = texttospeech.VoiceSelectionParams(
-        language_code=_LANGUAGE_CODE, name=_VOICE_NAME
+        language_code=_LANGUAGE_CODE, name=voice_name
     )
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3,
