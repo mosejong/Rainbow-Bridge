@@ -8,6 +8,7 @@ from ai.llm.safety import assess_crisis
 from ai.llm.provider import generate
 
 from app.db.mongodb import mongodb
+from app.db.redis_client import get_recent_emotions
 from app.schemas.message import MessageCreate, MessageResponse
 
 CRISIS_HOTLINE = "1393"
@@ -52,7 +53,9 @@ def _collection():
     return mongodb.db["messages"]
 
 
-def _build_prompt(pet: dict, tone: str, score: int, note: str) -> str:
+def _build_prompt(
+    pet: dict, tone: str, score: int, note: str, recovery_trend: str = ""
+) -> str:
     memories = pet.get("memories") or []
     memories_block = ""
     if memories:
@@ -60,6 +63,7 @@ def _build_prompt(pet: dict, tone: str, score: int, note: str) -> str:
         memories_block = f"- 함께한 추억:\n{bullets}\n"
 
     tone_guide = _TONE_GUIDE.get(tone, _TONE_GUIDE["warm"])
+    recovery_block = f"- 회복 추이: {recovery_trend}\n" if recovery_trend else ""
     return (
         f"[반려동물]\n"
         f"- 이름: {pet.get('name', '')}\n"
@@ -68,8 +72,9 @@ def _build_prompt(pet: dict, tone: str, score: int, note: str) -> str:
         f"{memories_block}"
         f"[보호자 감정]\n"
         f"- 감정 점수: {score}/10 (1=많이 힘듦 · 10=평온)\n"
-        f"- 메모: {note or '(없음)'}\n\n"
-        f"[요청] 위 기억을 바탕으로 {tone_guide} 3~4문장으로 써 주세요."
+        f"- 메모: {note or '(없음)'}\n"
+        f"{recovery_block}"
+        f"\n[요청] 위 기억을 바탕으로 {tone_guide} 3~4문장으로 써 주세요."
     )
 
 
@@ -144,8 +149,30 @@ async def create_message(data: MessageCreate) -> MessageResponse:
     pet_doc = await mongodb.db["pets"].find_one({"_id": ObjectId(data.pet_id)})
     pet = pet_doc or {}
 
+    # Redis 회복 추이 조회 — RAG 및 프롬프트 품질 향상용
+    recovery_trend = ""
+    try:
+        records = await get_recent_emotions(data.pet_id)
+        if len(records) >= 3:
+            scores = [r["score"] for r in records]
+            mid = max(1, len(scores) // 2)
+            if (
+                sum(scores[:mid]) / mid
+                > sum(scores[mid:]) / max(len(scores[mid:]), 1) + 0.5
+            ):
+                recovery_trend = "회복 중"
+            elif (
+                sum(scores[:mid]) / mid
+                < sum(scores[mid:]) / max(len(scores[mid:]), 1) - 0.5
+            ):
+                recovery_trend = "주의 필요"
+    except Exception:
+        pass
+
     tone = data.tone if data.tone in _TONE_GUIDE else "warm"
-    prompt = _build_prompt(pet, tone, data.emotion_score or 5, data.note or "")
+    prompt = _build_prompt(
+        pet, tone, data.emotion_score or 5, data.note or "", recovery_trend
+    )
 
     first_person = data.consent and int(crisis.risk_level) <= 1
     content = _llm_generate(prompt, first_person=first_person)

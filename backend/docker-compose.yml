@@ -8,6 +8,13 @@ services:
       - mongo_data:/data/db
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: rainbow_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
   backend:
     build:
       context: ..
@@ -19,10 +26,12 @@ services:
       - ../.env
     environment:
       MONGO_URI: mongodb://rainbow_mongo:27017
+      REDIS_URL: redis://rainbow_redis:6379
     volumes:
       - ../uploads:/app/backend/uploads
     depends_on:
       - mongo
+      - redis
     restart: unless-stopped
 
 volumes:

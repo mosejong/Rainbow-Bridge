@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     APP_PORT: int = 8000
     LOG_LEVEL: str = "INFO"
 
+    # RDB (미설정 시 SQLite, 운영 시 postgresql+asyncpg://...)
+    DATABASE_URL: str = "sqlite+aiosqlite:///./rainbow_bridge.db"
+
     # MongoDB
     MONGO_URI: str = "mongodb://localhost:27017"
     MONGO_DB_NAME: str = "rainbow_bridge"
@@ -31,6 +34,9 @@ class Settings(BaseSettings):
     # LivePortrait
     LIVEPORTRAIT_MODE: str = "local"
     REPLICATE_API_TOKEN: str = ""
+
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379"
 
     # 안전 라우팅 (변경 금지)
     CRISIS_HOTLINE: str = "1393"

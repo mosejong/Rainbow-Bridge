@@ -21,7 +21,7 @@
 
 **1) 누구신지 / 어떤 역할인지 확인**
 - "안녕하세요! 어떤 분이신가요? (이름 또는 역할)" 처럼 물어보고, [2. 팀 & 담당 영역](#2-팀--담당-영역) 표에서 담당 폴더·작업을 파악하세요.
-- 역할을 알면 그 사람의 담당 영역(`backend/`·`ai/`·`frontend/` 등)과 [PROGRESS.md](docs/PROGRESS.md)에서 맡은 MVP 항목을 안내하세요.
+- 역할을 알면 그 사람의 담당 영역(`backend/`·`ai/`·`frontend/` 등)과 [PROGRESS.md](docs/PROGRESS.md)에서 맡은 프로토타입 항목을 안내하세요.
 
 **2) 현재 브랜치 확인 → 본인 이름 브랜치로 유도 (인당 1브랜치)**
 - 우리는 **인당 1브랜치** 전략입니다. 각자 본인 영문 이름 브랜치 하나에서만 작업합니다.
@@ -32,7 +32,7 @@
   | 김윤한 | `kimyunhan` | 민경이 | `mingyeongi` |
   | 반소람 | `bansoram` | 장민수 | `jangminsu` |
 
-- 평소 작업은 **`dev`** 에 모읍니다. `main` 은 MVP 완성·서비스 가능 시점에만 씁니다.
+- 평소 작업은 **`dev`** 에 모읍니다. `main` 은 프로토타입 완성·서비스 가능 시점에만 씁니다.
 - `git branch --show-current` 로 지금 브랜치를 확인하세요.
 - **`main`(또는 `dev`)에 있으면, 거기서 작업하지 못하게 막고** 본인 이름 브랜치로 옮기게 유도하세요. 동의를 받으면 실행:
   ```bash
@@ -52,14 +52,19 @@
 ## 1. 우리가 만드는 것 (오해 금지)
 
 반려동물을 떠나보낸 보호자의 **펫로스(Pet Loss) 회복**을 돕는 애프터케어 서비스입니다.
+**수의사↔보호자 쌍방향 플랫폼** 방향 확정 (2026-06-05).
 
 - ✅ 기억 기반 **상징적 추모 메시지**, 감정 돌봄, 일상 복귀 지원
-- ❌ AI로 반려동물을 **부활**시키거나, 반려동물이 실제로 **직접 말하는 것처럼** 주장하는 것 — 절대 아님
-- ✅ 사용자가 제공한 사진·추억을 바탕으로 한 **AI 재해석 추모 편지/영상/TTS** 는 가능. 단, 항상 "기억 기반 AI 추모 표현"임을 표시하고, 기본값은 보호자 대상 위로 톤으로 유지합니다.
-- ✅ 표현의 정서는 "사실 재현"이 아니라 **마지막 작별을 위해 꿈처럼 상상해보는 추모**입니다. 사용자의 그리움을 인정하되, 실제 반려동물의 의사처럼 단정하지 않습니다.
-- ✅ PERSO 립싱크/더빙은 **기술 검증 및 선택형 후처리**로만 사용합니다. 서비스 핵심은 보호자의 회복이며, 1인칭 반려동물 대화·부활 연출·위기 상황 사용은 금지입니다.
+- ✅ **수의사 웹** — 보호자 반려동물 기록 확인 + 조언 남기기 (쌍방향 소통)
+- ✅ 수의사 처치 안내 RAG — **기본 대처법만** 제공. 상세 진단·처방은 "내원해 주세요"로 연결. 의료 조언 대체 아님.
+- ❌ AI로 반려동물을 **부활**시키거나, 결과물을 "실제 반려동물이 돌아와 말한 것"처럼 **사실인 양 주장**하는 것 — 절대 아님
+- ✅ 사용자가 제공한 사진·추억을 바탕으로 한 **AI 재해석 추모 편지/영상/TTS** 는 가능.
+- ✅ 반려동물 **1인칭 화법(꿈 속 작별 대화)** 은 보호자 동의 + 경고 문구 + risk_level 0~1 조건 충족 시 허용. (강사 승인 2026-06-05)
+  - 경고 문구 예: "AI가 보호자가 전해준 추억을 바탕으로 재해석한 꿈 속 작별 인사입니다."
+- ✅ PERSO 립싱크/더빙은 **선택형 후처리**로 허용. 위기 상황(risk_level 2+)에서는 사용 금지.
 
 > 메시지/프롬프트 작업 시 이 경계를 넘지 마세요. 위기 감정 안내 번호 **1393**은 임의 변경 금지.
+> 상세 윤리 기준 → [docs/ETHICS_추모표현_가이드.md](docs/ETHICS_추모표현_가이드.md)
 
 ## 2. 팀 & 담당 영역
 
@@ -78,20 +83,38 @@
 
 | 영역 | 기술 |
 |------|------|
-| Backend | FastAPI (Python), MongoDB |
-| AI / LLM | PERSO API(평가·시연), 로컬 LLM(개발) |
-| 멀티모달 | LivePortrait(로컬 / Replicate fallback), TTS |
-| Infra | Docker, Ubuntu 홈서버(김윤한), GPU 서버 RTX 5060(정환주) |
+| Backend | FastAPI (Python), MongoDB, PostgreSQL |
+| Cache | Redis — 감정 체크인 최근 기록 캐시, 회복 분석용 |
+| AI / LLM | Gemini API, PERSO API(평가·시연) |
+| RAG | ChromaDB — 추모 메시지·미션·장례 안내·수의사 처치 안내 |
+| 멀티모달 | LivePortrait(로컬 / GPU 서버), Google TTS |
+| Infra | Docker Compose, NCP 실서버, GitHub Actions CI/CD |
 
 - 백엔드는 **레이어 구조**를 지키세요: `api/`(라우터) → `services/`(로직) → `models/`·`db/`(데이터), 요청/응답은 `schemas/`(Pydantic).
 - 로컬 LLM 엔진/모델 선택은 **AI 담당(반소람·정환주)** 결정 사항. 임의로 `.env`나 문서에 채우지 마세요.
+
+### RAG 활용 지침 (반소람 담당)
+
+RAG는 다음 4곳에만 사용합니다. 컬렉션은 category 메타데이터로 분리하세요.
+
+| category | 용도 | 쿼리 방향 |
+|----------|------|----------|
+| `comfort` | 추모·위로 메시지 생성 | 감정 공감, 이별 슬픔 |
+| `mission` | 일상 복귀 미션 추천 | 회복 단계별 행동 유도 |
+| `funeral` | 장례 안내 Q&A | 절차·방법 정보 제공 |
+| `vet_protocol` | 수의사 처치 안내 | 기본 대처법 (내원 유도 포함) |
+
+```python
+# 반드시 category 필터 사용
+collection.query(query_texts=[query], where={"category": "mission"}, n_results=3)
+```
 
 ## 4. Git 협업 규칙 (요약)
 
 전체 내용은 [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) · [docs/GIT_GUIDE.md](docs/GIT_GUIDE.md). 핵심만:
 
 - 브랜치 전략: **인당 1브랜치 + dev 통합** — 각자 본인 영문 이름 브랜치 하나에서만 작업(`mosejong`·`kimyunhan`·`bansoram`·`junghwanju`·`mingyeongi`·`jangminsu`) → PR은 **`dev`로**.
-- `main` 은 **MVP 완성·서비스 가능 시점**에만 `dev → main` PR로 승격(PM 진행). 평소엔 `dev` 가 통합 브랜치.
+- `main` 은 **프로토타입 완성·서비스 가능 시점**에만 `dev → main` PR로 승격(PM 진행). 평소엔 `dev` 가 통합 브랜치.
 - 🚫 **`main`·`dev` 에 절대 직접 push 금지.** 둘 다 PR 머지로만 바뀝니다. 항상 내 브랜치 → PR(`dev`) → 리뷰 → 머지.
 - PR이 머지돼도 **내 브랜치는 삭제하지 않고** 계속 사용(`git merge dev`로 최신화 후 다음 작업).
 - 커밋: **Conventional Commits** + 한국어.
@@ -104,7 +127,7 @@
 
 - 자기 일지: [docs/devlog/members/](docs/devlog/members/) 의 **본인 파일**에 날짜 섹션을 맨 위에 추가.
 - 통합 일지: [docs/devlog/README.md](docs/devlog/README.md) 표에 그날 한 일 **한 줄** 요약 + 본인 일지 링크.
-- 진행도: 그날 MVP 구현 상태가 바뀌면 통합 일지의 **파트별 PM 대시보드**와 [docs/PROGRESS.md](docs/PROGRESS.md) 상태를 같이 갱신.
+- 진행도: 그날 프로토타입 구현 상태가 바뀌면 통합 일지의 **파트별 PM 대시보드**와 [docs/PROGRESS.md](docs/PROGRESS.md) 상태를 같이 갱신.
 - 클로드에게 "오늘 개발일지 정리해줘" 하면, 위 형식(개인 일지 + 통합 요약 + 진행도 반영)에 맞춰 작성하도록 도와주세요.
 
 ## 6. 자주 쓰는 명령
@@ -130,4 +153,5 @@ cd backend && ruff check . --fix && black . && pytest -q
 2. [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) — 협업 규칙
 3. [docs/SETUP.md](docs/SETUP.md) — 내 PC 환경 세팅
 4. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — 전체 구조
-5. [docs/PROGRESS.md](docs/PROGRESS.md) — 내가 맡은 일
+5. [docs/ETHICS_추모표현_가이드.md](docs/ETHICS_추모표현_가이드.md) — 추모 표현 허용/금지 경계
+6. [docs/PROGRESS.md](docs/PROGRESS.md) — 내가 맡은 일
