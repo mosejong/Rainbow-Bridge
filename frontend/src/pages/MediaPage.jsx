@@ -151,6 +151,7 @@ export default function MediaPage() {
         ) : (
           <Button
             variant="primary"
+            className="w-full"
             onClick={handleUpload}
             disabled={!file || status === 'done' || !ttsDone}
           >
@@ -179,10 +180,10 @@ export default function MediaPage() {
               download={`${petName}_추모영상.mp4`}
               className="block mt-3"
             >
-              <Button variant="ghost">영상 저장하기</Button>
+              <Button variant="ghost" className="w-full">영상 저장하기</Button>
             </a>
             <div className="mt-3">
-              <Button variant="primary" onClick={() => navigate('/mission')}>
+              <Button variant="primary" className="w-full" onClick={() => navigate('/mission')}>
                 다음 — 오늘의 미션
               </Button>
             </div>
