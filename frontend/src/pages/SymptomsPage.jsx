@@ -4,6 +4,12 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+const MOCK_HOSPITALS = [
+  { id: 'h1', name: '24시 행복동물병원', distance: '0.3km', phone: '02-1234-5678', hours: '24시간', emergency: true },
+  { id: 'h2', name: '푸른숲 동물메디컬센터', distance: '0.7km', phone: '02-9876-5432', hours: '09:00~21:00', emergency: false },
+  { id: 'h3', name: '사랑 동물병원', distance: '1.2km', phone: '031-1111-2222', hours: '09:00~19:00', emergency: false },
+];
+
 const SYMPTOMS = [
   { id: 'no_eat',    emoji: '🍽️', label: '밥을 잘 안 먹어요' },
   { id: 'too_drink', emoji: '💧', label: '물을 과하게 마셔요' },
@@ -131,17 +137,49 @@ export default function SymptomsPage() {
         )}
 
         {guide && (
-          <div className="flex flex-col gap-3">
-            <Button variant="primary" onClick={openKakaoMap}>
-              📍 가까운 동물병원 찾기
-            </Button>
-            <Button variant="ghost" onClick={() => { setGuide(null); setSelected(new Set()); }}>
-              증상 다시 선택
-            </Button>
-            <Button variant="ghost" onClick={() => navigate('/emotion')}>
-              감정 체크인으로 이동
-            </Button>
-          </div>
+          <>
+            {/* 주변 병원 목록 */}
+            <p className="text-xs text-gray-400 text-center mb-2">주변 동물병원 (예시)</p>
+            <div className="flex flex-col gap-3 mb-4">
+              {MOCK_HOSPITALS.map((h) => (
+                <Card key={h.id} className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="font-semibold text-gray-800 text-sm">{h.name}</p>
+                        {h.emergency && (
+                          <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-semibold">응급</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">{h.distance} · {h.hours}</p>
+                      <a href={`tel:${h.phone}`} className="text-xs text-violet-600 mt-0.5 block">{h.phone}</a>
+                    </div>
+                    <button
+                      onClick={() => window.open(`https://map.kakao.com/link/search/${encodeURIComponent(h.name)}`, '_blank')}
+                      className="shrink-0 text-xs bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold px-2.5 py-1.5 rounded-lg"
+                    >
+                      지도
+                    </button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <Button variant="primary" onClick={openKakaoMap}>
+                📍 더 많은 동물병원 찾기
+              </Button>
+              <Button variant="ghost" onClick={() => navigate('/health-records')}>
+                💊 투약·검진 기록 관리
+              </Button>
+              <Button variant="ghost" onClick={() => { setGuide(null); setSelected(new Set()); }}>
+                증상 다시 선택
+              </Button>
+              <Button variant="ghost" onClick={() => navigate('/emotion')}>
+                감정 체크인으로 이동
+              </Button>
+            </div>
+          </>
         )}
       </div>
     </div>

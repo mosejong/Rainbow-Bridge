@@ -10,7 +10,10 @@ from app.models.user import User
 from app.schemas.auth import RegisterRequest, TokenResponse, UserResponse
 
 _pwd_ctx = CryptContext(
-    schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12, truncate_error=False
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12,
+    bcrypt__truncate_error=False,
 )
 
 _SECRET_KEY = os.getenv("JWT_SECRET_KEY", "")
