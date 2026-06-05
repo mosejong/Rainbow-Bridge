@@ -9,18 +9,9 @@ import TimelinePage from './pages/TimelinePage';
 import MediaPage from './pages/MediaPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-
-function ComingSoon({ name }) {
-  return (
-    <div className="min-h-screen bg-purple-50 flex items-center justify-center">
-      <div className="text-center">
-        <p className="text-4xl mb-3">🚧</p>
-        <p className="text-violet-600 font-bold text-lg">{name}</p>
-        <p className="text-gray-400 text-sm mt-1">준비 중이에요</p>
-      </div>
-    </div>
-  );
-}
+import SymptomsPage from './pages/SymptomsPage';
+import HealthRecordsPage from './pages/HealthRecordsPage';
+import FuneralPage from './pages/FuneralPage';
 
 function App() {
   return (
@@ -30,6 +21,9 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/symptoms" element={<SymptomsPage />} />
+        <Route path="/health-records" element={<HealthRecordsPage />} />
+        <Route path="/funeral" element={<FuneralPage />} />
         <Route path="/emotion" element={<EmotionPage />} />
         <Route path="/message" element={<MessagePage />} />
         <Route path="/tts" element={<TtsPage />} />

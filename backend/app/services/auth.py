@@ -60,7 +60,13 @@ async def register(db: AsyncSession, data: RegisterRequest) -> UserResponse:
 
 async def login(db: AsyncSession, email: str, password: str) -> TokenResponse:
     user = await db.scalar(select(User).where(User.email == email))
-    if not user or not _verify_password(password, user.password_hash):
+    if not user:
+        raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다.")
+    try:
+        verified = _verify_password(password, user.password_hash)
+    except Exception:
+        verified = False
+    if not verified:
         raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다.")
 
     token = _create_token(user.id, user.email)

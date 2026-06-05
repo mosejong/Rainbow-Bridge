@@ -8,6 +8,7 @@ from urllib.parse import quote
 
 import requests
 from bson import ObjectId
+from bson.errors import InvalidId
 
 from app.db.mongodb import mongodb
 
@@ -27,9 +28,17 @@ def _collection():
     return mongodb.db["media_assets"]
 
 
-async def create_asset(pet_id: str, source_path: str) -> str:
+def _to_object_id(asset_id: str) -> ObjectId | None:
+    try:
+        return ObjectId(asset_id)
+    except (InvalidId, TypeError):
+        return None
+
+
+async def create_asset(pet_id: str, source_path: str, user_id: int) -> str:
     doc = {
         "pet_id": pet_id,
+        "user_id": user_id,
         "source_url": f"/uploads/media/{Path(source_path).name}",
         "status": "processing",
         "video_url": None,
@@ -39,8 +48,14 @@ async def create_asset(pet_id: str, source_path: str) -> str:
     return str(result.inserted_id)
 
 
-async def get_asset(asset_id: str) -> dict | None:
-    doc = await _collection().find_one({"_id": ObjectId(asset_id)})
+async def get_asset(asset_id: str, user_id: int | None = None) -> dict | None:
+    oid = _to_object_id(asset_id)
+    if oid is None:
+        return None
+    query: dict = {"_id": oid}
+    if user_id is not None:
+        query["user_id"] = user_id
+    doc = await _collection().find_one(query)
     if not doc:
         return None
     return {
@@ -82,8 +97,9 @@ async def run_liveportrait(asset_id: str, source_path: str, pet_id: str = ""):
 
         voiced_path = None
         if tts_files:
+            output_path = _VIDEO_DIR / f"{Path(video_path).stem}_voiced.mp4"
             voiced_path = await asyncio.to_thread(
-                merge_audio, video_path, str(tts_files[0]), output_dir=str(_VIDEO_DIR)
+                merge_audio, video_path, str(tts_files[0]), output_path=output_path
             )
 
         update = {
