@@ -99,7 +99,7 @@ def generate_funeral_guidance(
         step_focus = funeral_prompt.STEP_FOCUS.get(step, "")
         if step_focus:
             query_parts.append(step_focus)
-        rag_hits = _rag_retrieve(" ".join(query_parts), k=3)
+        rag_hits = _rag_retrieve(" ".join(query_parts), k=3, where={"category": "funeral"})
     except Exception:
         rag_hits = None
 
