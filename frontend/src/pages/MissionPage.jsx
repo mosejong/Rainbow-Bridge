@@ -102,6 +102,7 @@ export default function MissionPage() {
                 <div className="mt-4">
                   <Button
                     variant="primary"
+                    className="w-full"
                     onClick={() => handleComplete(mission.id)}
                     disabled={completing === mission.id}
                   >

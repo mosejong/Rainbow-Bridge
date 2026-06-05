@@ -11,10 +11,12 @@
    상징적 추모 영상만 생성합니다. (README §0)
 
 환경 변수(.env):
-    LIVEPORTRAIT_MODE      local | replicate   (기본 local)
-    LIVEPORTRAIT_HOME      외부 LivePortrait 클론 경로
-    LIVEPORTRAIT_CONDA_ENV conda 환경 이름      (기본 liveportrait)
-    REPLICATE_API_TOKEN    replicate 모드일 때만
+    LIVEPORTRAIT_MODE       local | replicate   (기본 local)
+    LIVEPORTRAIT_HOME       외부 LivePortrait 클론 경로 (서버는 설치 경로로 지정)
+    LIVEPORTRAIT_DRIVING    기본 모션(driving) 영상 경로 (서버는 올린 영상 경로로 지정)
+    LIVEPORTRAIT_CONDA_ENV  conda 환경 이름      (기본 liveportrait)
+    LIVEPORTRAIT_MULTIPLIER 모션 강도            (기본 0.4)
+    REPLICATE_API_TOKEN     replicate 모드일 때만
 """
 from __future__ import annotations
 
@@ -30,7 +32,14 @@ CONDA_ENV = os.getenv("LIVEPORTRAIT_CONDA_ENV", "liveportrait")
 REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 
 # 추모 영상에 어울리는 기본 모션(잔잔한 움직임). 추후 전용 템플릿으로 교체 예정.
-DEFAULT_DRIVING = LP_HOME / "assets" / "examples" / "driving" / "d0.mp4"
+# 서버 배포 대비: LIVEPORTRAIT_DRIVING 으로 경로 분리(없으면 LivePortrait 예제 d0).
+# → 서버에선 driving 영상을 올리고 LIVEPORTRAIT_DRIVING 에 그 경로를 지정하세요.
+DEFAULT_DRIVING = Path(
+    os.getenv(
+        "LIVEPORTRAIT_DRIVING",
+        str(LP_HOME / "assets" / "examples" / "driving" / "d0.mp4"),
+    )
+)
 
 # 모션 강도. 동물은 animation_region(eyes 등)이 무시되므로, driving_multiplier를
 # 낮춰서 입 움직임을 억제하고 잔잔한 ambient 느낌을 냄. 0.4 = 입 거의 닫힘 + 눈/고개 미세.
@@ -73,8 +82,8 @@ def merge_audio(
     영상이 음성보다 짧으면 영상을 반복(loop)해 음성 길이에 맞춥니다.
     (추모 톤: 메시지 낭독 내내 반려동물 얼굴이 잔잔히 움직임)
 
-    ⚠️ 윤리: 영상은 그대로 두고 **오디오만 얹습니다(립싱크 ❌).** 입이 말하는
-       것처럼 보이게 만들지 않습니다. (README §0 / PERSO lipSync=false 와 같은 원칙)
+    ⚠️ 윤리: 이 기본 파이프라인은 영상에 **오디오만 얹습니다(립싱크 없음).**
+       PERSO 립싱크/더빙은 사용자 선택과 라벨을 전제로 한 별도 후처리 단계입니다.
 
     Args:
         video_path: LivePortrait 무음 영상(MP4)

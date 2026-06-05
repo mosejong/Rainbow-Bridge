@@ -14,6 +14,7 @@ from fastapi import (
 from app.core.deps import get_current_user
 from app.schemas.media import MediaStatusResponse, MediaUploadResponse
 from app.services.media import create_asset, get_asset, run_liveportrait, run_perso
+from app.services.pet import get_pet
 
 router = APIRouter()
 
@@ -29,6 +30,9 @@ async def upload_media(
     pet_id: str = Form(...),
     user: dict = Depends(get_current_user),
 ):
+    if not await get_pet(pet_id, user_id=user["user_id"]):
+        raise HTTPException(status_code=404, detail="반려동물 정보를 찾을 수 없습니다.")
+
     if file.content_type not in _ALLOWED_TYPES:
         raise HTTPException(
             status_code=400, detail="이미지 파일(JPEG, PNG, WebP)만 업로드 가능합니다."
@@ -43,7 +47,7 @@ async def upload_media(
     save_path = _UPLOAD_DIR / f"{uuid.uuid4().hex}{ext}"
     save_path.write_bytes(contents)
 
-    asset_id = await create_asset(pet_id, str(save_path))
+    asset_id = await create_asset(pet_id, str(save_path), user_id=user["user_id"])
     background_tasks.add_task(run_liveportrait, asset_id, str(save_path), pet_id)
 
     return MediaUploadResponse(asset_id=asset_id)
@@ -51,7 +55,7 @@ async def upload_media(
 
 @router.get("/{asset_id}", response_model=MediaStatusResponse)
 async def get_media_status(asset_id: str, user: dict = Depends(get_current_user)):
-    asset = await get_asset(asset_id)
+    asset = await get_asset(asset_id, user_id=user["user_id"])
     if not asset:
         raise HTTPException(status_code=404, detail="asset을 찾을 수 없습니다.")
     return MediaStatusResponse(**asset)
@@ -64,7 +68,7 @@ async def request_perso(
     user: dict = Depends(get_current_user),
 ):
     """PERSO 다국어 더빙 비동기 요청. voiced_url 영상을 PERSO에 전송."""
-    asset = await get_asset(asset_id)
+    asset = await get_asset(asset_id, user_id=user["user_id"])
     if not asset:
         raise HTTPException(status_code=404, detail="asset을 찾을 수 없습니다.")
     if not asset.get("voiced_url"):
