@@ -13,7 +13,7 @@ from fastapi import (
 
 from app.core.deps import get_current_user
 from app.schemas.media import MediaStatusResponse, MediaUploadResponse
-from app.services.media import create_asset, get_asset, run_liveportrait
+from app.services.media import create_asset, get_asset, run_liveportrait, run_perso
 
 router = APIRouter()
 
@@ -44,7 +44,7 @@ async def upload_media(
     save_path.write_bytes(contents)
 
     asset_id = await create_asset(pet_id, str(save_path))
-    background_tasks.add_task(run_liveportrait, asset_id, str(save_path))
+    background_tasks.add_task(run_liveportrait, asset_id, str(save_path), pet_id)
 
     return MediaUploadResponse(asset_id=asset_id)
 
@@ -55,3 +55,26 @@ async def get_media_status(asset_id: str, user: dict = Depends(get_current_user)
     if not asset:
         raise HTTPException(status_code=404, detail="asset을 찾을 수 없습니다.")
     return MediaStatusResponse(**asset)
+
+
+@router.post("/{asset_id}/perso", status_code=202)
+async def request_perso(
+    asset_id: str,
+    background_tasks: BackgroundTasks,
+    user: dict = Depends(get_current_user),
+):
+    """PERSO 다국어 더빙 비동기 요청. voiced_url 영상을 PERSO에 전송."""
+    asset = await get_asset(asset_id)
+    if not asset:
+        raise HTTPException(status_code=404, detail="asset을 찾을 수 없습니다.")
+    if not asset.get("voiced_url"):
+        raise HTTPException(
+            status_code=400, detail="영상+음성 합치기가 완료되지 않았습니다."
+        )
+
+    background_tasks.add_task(run_perso, asset_id)
+    return {
+        "message": "PERSO 더빙 요청이 접수됐습니다.",
+        "asset_id": asset_id,
+        "status": "pending",
+    }
