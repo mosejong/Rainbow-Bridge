@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from typing import Final, Optional
+from typing import Final, List, Optional
 
 # --------------------------------------------------------------------------- #
 # 톤 — 메시지 분위기. ④ TTS 톤과 1:1로 매핑할 수 있게 키를 맞춰 둡니다.
@@ -65,7 +65,7 @@ _USER_TEMPLATE: Final[str] = """\
 [보호자 감정]
 - 감정 점수: {score}/10 (1=많이 힘듦 · 10=평온)
 - 메모: {note}
-
+{rag_block}
 [요청]
 위 기억을 바탕으로 보호자를 위로하는 추모의 글을 {tone_guide}
 3~4문장으로 써 주세요.
@@ -81,6 +81,14 @@ def _format_memories(memories: Optional[list[str]]) -> str:
     return f"- 함께한 추억:\n{lines}\n" if lines else ""
 
 
+def _format_rag(hits: Optional[List[dict]]) -> str:
+    """RAG 검색 결과를 few-shot 예시 블록으로. 없으면 빈 문자열."""
+    if not hits:
+        return ""
+    examples = "\n".join(f'  - "{h["text"]}"' for h in hits)
+    return f"\n[참고 위로글 예시 — 톤과 표현 방식만 참고하고 내용은 직접 작성하세요]\n{examples}\n"
+
+
 def build_user_prompt(
     *,
     name: str,
@@ -90,6 +98,7 @@ def build_user_prompt(
     note: str = "",
     memories: Optional[list[str]] = None,
     tone: str = DEFAULT_TONE,
+    rag_hits: Optional[List[dict]] = None,
 ) -> str:
     """추모 메시지 생성용 사용자 프롬프트를 만듭니다.
 
@@ -101,6 +110,7 @@ def build_user_prompt(
         note: 보호자가 남긴 메모(자유 입력).
         memories: 함께한 추억 키워드 목록(선택).
         tone: 메시지 톤. TONE_GUIDE 의 키(warm·calm·hopeful).
+        rag_hits: RAG 검색 결과(retrieve() 반환값). 없으면 few-shot 생략.
 
     Returns:
         포맷이 채워진 사용자 프롬프트 문자열.
@@ -113,6 +123,7 @@ def build_user_prompt(
         score=score,
         note=note.strip() or "(없음)",
         memories_block=_format_memories(memories),
+        rag_block=_format_rag(rag_hits),
         tone_guide=tone_guide,
     )
 
