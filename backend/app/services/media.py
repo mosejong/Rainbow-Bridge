@@ -34,6 +34,8 @@ async def get_asset(asset_id: str) -> dict | None:
         "asset_id": str(doc["_id"]),
         "status": doc["status"],
         "video_url": doc.get("video_url"),
+        "voiced_url": doc.get("voiced_url"),
+        "dubbed_url": doc.get("dubbed_url"),
     }
 
 
@@ -65,19 +67,24 @@ async def run_liveportrait(asset_id: str, source_path: str):
             reverse=True,
         )
 
-        final_path = video_path
+        voiced_path = None
         if tts_files:
-            final_path = await asyncio.to_thread(
+            voiced_path = await asyncio.to_thread(
                 merge_audio, video_path, str(tts_files[0]), output_dir=str(_VIDEO_DIR)
             )
+
+        update = {
+            "status": "done",
+            "video_url": f"/uploads/videos/{Path(video_path).name}",
+            "voiced_url": (
+                f"/uploads/videos/{Path(voiced_path).name}" if voiced_path else None
+            ),
+        }
 
         await _collection().update_one(
             {"_id": ObjectId(asset_id)},
             {
-                "$set": {
-                    "status": "done",
-                    "video_url": f"/uploads/videos/{Path(final_path).name}",
-                }
+                "$set": update,
             },
         )
     except Exception:
