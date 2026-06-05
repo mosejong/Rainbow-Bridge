@@ -63,10 +63,23 @@ _USER_TEMPLATE: Final[str] = """\
 
 def _assess_severity(symptoms: str) -> str:
     """증상 텍스트에서 심각도를 추론합니다."""
-    norm = symptoms.replace(" ", "")
-    emergency_keywords = ("경련", "발작", "호흡곤란", "숨못쉬", "의식없", "대량출혈", "다량출혈", "쓰러졌")
-    urgent_keywords = ("구토를반복", "설사를반복", "아무것도안먹", "먹지않", "고열", "피오줌", "피변", "혈변", "혈뇨")
-    soon_keywords = ("기침", "재채기", "눈곱", "눈물", "절뚝", "다리를절")
+    norm = symptoms.replace(" ", "").replace(",", "").replace(".", "")
+    emergency_keywords = (
+        "경련", "발작", "호흡곤란", "숨못쉬", "의식없", "의식을잃",
+        "대량출혈", "다량출혈", "쓰러졌", "쓰러짐",
+    )
+    urgent_keywords = (
+        # 구토·설사: "구토 반복", "구토를 반복" 등 조사 유무 모두 처리
+        "구토반복", "구토를반복", "설사반복", "설사를반복",
+        # 식욕 거부: "식욕 거부", "아무것도 안 먹" 등
+        "식욕거부", "식욕없", "아무것도안먹", "먹지않", "안먹은지",
+        # 기타 위급 증상
+        "고열", "피오줌", "피변", "혈변", "혈뇨",
+    )
+    soon_keywords = (
+        "기침", "재채기", "눈곱", "눈물",
+        "절뚝", "다리를절", "다리절",
+    )
     for kw in emergency_keywords:
         if kw in norm:
             return "emergency"
