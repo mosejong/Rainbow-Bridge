@@ -21,7 +21,7 @@ jobs:
 
       - name: 프론트 환경변수 설정
         run: |
-          echo "VITE_API_BASE_URL=http://101.79.19.87:8000" > frontend/.env
+          echo "VITE_API_BASE_URL=https://rainbow-bridge.duckdns.org" > frontend/.env
 
       - name: 프론트 빌드
         run: |

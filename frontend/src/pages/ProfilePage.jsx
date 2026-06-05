@@ -15,7 +15,6 @@ function ProfilePage() {
     start_date: '',
     end_date: '',
     memories: [],
-    photo: null,
   });
   const [memoryInput, setMemoryInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,10 +40,6 @@ function ProfilePage() {
       ...prev,
       memories: prev.memories.filter((_, i) => i !== idx),
     }));
-  }
-
-  function handlePhoto(e) {
-    setForm((prev) => ({ ...prev, photo: e.target.files[0] || null }));
   }
 
   async function handleSubmit(e) {
@@ -182,22 +177,6 @@ function ProfilePage() {
                     </span>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* 사진 업로드 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                사진 <span className="text-gray-400 font-normal">(선택)</span>
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhoto}
-                className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-violet-100 file:text-violet-700 file:font-medium hover:file:bg-violet-200 cursor-pointer"
-              />
-              {form.photo && (
-                <p className="text-xs text-gray-400 mt-1">{form.photo.name}</p>
               )}
             </div>
 
