@@ -7,13 +7,17 @@
 """
 
 import asyncio
+import logging
 import os
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+from google.auth.exceptions import DefaultCredentialsError
 
 from app.schemas.tts import TtsCreate, TtsResponse
+
+logger = logging.getLogger(__name__)
 
 # backend/app/services/tts.py → parents[3] = 레포 루트
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -52,8 +56,8 @@ async def generate_tts(data: TtsCreate) -> TtsResponse:
 
     try:
         result = await asyncio.to_thread(synthesize, data.text, tone, filename=filename)
-    except Exception:
-        # GCP 키 없을 때 gTTS 폴백 (무료, 인증 불필요)
+    except DefaultCredentialsError:
+        logger.warning("GCP 인증 없음 → gTTS 폴백 사용")
         result = await asyncio.to_thread(_gtts_fallback, data.text, filename)
 
     return TtsResponse(
