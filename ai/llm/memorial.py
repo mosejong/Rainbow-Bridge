@@ -5,10 +5,12 @@
 이 파일은 그 둘을 엮어 **흐름**을 담당합니다:
 
     입력 → (1) 위기 선체크 → (2) 프롬프트 조립 → (3) LLM 호출
-         → (4) 후처리 가드(1인칭/부활 차단) → 결과 dict
+         → (4) 후처리 가드(부활 차단 / 1인칭 모드가 아니면 1인칭도 차단) → 결과 dict
 
 🚫 윤리 경계 (../CLAUDE.md §0):
-  - 반려동물 부활/1인칭 화법 금지 → 출력에서도 후처리로 한 번 더 거릅니다.
+  - 반려동물 부활은 모든 모드에서 금지 → 출력에서도 후처리로 한 번 더 거릅니다.
+  - 1인칭 화법은 first_person=True(§1.5 조건 충족) 일 때만 허용.
+    호출자가 보호자 동의·경고 문구 표시·risk_level 0~1 을 보장해야 합니다.
   - 위기 신호가 강하면(L2↑) 메시지 생성보다 1393 안내가 **우선**입니다.
 
 LLM 호출(provider.generate)은 **주입(generate 인자)** 받습니다. 덕분에 엔진이
@@ -90,11 +92,13 @@ def _has_pet_first_person(content: str, pet_name: str) -> bool:
     return False
 
 
-def _violates_guardrail(content: str, pet_name: str = "") -> Optional[str]:
+def _violates_guardrail(
+    content: str, pet_name: str = "", first_person: bool = False
+) -> Optional[str]:
     """경계 위반 사유를 반환(없으면 None).
 
-    - 부활/환생 단정 표현
-    - 반려동물 이름 + 1인칭이 같은 문장에 등장 (반려동물 화법)
+    - 부활/환생 단정 표현 — first_person 여부와 관계없이 항상 차단.
+    - 반려동물 이름 + 1인칭이 같은 문장에 등장 — first_person=True 이면 허용.
       → 보호자가 "나는 봄이가 그리워요"라고 하는 경우는 차단하지 않습니다.
     """
     normalized = content.replace(" ", "")
@@ -103,7 +107,7 @@ def _violates_guardrail(content: str, pet_name: str = "") -> Optional[str]:
         if marker in normalized:
             return f"부활/환생 표현 감지: '{marker}'"
 
-    if _has_pet_first_person(content, pet_name):
+    if not first_person and _has_pet_first_person(content, pet_name):
         return f"반려동물({pet_name}) 1인칭 화법 감지"
 
     return None
@@ -117,6 +121,7 @@ def generate_message(
     generate: GenerateFn,
     source: str = "local",
     max_retries: int = 1,
+    first_person: bool = False,
 ) -> dict:
     """추모 메시지를 생성합니다.
 
@@ -127,9 +132,12 @@ def generate_message(
         generate: LLM 호출 함수(provider.generate 또는 테스트용 가짜). **주입 필수.**
         source: 결과 출처 표기(local·perso 등).
         max_retries: 가드 위반 시 재생성 횟수(소진되면 안내문으로 대체).
+        first_person: True 이면 반려동물 1인칭 편지 모드(꿈 속 작별 대화).
+            호출자가 보호자 동의·경고 문구 표시·risk_level 0~1 을 보장해야 합니다.
 
     Returns:
         ``{content, tone, source}``. 위기 시에는 ``crisis_message`` 와 ``risk_level`` 포함.
+        1인칭 모드이면 ``first_person: True`` 가 함께 반환됩니다.
     """
     note = str(emotion.get("note", "") or "")
 
@@ -153,6 +161,7 @@ def generate_message(
         note=note,
         memories=pet.get("memories"),
         tone=tone,
+        first_person=first_person,
     )
     messages = memorial_prompt.build_messages(**prompt_kwargs)
     prompt = f"{messages[0]['content']}\n\n{messages[1]['content']}"
@@ -163,9 +172,14 @@ def generate_message(
         content = generate(
             prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE
         ).strip()
-        violation = _violates_guardrail(content, pet_name=pet.get("name", ""))
+        violation = _violates_guardrail(
+            content, pet_name=pet.get("name", ""), first_person=first_person
+        )
         if violation is None:
-            return {"content": content, "tone": tone, "source": source}
+            result = {"content": content, "tone": tone, "source": source}
+            if first_person:
+                result["first_person"] = True
+            return result
         last_violation = violation
 
     # 재시도까지 실패 → 위험한 출력을 내보내지 않고 차단.
