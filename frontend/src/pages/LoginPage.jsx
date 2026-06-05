@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Button from '../components/Button';
 import { login } from '../api/auth';
+import { getMyPets } from '../api/pets';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -20,7 +21,20 @@ export default function LoginPage() {
     try {
       const { access_token } = await login(form);
       localStorage.setItem('access_token', access_token);
-      navigate('/profile');
+
+      // 기존 펫 있으면 바로 감정 체크인으로, 없으면 프로필 등록으로
+      try {
+        const pets = await getMyPets();
+        if (pets && pets.length > 0) {
+          localStorage.setItem('pet_id', pets[0].id || pets[0]._id);
+          localStorage.setItem('pet_name', pets[0].name);
+          navigate('/emotion');
+        } else {
+          navigate('/profile');
+        }
+      } catch {
+        navigate('/profile');
+      }
     } catch (err) {
       setError(err.response?.data?.detail || '이메일 또는 비밀번호를 확인해주세요.');
     } finally {
