@@ -246,9 +246,12 @@ python inference_animals.py -s <pet> -d <driving> --no_flag_stitching --driving_
 | 번역 없이 한국어 유지 | `translate` 를 **`source=ko, target=ko`** 로 보내면 한국어 유지 + 립싱크 (현 `run_perso`는 `en`이라 영어로 번역됨 → `ko`로 바꾸면 한국어) |
 | "목소리 없음" 에러 | 입력 영상에 **실제 speech 오디오 필수** (무음·사인톤 ❌). driving 영상 d18 오디오는 -91dB 무음이라 실패 → Google TTS 낭독 입혀 해결 |
 
-**품질 결론 (정지 프레임 + 재생 비교):**
-- ❌ **PERSO도 또렷한 이빨은 못 그림** — 혀·어두운 입속 위주 (LivePortrait와 동일, 소스 사진에 이빨 없으면 생성 안 됨)
-- 화질·이빨 차이 거의 없음. **유일한 차이 = 입 타이밍을 실제 음성 음소에 맞춤**(미세, 정지 프레임으론 거의 구분 안 됨)
+**품질 결론 (정지 프레임 확대 + 재생 비교):**
+- 🦷 **이빨은 "원본 입 상태"에 따라 갈림 (중요 — 직관과 반대):**
+  - **입 다문 소스(고양이 s39)** → 입을 벌릴 때 모델이 입속을 **새로 생성** → 혀 + **송곳니까지 그려짐**(그럴듯하게). 흰 고양이는 대비로 더 또렷.
+  - **입 벌린 소스(강아지 s31)** → 있던 혀·입속을 **늘리기만** 함 → 혀만, 이빨 없음.
+  - → 이빨은 사진에서 온 게 아니라 **모델이 생성(hallucination)** 한 것. **자연스러운 이빨/입속 원하면 입 다문 사진을 써야 함.** (LivePortrait/PERSO 공통 — PERSO가 따로 더 잘 그리는 건 아님)
+- 화질 차이 거의 없음. PERSO의 **유일한 실익 = 입 타이밍을 실제 음성 음소에 맞춤**(미세, 정지 프레임으론 거의 구분 안 됨)
 - → **PERSO의 시각적 이득은 작음.** 발표 서사 "기술 가능하나 시각적 이득 적음 + 윤리선 근접 → 기본은 잔잔(0.4), PERSO는 opt-in"을 데이터로 뒷받침. (윤리 기준: [docs/ETHICS_추모표현_가이드.md](../../docs/ETHICS_추모표현_가이드.md) §3)
 
 **증거 영상(gitignore, 로컬):** `output/_perso_test/COMPARE_cat_default_vs_perso.mp4`(좌 기본0.4｜우 PERSO), `perso_result_*.mp4`
@@ -265,7 +268,7 @@ python inference_animals.py -s <pet> -d <driving> --no_flag_stitching --driving_
 | Animals (기타 종) | ✅ 동작 확인 | 토끼·햄스터·앵무·올빼미·말·금붕어·도마뱀 7종 |
 | 추모 톤 (입 억제) | ✅ 해결 | `driving_multiplier 0.4` 확정 (eyes 모드 ❌ 동물 무효) |
 | TTS 음성 합치기 | ✅ 구현·검증 | `merge_audio()` — 영상 loop + 음성 길이 맞춤, libx264/aac |
-| PERSO 립싱크 | ✅ 검증 | 동물 립싱크 동작 확인, 이빨 미생성·시각이득 작음 → opt-in 권장 |
+| PERSO 립싱크 | ✅ 검증 | 동물 립싱크 동작 확인, 시각이득 작음 → opt-in 권장 |
 | 잔잔한 driving 템플릿 | ⏳ 진행 중 | 입 다문 영상 제작 시 품질↑ |
 
 ---
