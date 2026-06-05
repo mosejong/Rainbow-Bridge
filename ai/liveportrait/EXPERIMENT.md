@@ -213,7 +213,7 @@ python inference_animals.py -s <pet> -d <driving> --no_flag_stitching --driving_
 - **ffmpeg:** 시스템 PATH(`C:\ffmpeg\bin`) → 없으면 `imageio_ffmpeg` 내장 바이너리 폴백.
 - **함수 형태:** `generate_video`(사진→무음)와 분리한 **독립 함수** `merge_audio(video, audio, output=None)`. 백엔드가 영상 생성·음성 합치기를 각자 타이밍에 호출 가능.
 
-⚠️ **윤리:** 영상은 그대로 두고 **오디오만 얹음(립싱크 ❌)**. 입이 말하는 것처럼 보이게 하지 않음. (PERSO `lipSync=false` 와 같은 원칙)
+⚠️ **윤리:** 기본 파이프라인은 영상에 **오디오만 얹음(립싱크 없음)**. PERSO 립싱크/더빙은 사용자 선택과 라벨을 전제로 한 별도 후처리 단계.
 
 **검증 (스모크 + 실제 자산):**
 
