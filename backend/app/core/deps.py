@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
-_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "rainbow-bridge-secret-change-in-prod")
+_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "")
 _ALGORITHM = "HS256"
 
 _bearer = HTTPBearer(auto_error=False)
