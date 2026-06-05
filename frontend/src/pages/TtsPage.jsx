@@ -37,6 +37,7 @@ export default function TtsPage() {
         ? res.audio_url
         : `${API_BASE}${res.audio_url}`;
       setAudioUrl(url);
+      localStorage.setItem('tts_done', '1');
     } catch {
       setError('음성 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
     } finally {
@@ -132,8 +133,12 @@ export default function TtsPage() {
         )}
 
         <div className="mt-4">
-          <Button variant="ghost" onClick={() => navigate('/mission')}>
-            다음 — 오늘의 미션
+          <Button
+            variant={audioUrl ? 'primary' : 'ghost'}
+            onClick={() => navigate('/media')}
+            disabled={!audioUrl}
+          >
+            {audioUrl ? '다음 — 추모 영상 만들기' : '음성 생성 후 다음으로'}
           </Button>
         </div>
       </div>
