@@ -180,4 +180,4 @@
 | 민경이 | SymptomsPage 병원 카드·HealthRecordsPage 신규·FuneralPage 신규(장례 안내) 구현, 모바일 반응형 수정, Capacitor Android 앱 전략 확정, PR #84 업데이트 | [→](members/민경이.md#2026-06-05-day-5) |
 | 장민수 | `merge_audio()`(PR #74)·driving env 분리(#83)·PERSO 립싱크 검증+이빨 발견(#90·#91)·remote 모드+`server.py`(#95)·GPU 세팅 가이드(#96)·잔잔 driving 템플릿·PERSO 전수조사(Enterprise 1671크레딧) | [→](members/장민수.md#2026-06-05-day-5) |
 
-**팀 전체:** 멀티모달 사진→영상+음성 파이프라인 코어 완성. AI 1·2·3단계(증상 안내·장례 상담·기념일 케어 D+30/D+100)+RAG few-shot+1인칭 편지 모드 검증 완료. 프론트 1·2단계 신규 화면 구현 + Android Capacitor 앱 전략 확정. Docker+HTTPS 인프라 완성.
+**팀 전체:** **수의사↔보호자 쌍방향 플랫폼 방향 확정** (병원=웹·보호자=앱). 1단계(건강관리/증상 기록) → 2단계(장례 안내) → 3단계(펫로스 케어) 플로우 + AI RAG few-shot·1인칭 편지 모드 검증 완료. 프론트 1·2단계 신규 화면(SymptomsPage·HealthRecordsPage·FuneralPage) + Android Capacitor 전략 확정. 멀티모달 사진→영상+음성 파이프라인 완성. Docker+HTTPS 인프라 완성.
