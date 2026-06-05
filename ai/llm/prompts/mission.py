@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 
-from typing import Final, Optional
+from typing import Final, List, Optional
 
 # 미션 카테고리 (백엔드/프론트 분류 대비)
 CATEGORIES: Final[tuple[str, ...]] = (
@@ -25,6 +25,13 @@ DIFFICULTY_GUIDE: Final[dict[str, str]] = {
     "gentle": "지금 많이 힘든 상태예요. 집 안에서 1~5분이면 끝나는 아주 작은 것만 제안하세요.",
     "small": "조금씩 움직일 수 있어요. 10분 내외의 가벼운 활동을 제안하세요.",
     "active": "일상으로 돌아갈 힘이 있어요. 바깥·사람과 연결되는 활동도 좋습니다.",
+}
+
+# 회복 추이(백엔드 get_recovery 의 trend) → 프롬프트 표기. 난이도 보정은 ../mission.py.
+TREND_GUIDE: Final[dict[str, str]] = {
+    "회복중": "회복 중 — 조금씩 나아지고 있어요.",
+    "유지중": "유지 중 — 큰 변화 없이 지내고 있어요.",
+    "주의필요": "주의 필요 — 최근 감정이 가라앉고 있어요. 더 작고 부담 없이.",
 }
 
 
@@ -52,12 +59,28 @@ _USER_TEMPLATE: Final[str] = """\
 [보호자 상태]
 - 감정 점수: {score}/10 (1=많이 힘듦 · 10=평온)
 - 난이도 지침: {difficulty_guide}
-- 반려동물을 떠나보낸 지: {day_since_text}
+{trend_block}- 반려동물을 떠나보낸 지: {day_since_text}
 - 최근 받은 미션(겹치지 않게 피하세요): {recent}
-
+{rag_block}
 [요청]
 위 상태에 맞는 회복 미션 {count}개를 JSON 으로 제안하세요.
 """
+
+
+def _format_rag(hits: Optional[List[dict]]) -> str:
+    """RAG 검색 결과를 참고 예시 블록으로. 없으면 빈 문자열."""
+    if not hits:
+        return ""
+    examples = "\n".join(f'  - "{h["text"]}"' for h in hits)
+    return f"[참고 미션 예시 — 표현 방식만 참고하세요]\n{examples}"
+
+
+def _format_trend(recovery_trend: Optional[str]) -> str:
+    """회복 추이를 상태 블록의 한 줄로. 없거나 '데이터 없음'이면 생략."""
+    if not recovery_trend:
+        return ""
+    guide = TREND_GUIDE.get(recovery_trend.replace(" ", ""))
+    return f"- 최근 회복 추이: {guide}\n" if guide else ""
 
 
 def build_prompt(
@@ -67,6 +90,8 @@ def build_prompt(
     day_since: Optional[int] = None,
     recent_titles: Optional[list[str]] = None,
     count: int = 3,
+    rag_hits: Optional[List[dict]] = None,
+    recovery_trend: Optional[str] = None,
 ) -> str:
     """미션 추천용 전체 프롬프트(system+user)를 만듭니다.
 
@@ -76,6 +101,8 @@ def build_prompt(
         day_since: 반려동물을 떠나보낸 뒤 경과일(모르면 None).
         recent_titles: 최근 추천/완료한 미션 제목(중복 회피용).
         count: 추천 개수.
+        recovery_trend: 최근 회복 추이(백엔드 trend: "회복 중"·"유지 중"·"주의 필요").
+            없거나 "데이터 없음"이면 프롬프트에서 생략.
 
     Returns:
         provider.generate 에 넘길 프롬프트 문자열.
@@ -85,8 +112,10 @@ def build_prompt(
     user = _USER_TEMPLATE.format(
         score=emotion_score,
         difficulty_guide=DIFFICULTY_GUIDE.get(difficulty, DIFFICULTY_GUIDE["small"]),
+        trend_block=_format_trend(recovery_trend),
         day_since_text=day_text,
         recent=recent,
         count=count,
+        rag_block=_format_rag(rag_hits),
     )
     return f"{SYSTEM_PROMPT}\n\n{user}"

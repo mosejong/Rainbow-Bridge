@@ -23,12 +23,18 @@ class Hit(TypedDict):
     metadata: dict
 
 
-def retrieve(query: str, k: Optional[int] = None) -> List[Hit]:
+def retrieve(
+    query: str,
+    k: Optional[int] = None,
+    *,
+    where: Optional[dict] = None,
+) -> List[Hit]:
     """질문과 가까운 문서를 검색합니다.
 
     Args:
         query: 검색할 질문/문장.
         k: 가져올 개수. None 이면 설정의 `RAG_TOP_K`.
+        where: ChromaDB 메타데이터 필터. 예: ``{"category": "memorial"}``.
 
     Returns:
         유사도 내림차순 Hit 목록. 컬렉션이 비어 있으면 빈 리스트.
@@ -42,7 +48,10 @@ def retrieve(query: str, k: Optional[int] = None) -> List[Hit]:
         return []
 
     qv = embed_query(query)
-    res = col.query(query_embeddings=[qv], n_results=min(top_k, count))
+    query_kwargs: dict = {"query_embeddings": [qv], "n_results": min(top_k, count)}
+    if where:
+        query_kwargs["where"] = where
+    res = col.query(**query_kwargs)
 
     docs = (res.get("documents") or [[]])[0]
     metas = (res.get("metadatas") or [[]])[0]

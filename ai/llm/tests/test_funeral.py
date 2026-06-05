@@ -158,7 +158,7 @@ def test_all_steps_have_template():
 
 
 def test_note_triggers_gemini_call():
-    """note 가 있으면 Gemini 를 호출한다."""
+    """note 가 있으면 Gemini 를 호출하고 note_response 필드가 생긴다."""
     called = False
 
     def fake_generate(prompt, *, max_tokens=350, temperature=0.5, json_mode=False):
@@ -172,6 +172,20 @@ def test_note_triggers_gemini_call():
 
     assert called is True
     assert result["source"] == "local"
+    assert "note_response" in result
+    assert result["note_response"] == "화장과 수목장 비교 안내"
+
+
+def test_note_guidance_still_uses_template():
+    """note 있을 때도 guidance 는 STEP_TEMPLATES 에서 온다."""
+    def fake_generate(prompt, *, max_tokens=350, temperature=0.5, json_mode=False):
+        return "Gemini 답변"
+
+    result = generate_funeral_guidance(
+        "immediate", PET, note="뭘 해야 하나요", generate=fake_generate
+    )
+    assert PET["name"] in result["guidance"]
+    assert result["guidance"] == funeral_prompt.STEP_TEMPLATES["immediate"].format(name=PET["name"])
 
 
 def test_note_passes_step_in_prompt():
@@ -194,6 +208,7 @@ def test_note_custom_source():
         "method", PET, note="질문이요", generate=fake_generate, source="perso"
     )
     assert result["source"] == "perso"
+    assert "note_response" in result
 
 
 # --------------------------------------------------------------------------- #
