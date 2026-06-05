@@ -45,6 +45,7 @@ _TEMPERATURE: float = 0.7
 # 위기 안내가 필요할 때 메시지 대신 내보내는 안내문.
 # 🚨 1393 은 CRISIS_HOTLINE 상수로만 — 하드코딩 금지(../CLAUDE.md §0).
 _CRISIS_NOTICE: str = (
+    "지금은 안전이 먼저입니다. "
     "지금 많이 힘드신 것 같아요. 혼자 견디지 않으셔도 됩니다. "
     f"언제든 자살예방 상담전화 {CRISIS_HOTLINE}(24시간)으로 마음을 나눠 주세요."
 )
