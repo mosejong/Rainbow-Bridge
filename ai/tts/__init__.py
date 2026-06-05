@@ -6,6 +6,6 @@
    음성도 **보호자 대상 위로 낭독**입니다. 반려동물 목소리 흉내 ❌.
 """
 
-from .tts import TtsTone, synthesize
+from .tts import AVAILABLE_VOICES, TtsTone, synthesize
 
-__all__ = ["TtsTone", "synthesize"]
+__all__ = ["AVAILABLE_VOICES", "TtsTone", "synthesize"]
