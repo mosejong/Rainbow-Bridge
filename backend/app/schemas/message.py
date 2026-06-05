@@ -11,6 +11,7 @@ class MessageCreate(BaseModel):
     note: Optional[str] = Field(None, description="보호자 메모")
     consent: bool = Field(False, description="1인칭 편지 동의 여부")
 
+
 class MessageResponse(BaseModel):
     id: str
     pet_id: str
