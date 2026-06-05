@@ -18,7 +18,7 @@ services:
     env_file:
       - ../.env
     environment:
-      MONGO_URI: mongodb://mongo:27017
+      MONGO_URI: mongodb://rainbow_mongo:27017
     volumes:
       - ../uploads:/app/backend/uploads
     depends_on:
