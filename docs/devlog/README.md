@@ -174,7 +174,7 @@
 | 모세종 | — | [→](members/모세종.md) |
 | 김윤한 | — | [→](members/김윤한.md) |
 | 반소람 | 위기 차단 문구 보강, 1단계 증상 진료 안내·2단계 장례 절차 상담 신규(프롬프트+로직+테스트), RAG few-shot 추모 메시지 연결 | [→](members/반소람.md#2026-06-05-day-5) |
-| 정환주 | — | [→](members/정환주.md) |
+| 정환주 | RAG 검색 파이프라인 신설(ChromaDB, PR #79)+검색 품질 실증 도구(Hit@1/MRR), 벡터DB 스터디·비교 문서(PR #73), ④ TTS 음성 다양화·실패 폴백(PR #71·#73), HHHHHMM 척도 모듈(도먼트), PERSO 아바타 핸드오프, 1단계 확장구조 역할분담 | [→](members/정환주.md#2026-06-05-day-5) |
 | 민경이 | — | [→](members/민경이.md) |
 | 장민수 | LivePortrait 영상+TTS 합치기 `merge_audio()`, driving 경로 env 분리(서버 배포 대비, PR #83), PERSO 동물 립싱크 테스트(이빨/입 자연스러움 확인) | [→](members/장민수.md#2026-06-05-day-5) |
 
