@@ -3,7 +3,8 @@ import app.core.ai_path  # noqa: F401  프로젝트 루트를 sys.path에 추가
 from ai.llm.safety import assess_crisis
 from ai.llm.provider import generate
 from app.db.mongodb import mongodb
-from app.schemas.emotion import EmotionCreate, EmotionResponse
+from app.db.redis_client import get_recent_emotions, push_emotion
+from app.schemas.emotion import EmotionCreate, EmotionResponse, RecoveryResponse
 
 CRISIS_HOTLINE = "1393"
 
@@ -21,6 +22,18 @@ async def create_emotion(data: EmotionCreate) -> EmotionResponse:
     doc["created_at"] = datetime.now(timezone.utc)
     result = await _collection().insert_one(doc)
     doc["id"] = str(result.inserted_id)
+
+    # Redis에 최근 감정 기록 캐시 (회복 분석용)
+    try:
+        await push_emotion(
+            pet_id=data.pet_id,
+            score=data.score,
+            risk_level=risk_level,
+            created_at=doc["created_at"].isoformat(),
+        )
+    except Exception:
+        pass  # Redis 장애가 체크인 자체를 막지 않도록
+
     response = EmotionResponse(**doc)
     if crisis.hotline_required:
         response.crisis_message = (
@@ -28,3 +41,45 @@ async def create_emotion(data: EmotionCreate) -> EmotionResponse:
             f"자살예방상담전화 {CRISIS_HOTLINE}로 연락해 주세요. 24시간 운영합니다."
         )
     return response
+
+
+async def get_recovery(pet_id: str) -> RecoveryResponse:
+    records = await get_recent_emotions(pet_id)
+
+    if not records:
+        return RecoveryResponse(
+            pet_id=pet_id,
+            total_checkins=0,
+            avg_score=None,
+            trend="데이터 없음",
+            recovery_pct=0,
+            latest_risk_level=None,
+            records=[],
+        )
+
+    scores = [r["score"] for r in records]
+    avg = round(sum(scores) / len(scores), 1)
+
+    # 회복 추이: 최근 절반 vs 앞쪽 절반 점수 비교
+    mid = max(1, len(scores) // 2)
+    recent_avg = sum(scores[:mid]) / mid
+    older_avg = sum(scores[mid:]) / max(len(scores[mid:]), 1)
+    if recent_avg > older_avg + 0.5:
+        trend = "회복 중"
+    elif recent_avg < older_avg - 0.5:
+        trend = "주의 필요"
+    else:
+        trend = "유지 중"
+
+    # 회복률: 평균 점수를 10점 만점 기준 %
+    recovery_pct = round(avg * 10)
+
+    return RecoveryResponse(
+        pet_id=pet_id,
+        total_checkins=len(records),
+        avg_score=avg,
+        trend=trend,
+        recovery_pct=recovery_pct,
+        latest_risk_level=records[0]["risk_level"],
+        records=records,
+    )
