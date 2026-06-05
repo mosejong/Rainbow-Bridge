@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from typing import Final, Optional
+from typing import Final, List, Optional
 
 # --------------------------------------------------------------------------- #
 # 단계별 고정 안내 텍스트 — note 없을 때 반환. {name} 만 치환.
@@ -135,7 +135,7 @@ _USER_TEMPLATE: Final[str] = """\
 
 [현재 단계]: {step_name}
 [이번 단계 안내 초점]: {step_focus}
-{choice_block}{note_block}\
+{choice_block}{note_block}{rag_block}\
 위 상황에서 보호자가 지금 해야 할 일을 3~5문장으로 안내해 주세요.
 {next_line}
 """
@@ -155,6 +155,14 @@ def _format_note(note: str) -> str:
     return f"[보호자 메모]: {note.strip()}\n"
 
 
+def _format_rag(hits: Optional[List[dict]]) -> str:
+    """RAG 검색 결과를 few-shot 예시 블록으로. 없으면 빈 문자열."""
+    if not hits:
+        return ""
+    examples = "\n".join(f'  - "{h["text"]}"' for h in hits)
+    return f"\n[참고 안내글 예시 — 톤과 표현 방식만 참고하세요]\n{examples}\n"
+
+
 def next_step(step: str) -> Optional[str]:
     """현재 단계의 다음 단계 키를 반환합니다. 마지막 단계면 None."""
     try:
@@ -172,6 +180,7 @@ def build_messages(
     species: str = "",
     choice: str = "",
     note: str = "",
+    rag_hits: Optional[List[dict]] = None,
 ) -> list[dict[str, str]]:
     """장례 절차 상담용 OpenAI 호환 chat 메시지 배열을 만듭니다.
 
@@ -203,6 +212,7 @@ def build_messages(
         step_focus=step_focus,
         choice_block=_format_choice(choice),
         note_block=_format_note(note),
+        rag_block=_format_rag(rag_hits),
         next_line=next_line,
     )
     return [

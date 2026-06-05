@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 from typing import Optional, Protocol
 
+from ai.rag.retrieve import retrieve as _rag_retrieve
 from .prompts import mission as mission_prompt
 
 
@@ -163,6 +164,14 @@ def recommend(
     recent: set[str] = set(history or [])
     score = emotion_score if emotion_score is not None else 5
 
+    # RAG 검색 — 회복 미션 예시 검색. 실패 시 graceful fallback.
+    rag_hits = None
+    try:
+        query = mission_prompt.DIFFICULTY_GUIDE.get(difficulty, "회복 미션")
+        rag_hits = _rag_retrieve(query, k=3)
+    except Exception:
+        rag_hits = None
+
     missions: list[dict] = []
 
     # LLM 개인화 시도 — 실패/이상 출력이면 조용히 폴백.
@@ -174,6 +183,7 @@ def recommend(
                 day_since=day_since,
                 recent_titles=sorted(recent),
                 count=count,
+                rag_hits=rag_hits,
             )
             raw = generate(
                 prompt,

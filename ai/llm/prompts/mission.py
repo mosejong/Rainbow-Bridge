@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 
-from typing import Final, Optional
+from typing import Final, List, Optional
 
 # 미션 카테고리 (백엔드/프론트 분류 대비)
 CATEGORIES: Final[tuple[str, ...]] = (
@@ -54,10 +54,18 @@ _USER_TEMPLATE: Final[str] = """\
 - 난이도 지침: {difficulty_guide}
 - 반려동물을 떠나보낸 지: {day_since_text}
 - 최근 받은 미션(겹치지 않게 피하세요): {recent}
-
+{rag_block}
 [요청]
 위 상태에 맞는 회복 미션 {count}개를 JSON 으로 제안하세요.
 """
+
+
+def _format_rag(hits: Optional[List[dict]]) -> str:
+    """RAG 검색 결과를 참고 예시 블록으로. 없으면 빈 문자열."""
+    if not hits:
+        return ""
+    examples = "\n".join(f'  - "{h["text"]}"' for h in hits)
+    return f"[참고 미션 예시 — 표현 방식만 참고하세요]\n{examples}"
 
 
 def build_prompt(
@@ -67,6 +75,7 @@ def build_prompt(
     day_since: Optional[int] = None,
     recent_titles: Optional[list[str]] = None,
     count: int = 3,
+    rag_hits: Optional[List[dict]] = None,
 ) -> str:
     """미션 추천용 전체 프롬프트(system+user)를 만듭니다.
 
@@ -88,5 +97,6 @@ def build_prompt(
         day_since_text=day_text,
         recent=recent,
         count=count,
+        rag_block=_format_rag(rag_hits),
     )
     return f"{SYSTEM_PROMPT}\n\n{user}"

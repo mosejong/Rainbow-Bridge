@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from typing import Optional, Protocol
 
+from ai.rag.retrieve import retrieve as _rag_retrieve
 from .prompts import funeral as funeral_prompt
 from .safety import CRISIS_HOTLINE, detect_crisis
 
@@ -89,13 +90,25 @@ def generate_funeral_guidance(
             "source": "template",
         }
 
-    # (3) note 있으면 Gemini 호출 (질문에 맞춤 답변).
+    # (3) RAG 검색 — 현재 단계 안내글 top-3 검색. 실패 시 graceful fallback.
+    rag_hits = None
+    try:
+        query_parts: list[str] = [note]
+        step_focus = funeral_prompt.STEP_FOCUS.get(step, "")
+        if step_focus:
+            query_parts.append(step_focus)
+        rag_hits = _rag_retrieve(" ".join(query_parts), k=3)
+    except Exception:
+        rag_hits = None
+
+    # (4) note 있으면 Gemini 호출 (질문에 맞춤 답변).
     messages = funeral_prompt.build_messages(
         step,
         name=pet.get("name", ""),
         species=pet.get("species", ""),
         choice=choice,
         note=note,
+        rag_hits=rag_hits,
     )
     prompt = f"{messages[0]['content']}\n\n{messages[1]['content']}"
     guidance = generate(prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE).strip()
