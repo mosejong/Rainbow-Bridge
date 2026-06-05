@@ -229,6 +229,32 @@ python inference_animals.py -s <pet> -d <driving> --no_flag_stitching --driving_
 
 ---
 
+### 2026-06-05 — PERSO 립싱크 실연동 검증
+
+**목표:** voiced 영상(LivePortrait+TTS) → PERSO → 동물 입모양이 음성에 맞춰지는지(립싱크) + 이빨/품질 확인. (스크럼 "PERSO 립싱크 미검증" 항목 해소)
+
+**방법:** `voiced.mp4`(강아지·고양이 + 한국어 낭독)를 PERSO video-translator에 업로드 → 더빙 → 결과 다운로드. 테스트 스크립트: [perso_lipsync_test.py](perso_lipsync_test.py) (키는 `.env`, 결과·입력은 `output/` gitignore).
+
+**결과:**
+- ✅ **PERSO 동물 얼굴 립싱크 동작 확인** — 강아지·고양이 입이 음성에 맞춰 열림/닫힘 (사람 전용 아님)
+- ✅ 파이프라인 전체 통과: SAS 업로드 → 미디어 등록 → 큐 → 프로젝트 → 폴링 → 다운로드
+
+**API 사용 시 알아낸 것 (백엔드 `run_perso` 참고용):**
+| 발견 | 내용 |
+|------|------|
+| `/lip-sync` 엔드포인트 | **GET 전용**(POST·PUT 405) → 별도 생성 API 아님. `/translate`가 곧 립싱크 |
+| 번역 없이 한국어 유지 | `translate` 를 **`source=ko, target=ko`** 로 보내면 한국어 유지 + 립싱크 (현 `run_perso`는 `en`이라 영어로 번역됨 → `ko`로 바꾸면 한국어) |
+| "목소리 없음" 에러 | 입력 영상에 **실제 speech 오디오 필수** (무음·사인톤 ❌). driving 영상 d18 오디오는 -91dB 무음이라 실패 → Google TTS 낭독 입혀 해결 |
+
+**품질 결론 (정지 프레임 + 재생 비교):**
+- ❌ **PERSO도 또렷한 이빨은 못 그림** — 혀·어두운 입속 위주 (LivePortrait와 동일, 소스 사진에 이빨 없으면 생성 안 됨)
+- 화질·이빨 차이 거의 없음. **유일한 차이 = 입 타이밍을 실제 음성 음소에 맞춤**(미세, 정지 프레임으론 거의 구분 안 됨)
+- → **PERSO의 시각적 이득은 작음.** 발표 서사 "기술 가능하나 시각적 이득 적음 + 윤리선 근접 → 기본은 잔잔(0.4), PERSO는 opt-in"을 데이터로 뒷받침. (윤리 기준: [docs/ETHICS_추모표현_가이드.md](../../docs/ETHICS_추모표현_가이드.md) §3)
+
+**증거 영상(gitignore, 로컬):** `output/_perso_test/COMPARE_cat_default_vs_perso.mp4`(좌 기본0.4｜우 PERSO), `perso_result_*.mp4`
+
+---
+
 ## 모드별 현황
 
 | 모드 | 상태 | 비고 |
@@ -239,6 +265,7 @@ python inference_animals.py -s <pet> -d <driving> --no_flag_stitching --driving_
 | Animals (기타 종) | ✅ 동작 확인 | 토끼·햄스터·앵무·올빼미·말·금붕어·도마뱀 7종 |
 | 추모 톤 (입 억제) | ✅ 해결 | `driving_multiplier 0.4` 확정 (eyes 모드 ❌ 동물 무효) |
 | TTS 음성 합치기 | ✅ 구현·검증 | `merge_audio()` — 영상 loop + 음성 길이 맞춤, libx264/aac |
+| PERSO 립싱크 | ✅ 검증 | 동물 립싱크 동작 확인, 이빨 미생성·시각이득 작음 → opt-in 권장 |
 | 잔잔한 driving 템플릿 | ⏳ 진행 중 | 입 다문 영상 제작 시 품질↑ |
 
 ---
