@@ -1,6 +1,6 @@
 # 프론트엔드 MVP 실행 계획 — 레인보우 브릿지
 
-> 담당: 민경이 · 장민수 | 작성: 2026-06-02 | 발표: 2026-06-19 (D-17)
+> 담당: 민경이 · 장민수 | 작성: 2026-06-02 | 최종 수정: 2026-06-05 | 발표: 2026-06-19 (D-14)
 > 전체 협업 규칙: [CONTRIBUTING.md](../docs/CONTRIBUTING.md) | 아키텍처: [ARCHITECTURE.md](../docs/ARCHITECTURE.md)
 
 > **백엔드 API 주소 (ngrok, 서버 켜있는 동안 사용):**
@@ -10,16 +10,78 @@
 
 ---
 
+## 0. 플랫폼 전략 (2026-06-05 확정)
+
+### 웹(병원용) + Android 앱(유저용) 이중 배포
+
+| 배포 대상 | 플랫폼 | 기술 | 대상 사용자 |
+|------|------|------|------|
+| 웹 | 브라우저 | Vite + React 빌드 → 서버 배포 | 병원·관련 기관 |
+| Android 앱 | Google Play / APK | **Capacitor** (기존 코드 재사용) | 반려동물 보호자 |
+
+> iOS(아이폰)는 Mac + 애플 개발자 계정 필요 → **이번 MVP 범위 제외**
+
+### 결정 과정 요약
+
+처음에는 발표 일정(6/19)만 고려해서 **PWA**를 검토했음.
+하지만 "핸드폰에 앱 아이콘 생기고, 설치해서 앱처럼 쓰고 싶다"는 요구 확인 후 → **Capacitor**로 확정.
+
+| | PWA | Capacitor (확정) |
+|---|---|---|
+| 홈 화면 아이콘 | ⚠️ 브라우저에서 "홈 추가" 필요 | ✅ 진짜 앱 아이콘 |
+| 풀스크린 실행 | ⚠️ 브라우저 잔재 있음 | ✅ 주소창 없는 앱 |
+| APK 설치 (발표용) | ❌ | ✅ |
+| Google Play 출시 | ❌ | ✅ |
+| iOS 지원 | ✅ | ❌ (Mac 없어서 제외) |
+| 세팅 시간 | 반나절 | 1~2일 |
+
+**최종 결정: Capacitor (Android 전용)** — iOS는 Mac + 애플 개발자 계정 필요하므로 이번 MVP 제외.
+
+### 왜 Capacitor인가? (React Native 재작성 안 하는 이유)
+
+| | Capacitor | React Native |
+|---|---|---|
+| 기존 React 코드 | **그대로 사용** | 전부 재작성 필요 |
+| 작업량 | 세팅 1~2일 | 2주 이상 |
+| 6/19 발표까지 가능? | ✅ | ❌ |
+| Android 앱 배포 | ✅ | ✅ |
+| Mac 없이 Android 빌드 | ✅ | ✅ |
+| 실제 앱 아이콘 | ✅ | ✅ |
+| 핸드폰에 직접 설치(APK) | ✅ | ✅ |
+
+### Capacitor 동작 방식
+
+```
+npm run build (Vite)
+    ↓
+dist/ 폴더 (HTML + JS + CSS)
+    ↓
+Capacitor가 Android WebView 안에 넣음
+    ↓
+Android Studio → APK 빌드
+    ↓
+핸드폰에 설치 → 홈 화면 아이콘 생성 → 앱처럼 실행
+```
+
+### 사용자가 보는 것
+
+- **홈 화면에 레인보우 브릿지 아이콘** 생김
+- 아이콘 탭 → **풀스크린으로 앱 실행** (브라우저 주소창 없음)
+- Google Play 출시 전에도 **APK 파일로 바로 설치** 가능 (테스트·발표용)
+
+---
+
 ## 1. 기술 스택 확정
 
 | 영역 | 선택 | 이유 |
 |------|------|------|
-| 빌드 | **Vite + React 18** | 빠른 HMR, 설정 최소, 18일 일정에 최적 |
+| 빌드 | **Vite + React 18** | 빠른 HMR, 설정 최소, 일정에 최적 |
 | 언어 | **JavaScript** (JS 우선) | 둘 다 처음이면 JS로 시작 → 나중에 TS 전환 가능 |
 | 라우팅 | **React Router v6** | 페이지 전환 |
 | HTTP | **axios** | 인터셉터로 에러·로딩 공통 처리 |
 | 스타일 | **Tailwind CSS** | 빠른 UI 구성, 클래스 재사용 |
 | 상태 | **React useState/useEffect** (기본) | TanStack Query는 선택 사항 |
+| 모바일 앱 패키징 | **Capacitor** | 기존 웹 코드 → Android APK 변환 |
 
 > 장민수님이 Node.js/npm 설치가 안 됐다면 오늘 먼저 해결하고 시작하세요. (아래 §7 셋업 참고)
 
@@ -56,10 +118,11 @@
 
 | 항목 | 담당 | 시점 |
 |------|------|------|
-| Vite 프로젝트 초기 세팅 | **민경이** (먼저 push → 장민수 pull) | 오늘 |
-| 공통 컴포넌트 (`Button`, `Card`, `LoadingSpinner`) | **민경이** | 1주차 |
-| axios 인스턴스 + Mock 데이터 | **민경이** | 1주차 |
-| 앱 라우팅 (`App.jsx`) | **민경이** | 1주차 |
+| Vite 프로젝트 초기 세팅 | **민경이** (먼저 push → 장민수 pull) | 완료 |
+| 공통 컴포넌트 (`Button`, `Card`, `LoadingSpinner`) | **민경이** | 완료 |
+| axios 인스턴스 + Mock 데이터 | **민경이** | 완료 |
+| 앱 라우팅 (`App.jsx`) | **민경이** | 완료 |
+| **Capacitor Android 앱 세팅** | **민경이** | 2주차 |
 
 > ⚠️ `api/`, `components/`, `App.jsx` 는 공통 파일 — 수정할 때는 서로 미리 얘기하고 PR 올리기
 
@@ -72,26 +135,36 @@ frontend/
 ├── FRONTEND_PLAN.md       ← 이 파일
 ├── package.json
 ├── vite.config.js
+├── capacitor.config.ts    ← Capacitor 세팅 후 생성됨
 ├── index.html
+├── android/               ← Capacitor 세팅 후 생성됨 (Android Studio 프로젝트)
 └── src/
     ├── api/
     │   ├── axiosInstance.js   # baseURL, 헤더 공통 설정
+    │   ├── auth.js            # 로그인/회원가입
     │   ├── pets.js            # /api/v1/pets 관련 함수
     │   ├── emotions.js        # /api/v1/emotions
     │   ├── messages.js        # /api/v1/messages
     │   ├── missions.js        # /api/v1/missions
     │   ├── timeline.js        # /api/v1/timeline
     │   ├── report.js          # /api/v1/report
-    │   └── media.js           # /api/v1/media
+    │   ├── media.js           # /api/v1/media
+    │   ├── hospitals.js       # /api/v1/hospitals (다음 주 연동 예정)
+    │   └── funerals.js        # /api/v1/funerals (다음 주 연동 예정)
     ├── components/
-    │   ├── Button.jsx         # 공통 버튼
-    │   ├── Card.jsx           # 공통 카드
-    │   ├── LoadingSpinner.jsx # 로딩 표시
+    │   ├── Button.jsx
+    │   ├── Card.jsx
+    │   ├── LoadingSpinner.jsx
     │   └── SafetyModal.jsx    # 1393 경고 모달 (민경이, 최우선)
     ├── pages/
+    │   ├── LoginPage.jsx      # 민경이
+    │   ├── RegisterPage.jsx   # 민경이
     │   ├── ProfilePage.jsx    # 민경이
     │   ├── EmotionPage.jsx    # 민경이
     │   ├── MessagePage.jsx    # 민경이
+    │   ├── SymptomsPage.jsx   # 민경이 (병원 카드 포함)
+    │   ├── HealthRecordsPage.jsx # 민경이 (투약·검진 기록)
+    │   ├── FuneralPage.jsx    # 민경이 (장례 안내)
     │   ├── TtsPage.jsx        # 장민수
     │   ├── MissionPage.jsx    # 장민수
     │   ├── TimelinePage.jsx   # 장민수
@@ -113,6 +186,7 @@ frontend/
 
 | 기능 | 메서드 | 경로 | 담당 페이지 |
 |------|--------|------|------------|
+| 로그인 | `POST` | `/api/v1/auth/login` | LoginPage |
 | 프로필 등록 | `POST` | `/api/v1/pets` | ProfilePage |
 | 감정 체크인 | `POST` | `/api/v1/emotions` | EmotionPage |
 | 메시지 생성 | `POST` | `/api/v1/messages/generate` | MessagePage |
@@ -122,60 +196,9 @@ frontend/
 | 타임라인 | `GET` | `/api/v1/timeline/{pet_id}` | TimelinePage |
 | 리포트 | `GET` | `/api/v1/report/{pet_id}` | ReportPage |
 | 사진 업로드 | `POST` | `/api/v1/media/upload` | MediaPage |
-
-### Mock 데이터 예시 (백엔드 전 임시 사용)
-
-```js
-// src/api/axiosInstance.js
-import axios from 'axios';
-
-const api = axios.create({
-  // 백엔드 서버가 켜있을 때: ngrok URL
-  // 꺼있을 때: Mock 데이터로 대체
-  baseURL: 'https://preacher-posing-lair.ngrok-free.dev',
-  headers: { 'Content-Type': 'application/json' },
-});
-
-export default api;
-```
-
-```js
-// src/api/mock.js
-export const mockPet = {
-  _id: "pet_001",
-  name: "콩이",
-  species: "강아지",
-  period: "2018-2026",
-  memories: ["공원 산책", "간식 좋아함", "낮잠 자는 거 좋아함"],
-  photo_url: null,
-};
-
-export const mockEmotion = {
-  _id: "emo_001",
-  pet_id: "pet_001",
-  mood: "슬픔",
-  note: "오늘 콩이 생각이 많이 났어",
-  risk_flag: false,
-};
-
-export const mockMessage = {
-  _id: "msg_001",
-  pet_id: "pet_001",
-  content: "콩이는 당신과 함께한 모든 순간을 소중히 간직하고 있을 거예요. 공원 산책도, 함께한 낮잠도 모두 아름다운 기억입니다.",
-  tone: "따뜻함",
-};
-
-export const mockMissions = [
-  { _id: "mis_001", title: "오늘 5분 산책하기", done: false },
-  { _id: "mis_002", title: "콩이 사진 1장 꺼내보기", done: false },
-  { _id: "mis_003", title: "좋아하는 음악 듣기", done: true },
-];
-
-export const mockTimeline = [
-  { _id: "tl_001", type: "emotion", ref_id: "emo_001", created_at: "2026-06-01" },
-  { _id: "tl_002", type: "message", ref_id: "msg_001", created_at: "2026-06-02" },
-];
-```
+| 주변 병원 | `GET` | `/api/v1/hospitals` | SymptomsPage |
+| 장례식장 | `GET` | `/api/v1/funerals` | FuneralPage |
+| 장례 기록 | `POST` | `/api/v1/funeral-records` | FuneralPage |
 
 ---
 
@@ -237,16 +260,8 @@ function SafetyModal({ isOpen, onClose }) {
 
 **제출 시 동작:**
 1. `POST /api/v1/pets` 호출
-2. 성공 → `pet_id` 저장 (localStorage 또는 상태) → EmotionPage로 이동
+2. 성공 → `pet_id` 저장 (localStorage) → EmotionPage로 이동
 3. 실패 → 에러 메시지 표시
-
-**상태 관리:**
-```js
-const [form, setForm] = useState({
-  name: '', species: '강아지', period: '', memories: [], photo: null
-});
-const [petId, setPetId] = useState(null); // 저장 후 이 ID로 이후 API 호출
-```
 
 ---
 
@@ -254,18 +269,17 @@ const [petId, setPetId] = useState(null); // 저장 후 이 ID로 이후 API 호
 
 **UI:**
 - 오늘 기분을 선택하세요 (이모지 버튼 5개)
-  - 😊 괜찮아요 / 😔 슬퍼요 / 😢 많이 힘들어요 / 😰 너무 힘들어요 / 😶 잘 모르겠어요
 - 선택한 감정 텍스트 + 선택적 메모 입력칸
 
 **위험 감정 처리 (핵심!):**
 ```js
-const RISK_MOODS = ['너무 힘들어요']; // 백엔드에서도 감지하지만 프론트 선제 처리
+const RISK_MOODS = ['너무 힘들어요'];
 
 async function handleSubmit() {
   const response = await postEmotion({ mood, note, pet_id });
   if (response.risk_flag || RISK_MOODS.includes(mood)) {
-    setSafetyOpen(true); // 모달 띄우기
-    return; // 다음 화면으로 자동 이동하지 않음
+    setSafetyOpen(true);
+    return;
   }
   navigate('/message');
 }
@@ -280,7 +294,7 @@ async function handleSubmit() {
 2. **완료 상태**: 메시지 카드 (둥근 카드, 파스텔 배경)
 3. **버튼**: [다시 생성] [음성으로 듣기 → TtsPage]
 
-**주의:** "반려동물인 척" 하는 메시지 형태 금지 (ARCHITECTURE 8번 원칙)
+**주의:** "반려동물인 척" 하는 메시지 형태 금지
 - ✅ "콩이와 함께한 공원 산책은..."
 - ❌ "안녕 나 콩이야, 잘 지내?"
 
@@ -292,14 +306,6 @@ async function handleSubmit() {
 - 톤 선택: [따뜻하게 / 차분하게 / 부드럽게] 버튼
 - 선택 후 [낭독 시작] 버튼
 - 오디오 플레이어 (재생/일시정지/음량)
-
-**API 연동:**
-```js
-// POST /api/v1/messages/{id}/tts → { audio_url: "..." } 응답
-const response = await generateTts({ message_id, tone });
-setAudioUrl(response.audio_url);
-// <audio src={audioUrl} controls />
-```
 
 ---
 
@@ -324,89 +330,93 @@ setAudioUrl(response.audio_url);
 ### ⑧ ReportPage — 평가 리포트 (민경이)
 
 **UI:**
-- 감정 변화 그래프 (간단한 막대 or 선 그래프)
-  - 라이브러리: `recharts` (npm install recharts)
+- 감정 변화 그래프 (recharts 라이브러리)
 - 미션 완료율 (%)
 - 추모 메시지 생성 횟수
 
 ---
 
-## 6. 일정표 (D-17, 2026-06-02 ~ 06-19)
+## 6. 일정표 (2026-06-02 ~ 06-19)
 
-### 1주차 (6/2~6/8) — 세팅 + 핵심 기능
+### 1주차 (6/2~6/8) — 세팅 + 핵심 기능 ✅ 완료
 
-| 날짜 | 민경이 할 일 | 장민수 할 일 |
-|------|------------|------------|
-| **6/2 (오늘)** | Vite 프로젝트 생성 + push | 세팅 파일 pull + 환경 세팅 |
-| 6/3 | SafetyModal 완성 (최우선) | TtsPage 레이아웃 잡기 |
-| 6/4 | ProfilePage 완성 | MissionPage 카드 UI |
-| 6/5 | EmotionPage + SafetyModal 연결 | TimelinePage 레이아웃 |
-| 6/6~8 | MessagePage (로딩+카드) | 각 페이지 마무리 |
+| 날짜 | 민경이 | 장민수 |
+|------|--------|--------|
+| 6/2~3 | Vite 세팅 + 공통 컴포넌트 + ProfilePage | 환경 세팅 |
+| 6/4~5 | EmotionPage + MessagePage + SymptomsPage 병원 카드 | TtsPage, MissionPage |
+| 6/5 | **HealthRecordsPage 신규 · FuneralPage 신규 · 모바일 반응형 수정** | |
+| 6/6~8 | 린트 정리, dev 머지, PR 정리 | 각 페이지 마무리 |
 
-### 2주차 (6/9~6/15) — API 연동
+### 2주차 (6/9~6/13) — API 연동 + Android 앱 패키징
 
 | 날짜 | 할 일 |
 |------|------|
-| 6/9~10 | 백엔드 API 확인 + axiosInstance 연동 시작 |
-| 6/11~12 | Mock 데이터 → 실제 API로 교체 (기능별로) |
-| 6/13~15 | 위험 감정 플로우 전체 테스트 + 버그 수정 |
+| 6/9~10 | 백엔드 API 연동 (hospitals, funerals) · axiosInstance 실서버 교체 |
+| 6/11~12 | Mock 데이터 → 실제 API로 교체 (기능별) |
+| 6/12~13 | **Capacitor 세팅 + Android Studio 빌드 + 핸드폰 APK 설치 테스트** |
+
+#### Capacitor Android 세팅 순서 (6/12~13 예정)
+
+> 사전 조건: Android Studio + JDK 17 설치 필요
+
+```bash
+# 1. Capacitor 설치
+npm install @capacitor/core @capacitor/cli @capacitor/android
+
+# 2. 초기화 (앱 이름, 패키지명 입력)
+npx cap init "레인보우브릿지" "com.rainbowbridge.app"
+
+# 3. Vite 빌드
+npm run build
+
+# 4. Android 플랫폼 추가
+npx cap add android
+
+# 5. 빌드 결과물 동기화
+npx cap sync android
+
+# 6. Android Studio로 열기
+npx cap open android
+# → Android Studio에서 Run 버튼 → 핸드폰 연결 or 에뮬레이터
+```
+
+**APK 빌드 후 확인 사항:**
+- [ ] 홈 화면에 앱 아이콘 생성
+- [ ] 아이콘 탭 → 풀스크린 앱 실행 (주소창 없음)
+- [ ] 로그인 → 감정 체크인 → 메시지 카드 전체 플로우
+- [ ] 전화 버튼(1393) 탭 → 전화 앱 실행
 
 ### 3주차 (6/16~6/19) — 통합 + 발표 준비
 
 | 날짜 | 할 일 |
 |------|------|
 | 6/16~17 | 전체 플로우 연결 테스트 (프로필→감정→메시지→미션) |
-| 6/18 | 디자인 통일, 에러/로딩 처리, 모바일 대응 |
-| 6/19 | 발표 리허설, 데모 환경 점검 |
+| 6/18 | 앱 아이콘 디자인 확정, 에러/로딩 처리, 모바일 대응 최종 점검 |
+| 6/19 | 발표 리허설, 데모 환경 점검 (APK 설치 상태로 발표) |
 
 ---
 
-## 7. 오늘(6/2) 당장 해야 할 것
+## 7. Capacitor 세팅 시 주의사항
 
-### 민경이 — Vite 프로젝트 세팅 (1~2시간)
+### API 주소 처리
 
-```bash
-# 1. frontend 폴더에서 실행
-cd C:\Users\kysop\Team_Rainbow_Bridge\Rainbow-Bridge\frontend
+Capacitor 앱은 `file://` 프로토콜로 실행되기 때문에 `localhost`에 접근이 안 됨. 반드시 ngrok URL 또는 실서버 주소 사용.
 
-# 2. Vite 프로젝트 생성 (현재 폴더에)
-npm create vite@latest . -- --template react
-# → 덮어쓰기 여부 물으면 y
-
-# 3. 의존성 설치
-npm install
-
-# 4. Tailwind CSS 설치
-npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
-
-# 5. axios + react-router-dom 설치
-npm install axios react-router-dom
-
-# 6. 개발 서버 실행 확인
-npm run dev
-# 브라우저에서 http://localhost:5173 열려야 함
-
-# 7. Tailwind 설정 — tailwind.config.js 수정
-# content: ["./index.html", "./src/**/*.{js,jsx}"] 로 변경
-
-# 8. src/index.css 맨 위에 추가
-# @tailwind base;
-# @tailwind components;
-# @tailwind utilities;
+```js
+// src/api/axiosInstance.js
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://preacher-posing-lair.ngrok-free.dev',
+});
 ```
 
-### 장민수 — 세팅 완료 후 (민경이 push 기다렸다가)
+### Android 권한 (필요 시 추가)
 
-```bash
-# 민경이가 push 하면:
-git checkout jangminsu
-git merge dev    # dev에 민경이 PR 머지된 후
+- 카카오맵 위치 기반: `android/app/src/main/AndroidManifest.xml`에 위치 권한 추가
+- 사진 업로드: 카메라·갤러리 접근 권한
 
-cd frontend
-npm install      # package.json 기반 의존성 설치
-npm run dev      # 실행 확인
-```
+### 앱 아이콘 변경
+
+`android/app/src/main/res/` 폴더의 아이콘 파일을 교체하거나 Capacitor Assets 플러그인 사용.
 
 ---
 
@@ -420,14 +430,14 @@ npm run dev      # 실행 확인
 
 ---
 
-## 9. 공통 컴포넌트 스펙 (민경이가 먼저 만들기)
+## 9. 공통 컴포넌트 스펙
 
 ```jsx
 // components/Button.jsx
-// props: children, onClick, variant("primary"|"danger"|"ghost"), disabled
+// props: children, onClick, variant("primary"|"danger"|"ghost"), disabled, className
 // primary: 보라색 배경 / danger: 빨간색 / ghost: 테두리만
 
-// components/Card.jsx  
+// components/Card.jsx
 // props: children, className(추가 클래스)
 // 기본: 흰 배경, 둥근 모서리(rounded-2xl), 그림자(shadow-md), 패딩(p-6)
 
@@ -449,8 +459,6 @@ npm run dev      # 실행 확인
 | 텍스트 주 | `gray-800` |
 | 텍스트 보조 | `gray-500` |
 | 카드 배경 | 흰색 + 그림자 |
-
-> 폰트: 기본 시스템 폰트 사용. 나눔고딕 등 한글 폰트 추가 시 팀과 상의.
 
 ---
 
