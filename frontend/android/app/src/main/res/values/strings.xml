@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">레인보우브릿지</string>
+    <string name="title_activity_main">레인보우브릿지</string>
+    <string name="package_name">com.rainbowbridge.app</string>
+    <string name="custom_url_scheme">com.rainbowbridge.app</string>
+</resources>
