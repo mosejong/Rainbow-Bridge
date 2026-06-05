@@ -9,7 +9,7 @@ class MessageCreate(BaseModel):
     tone: str = Field("warm", description="메시지 톤 (warm·calm·hopeful)")
     emotion_score: Optional[int] = Field(None, ge=1, le=10, description="감정 점수")
     note: Optional[str] = Field(None, description="보호자 메모")
-
+    consent: bool = Field(False, description="1인칭 편지 동의 여부")
 
 class MessageResponse(BaseModel):
     id: str
