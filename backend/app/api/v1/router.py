@@ -8,6 +8,7 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     admin,
+    vets,
     auth,
     emotions,
     hospitals,
@@ -35,3 +36,4 @@ api_router.include_router(llm_logs.router, prefix="/llm-logs", tags=["llm_logs"]
 api_router.include_router(hospitals.router, prefix="/hospitals", tags=["hospitals"])
 api_router.include_router(media.router, prefix="/media", tags=["media"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
+api_router.include_router(vets.router, prefix="/vets", tags=["vets"])
