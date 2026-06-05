@@ -32,6 +32,10 @@ from typing import Final, Optional
 # 음성 파일 저장 위치 — git 미포함(.gitignore). 백엔드 MediaAsset 와 합의 후 조정.
 _OUTPUT_DIR: Final[str] = os.environ.get("TTS_OUTPUT_DIR", "ai/tts/_output")
 
+# 합성 실패(키 없음·할당량·네트워크·데모 오프라인) 시 폴백할 샘플 mp3 폴더.
+# 미리 `make_samples.py` 로 생성해 둔다. *.mp3 는 .gitignore 됨(각자 로컬).
+_SAMPLE_DIR: Final[str] = os.environ.get("TTS_SAMPLE_DIR", "ai/tts/_samples")
+
 # 한국어 음성 (Google Cloud TTS). 최종 음성/이름은 후기 비교 후 확정.
 _LANGUAGE_CODE: Final[str] = "ko-KR"
 _VOICE_NAME: Final[str] = os.environ.get("TTS_VOICE", "ko-KR-Neural2-A")
@@ -102,6 +106,15 @@ def _resolve_voice(voice: Optional[str]) -> str:
 _SENTENCE_SPLIT_RE: Final[re.Pattern[str]] = re.compile(r"(?<=[.!?。…\n])\s+")
 
 
+def _fallback_path(tone: TtsTone) -> Optional[str]:
+    """합성 실패 시 쓸 샘플 mp3 경로. 톤별 샘플 우선, 없으면 공통, 둘 다 없으면 None."""
+    per_tone = os.path.join(_SAMPLE_DIR, f"fallback_{tone.value}.mp3")
+    if os.path.exists(per_tone):
+        return per_tone
+    generic = os.path.join(_SAMPLE_DIR, "fallback.mp3")
+    return generic if os.path.exists(generic) else None
+
+
 def _split_text(text: str, max_chars: int = _MAX_CHARS) -> list[str]:
     """긴 텍스트를 문장 경계로 나눠 청크(<= max_chars)로 묶습니다."""
     sentences = _SENTENCE_SPLIT_RE.split(text.strip())
@@ -163,8 +176,9 @@ def synthesize(
         filename: 저장 파일명(미지정 시 자동).
 
     Returns:
-        {"audio_path": str, "duration": float, "format": "mp3"}
-        — 백엔드 MediaAsset 형태와 합의해 조정.
+        {"audio_path": str, "duration": float, "format": "mp3", "fallback": bool}
+        — 백엔드 MediaAsset 형태와 합의해 조정. `fallback`은 합성 실패로
+        샘플 mp3를 대신 돌려줬는지 여부(실패 대비).
 
     Raises:
         RuntimeError: Google Cloud TTS 라이브러리/인증이 준비되지 않은 경우.
@@ -177,11 +191,27 @@ def synthesize(
     params = _TONE_MAP[tone]
     voice_name = _resolve_voice(voice)
     chunks = _split_text(text)
-    audio = _synthesize_google(chunks, params, voice_name)
 
     os.makedirs(_OUTPUT_DIR, exist_ok=True)
     name = filename or f"tts_{tone.value}_{abs(hash(text)) % 10_000_000}.mp3"
     path = os.path.join(_OUTPUT_DIR, name)
+
+    try:
+        audio = _synthesize_google(chunks, params, voice_name)
+    except Exception:
+        # 합성 실패 → 미리 만든 샘플 mp3로 폴백(데모가 에러로 끊기지 않게).
+        # 폴백 샘플도 없으면 원래 에러를 그대로 올린다.
+        fallback = _fallback_path(tone)
+        if fallback is None:
+            raise
+        shutil.copyfile(fallback, path)
+        return {
+            "audio_path": path,
+            "duration": _probe_duration(path) or _estimate_duration(text),
+            "format": "mp3",
+            "fallback": True,
+        }
+
     with open(path, "wb") as f:
         f.write(audio)
 
@@ -189,6 +219,7 @@ def synthesize(
         "audio_path": path,
         "duration": _probe_duration(path) or _estimate_duration(text),
         "format": "mp3",
+        "fallback": False,
     }
 
 
