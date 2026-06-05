@@ -21,7 +21,7 @@ AI로 반려동물을 "부활"시키거나 대신 말하게 하는 서비스가 
 
 ---
 
-## ✨ 핵심 기능 (MVP)
+## ✨ 핵심 기능 (프로토타입)
 
 | # | 기능 | 설명 | 상태 |
 |---|------|------|------|
@@ -77,7 +77,7 @@ rainbow-bridge/
 ├── docs/             # 📚 문서 (필독!)
 │   ├── CONTRIBUTING.md   # 협업 규칙
 │   ├── GIT_GUIDE.md      # Git 사용법 (꼭 읽기)
-│   ├── PROGRESS.md       # MVP 진행도
+│   ├── PROGRESS.md       # 프로토타입 진행도
 │   ├── ARCHITECTURE.md   # 시스템 구조
 │   ├── SETUP.md          # 개발 환경 셋업
 │   └── devlog/           # 개발일지 (통합 + members/사람별)
