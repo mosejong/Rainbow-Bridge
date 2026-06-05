@@ -23,6 +23,7 @@ from __future__ import annotations
 import re
 from typing import Optional, Protocol
 
+from ai.rag.retrieve import retrieve as _rag_retrieve
 from .prompts import memorial as memorial_prompt
 from .safety import CRISIS_HOTLINE, detect_crisis
 
@@ -152,7 +153,22 @@ def generate_message(
             "risk_level": int(crisis.risk_level),
         }
 
-    # (2) 프롬프트 조립 — 키 이름은 백엔드 스키마와 합의(pet.period, emotion_score).
+    # (2) RAG 검색 — note + 추억 키워드로 관련 위로글 top-3 검색.
+    #     실패(DB 미적재·네트워크 오류 등) 시 graceful fallback.
+    rag_hits = None
+    try:
+        query_parts: list[str] = []
+        if note:
+            query_parts.append(note)
+        for m in (pet.get("memories") or [])[:3]:
+            if m:
+                query_parts.append(str(m))
+        if query_parts:
+            rag_hits = _rag_retrieve(" ".join(query_parts), k=3)
+    except Exception:
+        rag_hits = None
+
+    # (3) 프롬프트 조립 — 키 이름은 백엔드 스키마와 합의(pet.period, emotion_score).
     prompt_kwargs = dict(
         name=pet.get("name", ""),
         species=pet.get("species", ""),
@@ -162,11 +178,12 @@ def generate_message(
         memories=pet.get("memories"),
         tone=tone,
         first_person=first_person,
+        rag_hits=rag_hits,
     )
     messages = memorial_prompt.build_messages(**prompt_kwargs)
     prompt = f"{messages[0]['content']}\n\n{messages[1]['content']}"
 
-    # (3)+(4) 호출 후 가드 검사, 위반 시 재생성.
+    # (4)+(5) 호출 후 가드 검사, 위반 시 재생성.
     last_violation = ""
     for _ in range(max_retries + 1):
         content = generate(
