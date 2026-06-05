@@ -86,6 +86,44 @@ def ingest_corpus(path: Optional[str] = None, *, batch_size: int = 64) -> int:
     return len(items)
 
 
+def seed_if_empty(path: Optional[str] = None) -> int:
+    """**콜드 스타트 시딩** — 컬렉션이 비어 있을 때만 코퍼스를 1회 적재합니다.
+
+    서버 첫 기동 시 빈 벡터스토어를 채우는 용도. 컬렉션에 문서가 이미 있으면
+    그대로 두고 0 을 반환합니다(멱등).
+
+    ⚠️ **재적재 자동화가 아닙니다.** corpus.json 을 고친 뒤 다시 적재하는 것은
+       콘텐츠 담당(반소람)의 수동 경로(`python -m rag.ingest`) 책임입니다
+       (ROLES_RAG.md §3·eval/README). 이 함수는 컬렉션이 비어야만 동작합니다.
+
+    ⚠️ **import 시 자동 실행 금지.** 임베딩 API(LLM_API_KEY)·네트워크가 필요하므로
+       모듈 로드가 아니라 서버 시작 hook 등에서 **명시적으로** 호출하세요.
+
+    Returns:
+        새로 적재한 문서 수. 이미 차 있으면 0.
+    """
+    cfg = get_rag_config()
+    col = get_collection()
+    existing = col.count()
+    if existing > 0:
+        print(
+            f"[RAG seed] 컬렉션 '{cfg.collection}' 이미 {existing}개 적재됨 → 시딩 건너뜀"
+        )
+        return 0
+
+    src = path or cfg.corpus_path
+    is_sample = "sample" in Path(src).name.lower()
+    n = ingest_corpus(src)
+    if is_sample:
+        print(
+            f"[RAG seed] ⚠️ 샘플 자리표시 {n}개를 운영 컬렉션 '{cfg.collection}'에 적재 "
+            f"← {src} — 실제 위로글 아님(반소람 운영 코퍼스 교체 전까지 임시)"
+        )
+    else:
+        print(f"[RAG seed] 콜드 스타트 적재 {n}개 → '{cfg.collection}' ← {src}")
+    return n
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="위로글 코퍼스를 ChromaDB 에 적재")
     parser.add_argument(

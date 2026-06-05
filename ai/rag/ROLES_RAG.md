@@ -135,3 +135,32 @@ prompt_kwargs = dict(
 3. (반소람) `--corpus`/`--queries` 로 측정 → `Hit@1` 정환주 공유 (§3·README 핸드오프).
 
 > ⚠️ corpus 토픽과 쿼리 `expected_topic` 의 **명명 규칙(매핑)을 먼저 합의**해야 함. 한쪽만 바꾸면 전부 오답.
+
+---
+
+## 7. ChromaDB 운영/배포 (정환주 제공 · backend 적용 대기)
+
+> 정환주가 **시딩 도구**를 제공. 실제 볼륨 마운트·배포 자동화는 **RAG 통합방식이 정해진 뒤** backend 담당(모세종·김윤한)이 적용.
+
+### 제공된 것 (정환주, 의존 없음)
+
+- **`ingest.seed_if_empty(path=None)`** — **콜드 스타트 시딩**. 컬렉션이 비어 있을 때만 corpus 1회 적재(멱등). 서버 첫 기동 hook에서 호출용.
+  - ❗ **재적재 자동화 아님.** corpus 수정 후 재적재는 반소람 수동 경로(`python -m rag.ingest`, §3).
+  - ❗ **import 시 자동 실행 안 함.** 임베딩 API·네트워크 필요 → 명시 호출만(CI/테스트 안전).
+  - ❗ 현재 운영 corpus 가 `corpus.sample.json`(자리표시)뿐 → 지금 시딩하면 **샘플이 live `consolation` 에 들어감.** 함수가 이 경우 경고 로그를 크게 찍음. **운영 corpus(반소람) 준비 전 프로덕션 시딩 금지.**
+- `_chroma` 영속 폴더는 `.gitignore` 처리됨(`.gitignore:70`). 커밋 안 됨.
+
+### ⚠️ 미해결 — 배포 자동화 (통합방식 결정 의존)
+
+현재 `backend/` 는 `rag` 를 import 하지 않고, `docker-compose.yml` 에 `_chroma` 볼륨이 없습니다.
+RAG 를 **backend import** 로 둘지 **별도 REST 추론 서버**로 둘지 미확정([../CLAUDE.md](../CLAUDE.md) §3) → 아래는 결정 후 적용.
+
+| 결정 후 챙길 것 | 비고 |
+|----------------|------|
+| `_chroma` 영속 볼륨 마운트 | 컨테이너 재시작에도 벡터 유지 (`mongo_data` 패턴 참고) |
+| 시작 시 `seed_if_empty()` 1회 호출 | import 자동실행 ❌ — 시작 hook/엔트리포인트에서 명시 호출 |
+| `LLM_API_KEY` 환경변수 | 임베딩 호출 (이미 `.env`) |
+| import 방식이면 | backend 이미지에 `ai/rag` 포함 + 위 볼륨 |
+| REST 방식이면 | 별도 RAG 서버 컨테이너에 볼륨·시딩 |
+
+→ **통합방식 결정은 PM/백엔드(모세종) 안건.** 정해지면 정환주가 시딩 hook 연결 지원, backend 가 볼륨·compose 적용.
