@@ -117,7 +117,7 @@ export default function TtsPage() {
         {loading ? (
           <LoadingSpinner message="음성을 생성하고 있어요..." />
         ) : (
-          <Button variant="primary" onClick={handleGenerate} disabled={!messageText}>
+          <Button variant="primary" onClick={handleGenerate} disabled={!messageText} className="w-full">
             {audioUrl ? '다시 생성하기' : '낭독 시작'}
           </Button>
         )}
@@ -137,6 +137,7 @@ export default function TtsPage() {
             variant={audioUrl ? 'primary' : 'ghost'}
             onClick={() => navigate('/media')}
             disabled={!audioUrl}
+            className="w-full"
           >
             {audioUrl ? '다음 — 추모 영상 만들기' : '음성 생성 후 다음으로'}
           </Button>
