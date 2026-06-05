@@ -98,8 +98,10 @@
 | 파트 | 담당 | 상태 | 비고 |
 |------|------|------|------|
 | 사진 업로드 API | 모세종 | ✅ | POST /media/upload, GET /media/{asset_id} |
-| LivePortrait 파이프라인 | 장민수 | 🟡 | conda 환경·animals 모드 동작 확인, 7종 검증·강도 0.4 확정 |
+| LivePortrait 파이프라인 | 장민수 | ✅ | animals 모드·7종 검증·강도 0.4, 잔잔 driving 템플릿(평균) |
 | 영상+TTS 합치기(FFmpeg) | 장민수 | ✅ | merge_audio() — 영상 loop+음성 길이 맞춤, libx264/aac, 립싱크❌ |
+| remote 추론(GPU 서버) | 장민수 | 🟡 | server.py + remote 모드(PR #95), 정환주 터널 연결 대기 |
+| PERSO 립싱크(선택형) | 장민수 | ✅ | 동물 립싱크 검증, opt-in+라벨, Enterprise 1671크레딧 |
 | 다운로드 제공 | 김윤한 | ⬜ | |
 
 ---
