@@ -47,6 +47,7 @@ _SYSTEM_PROMPT_1ST = """\
 - 종교적 단정이나 근거 없는 위로를 강요하지 마세요.
 """
 
+
 def _collection():
     return mongodb.db["messages"]
 
@@ -89,7 +90,10 @@ def _llm_generate(prompt: str, first_person: bool = False) -> str | None:
         resp = client.chat.completions.create(
             model=os.getenv("LLM_MODEL", "gemini-2.5-flash"),
             messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT_1ST if first_person else _SYSTEM_PROMPT},
+                {
+                    "role": "system",
+                    "content": _SYSTEM_PROMPT_1ST if first_person else _SYSTEM_PROMPT,
+                },
                 {"role": "user", "content": prompt},
             ],
             max_tokens=int(os.getenv("LLM_MAX_TOKENS", "512")),
