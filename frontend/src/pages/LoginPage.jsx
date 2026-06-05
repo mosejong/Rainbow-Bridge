@@ -21,8 +21,8 @@ export default function LoginPage() {
       const { access_token } = await login(form);
       localStorage.setItem('access_token', access_token);
       navigate('/profile');
-    } catch (err) {
-      setError(err.response?.data?.detail || '이메일 또는 비밀번호를 확인해주세요.');
+    } catch {
+      setError('이메일 또는 비밀번호를 확인해주세요.');
     } finally {
       setLoading(false);
     }
