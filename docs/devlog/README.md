@@ -171,8 +171,8 @@
 
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
-| 모세종 | — | [→](members/모세종.md) |
-| 김윤한 | — | [→](members/김윤한.md) |
+| 모세종 | 서비스 방향 확정(3단계·수의사↔보호자 플랫폼), PERSO 립싱크 2단계 플로우 구현·동물 한계 확인, 4종 비교 실험 설계, 1단계 DB 스키마(PetDiary·Vet·VetAdvice) + PostgreSQL 준비, PR #89~#100 관리 | [→](members/모세종.md#2026-06-05-day-5) |
+| 김윤한 | docker-compose 백엔드+MongoDB 통합, DuckDNS 도메인+Let's Encrypt HTTPS 설정, MongoDB 컨테이너 연결 수정(localhost→rainbow_mongo), media upload 검증 수정 PR 제출 | [→](members/김윤한.md#2026-06-05-day-5) |
 | 반소람 | 위기 차단 보강, 1단계 증상 진료·2단계 장례·3단계 기념일(D+30/D+100) 케어 신규(프롬프트+로직+테스트), RAG few-shot 연결, 1인칭 편지 모드 smoke test 완료 | [→](members/반소람.md#2026-06-05-day-5) |
 | 정환주 | — | [→](members/정환주.md) |
 | 민경이 | SymptomsPage 병원 카드·HealthRecordsPage 신규·FuneralPage 신규(장례 안내) 구현, 모바일 반응형 수정, Capacitor Android 앱 전략 확정, PR #84 업데이트 | [→](members/민경이.md#2026-06-05-day-5) |
