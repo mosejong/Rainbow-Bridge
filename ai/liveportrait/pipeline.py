@@ -42,6 +42,82 @@ class LivePortraitError(RuntimeError):
     """파이프라인 실행 실패."""
 
 
+def _find_ffmpeg() -> str:
+    """ffmpeg 실행 파일 경로를 찾습니다.
+
+    시스템 PATH에 ffmpeg가 있으면 그걸 쓰고, 없으면 imageio_ffmpeg가
+    내장한 바이너리로 폴백합니다. (이 PC엔 시스템 ffmpeg가 없어 conda의
+    imageio_ffmpeg 내장 ffmpeg를 사용 — 2026-06-05 확인)
+    """
+    system = shutil.which("ffmpeg")
+    if system:
+        return system
+    try:
+        import imageio_ffmpeg  # 지연 import (합치기 때만 필요)
+
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except ImportError as e:
+        raise LivePortraitError(
+            "ffmpeg를 찾을 수 없습니다. 시스템에 ffmpeg를 설치하거나 "
+            "`pip install imageio-ffmpeg` 후 다시 시도하세요."
+        ) from e
+
+
+def merge_audio(
+    video_path: str | Path,
+    audio_path: str | Path,
+    output_path: str | Path | None = None,
+) -> Path:
+    """무음 추모 영상 + 낭독 음성(mp3) → 음성 입힌 MP4. 결과 경로 반환.
+
+    영상이 음성보다 짧으면 영상을 반복(loop)해 음성 길이에 맞춥니다.
+    (추모 톤: 메시지 낭독 내내 반려동물 얼굴이 잔잔히 움직임)
+
+    ⚠️ 윤리: 영상은 그대로 두고 **오디오만 얹습니다(립싱크 ❌).** 입이 말하는
+       것처럼 보이게 만들지 않습니다. (README §0 / PERSO lipSync=false 와 같은 원칙)
+
+    Args:
+        video_path: LivePortrait 무음 영상(MP4)
+        audio_path: TTS 낭독 음성(mp3)
+        output_path: 결과 경로 (None이면 영상 옆에 `<stem>_voiced.mp4`)
+    """
+    video_path = Path(video_path)
+    audio_path = Path(audio_path)
+
+    if not video_path.exists():
+        raise FileNotFoundError(f"영상 없음: {video_path}")
+    if not audio_path.exists():
+        raise FileNotFoundError(f"음성 없음: {audio_path}")
+
+    if output_path is None:
+        output_path = video_path.with_name(f"{video_path.stem}_voiced.mp4")
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    ffmpeg = _find_ffmpeg()
+    # -stream_loop -1: 영상 무한 반복 → -shortest 로 음성이 끝나면 종료.
+    # libx264 + yuv420p 재인코딩: loop 이음새가 깔끔하고 브라우저 <video> 호환.
+    # -map: 영상은 입력0(0:v), 음성은 입력1(1:a)에서 가져옴.
+    cmd = [
+        ffmpeg, "-y",
+        "-stream_loop", "-1", "-i", str(video_path),
+        "-i", str(audio_path),
+        "-map", "0:v:0", "-map", "1:a:0",
+        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18",
+        "-c:a", "aac", "-b:a", "192k",
+        "-shortest",
+        str(output_path),
+    ]
+    result = subprocess.run(
+        cmd, capture_output=True, text=True, encoding="utf-8", errors="ignore"
+    )
+    if result.returncode != 0:
+        raise LivePortraitError(f"음성 합치기 실패:\n{result.stderr[-2000:]}")
+    if not output_path.exists():
+        raise LivePortraitError(f"합쳐진 영상을 찾을 수 없음: {output_path}")
+    return output_path
+
+
 def generate_video(
     source_image: str | Path,
     driving_video: str | Path | None = None,
