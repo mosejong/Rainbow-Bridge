@@ -3,10 +3,19 @@ import shutil
 from datetime import datetime, timezone
 
 from bson import ObjectId
-from fastapi import UploadFile
+from bson.errors import InvalidId
+from fastapi import HTTPException, UploadFile
 
 from app.db.mongodb import mongodb
 from app.schemas.pet import PetCreate, PetPhotoResponse, PetResponse
+
+
+def _to_object_id(pet_id: str) -> ObjectId:
+    try:
+        return ObjectId(pet_id)
+    except (InvalidId, Exception):
+        raise HTTPException(status_code=404, detail="반려동물 정보를 찾을 수 없습니다.")
+
 
 _UPLOAD_DIR = "uploads/pets"
 
@@ -27,7 +36,7 @@ async def create_pet(data: PetCreate, user_id: int) -> PetResponse:
 
 
 async def get_pet(pet_id: str, user_id: int | None = None) -> PetResponse | None:
-    query: dict = {"_id": ObjectId(pet_id)}
+    query: dict = {"_id": _to_object_id(pet_id)}
     if user_id is not None:
         query["user_id"] = user_id
     doc = await _collection().find_one(query)
@@ -47,7 +56,7 @@ async def get_pets_by_user(user_id: int) -> list[PetResponse]:
 
 
 async def upload_pet_photo(pet_id: str, file: UploadFile) -> PetPhotoResponse | None:
-    doc = await _collection().find_one({"_id": ObjectId(pet_id)})
+    doc = await _collection().find_one({"_id": _to_object_id(pet_id)})
     if not doc:
         return None
 
@@ -61,14 +70,14 @@ async def upload_pet_photo(pet_id: str, file: UploadFile) -> PetPhotoResponse | 
 
     photo_url = f"/uploads/pets/{filename}"
     await _collection().update_one(
-        {"_id": ObjectId(pet_id)}, {"$set": {"photo_url": photo_url}}
+        {"_id": _to_object_id(pet_id)}, {"$set": {"photo_url": photo_url}}
     )
     return PetPhotoResponse(id=pet_id, photo_url=photo_url)
 
 
 async def set_memorial_mode(pet_id: str) -> PetResponse | None:
     doc = await _collection().find_one_and_update(
-        {"_id": ObjectId(pet_id)},
+        {"_id": _to_object_id(pet_id)},
         {"$set": {"memorial_mode": True}},
         return_document=True,
     )
