@@ -60,6 +60,7 @@
 - ✅ PERSO 립싱크/더빙은 **기술 검증 및 선택형 후처리**로만 사용합니다. 서비스 핵심은 보호자의 회복이며, 1인칭 반려동물 대화·부활 연출·위기 상황 사용은 금지입니다.
 
 > 메시지/프롬프트 작업 시 이 경계를 넘지 마세요. 위기 감정 안내 번호 **1393**은 임의 변경 금지.
+> 상세 윤리 기준 → [docs/ETHICS_추모표현_가이드.md](docs/ETHICS_추모표현_가이드.md)
 
 ## 2. 팀 & 담당 영역
 
@@ -130,4 +131,5 @@ cd backend && ruff check . --fix && black . && pytest -q
 2. [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) — 협업 규칙
 3. [docs/SETUP.md](docs/SETUP.md) — 내 PC 환경 세팅
 4. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — 전체 구조
-5. [docs/PROGRESS.md](docs/PROGRESS.md) — 내가 맡은 일
+5. [docs/ETHICS_추모표현_가이드.md](docs/ETHICS_추모표현_가이드.md) — 추모 표현 허용/금지 경계
+6. [docs/PROGRESS.md](docs/PROGRESS.md) — 내가 맡은 일
