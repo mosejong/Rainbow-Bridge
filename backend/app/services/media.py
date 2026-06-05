@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import time
 from datetime import datetime, timezone
@@ -10,6 +11,8 @@ from bson import ObjectId
 
 from app.db.mongodb import mongodb
 
+logger = logging.getLogger(__name__)
+
 _PERSO_BASE = "https://api.perso.ai"
 _PERSO_KEY = os.getenv("PERSO_API_KEY", "")
 _PERSO_SPACE = int(os.getenv("PERSO_SPACE_SEQ", "0"))
@@ -17,6 +20,7 @@ _PERSO_HEADERS = {"XP-API-KEY": _PERSO_KEY, "Content-Type": "application/json"}
 
 _UPLOAD_DIR = Path("uploads/media")
 _VIDEO_DIR = Path("uploads/videos")
+_TTS_DIR = Path("uploads/tts")
 
 
 def _collection():
@@ -48,7 +52,7 @@ async def get_asset(asset_id: str) -> dict | None:
     }
 
 
-async def run_liveportrait(asset_id: str, source_path: str):
+async def run_liveportrait(asset_id: str, source_path: str, pet_id: str = ""):
     """백그라운드에서 LivePortrait 실행. 실패 시 status=error로 처리."""
     try:
         _VIDEO_DIR.mkdir(parents=True, exist_ok=True)
@@ -66,12 +70,12 @@ async def run_liveportrait(asset_id: str, source_path: str):
             generate_video, source_path, output_dir=str(_VIDEO_DIR)
         )
 
-        # 2. TTS 음성 있으면 합치기 (uploads/tts/{pet_id}_*.mp3 최신 파일)
-        doc = await _collection().find_one({"_id": ObjectId(asset_id)})
-        pet_id = doc.get("pet_id", "") if doc else ""
-        tts_dir = Path("uploads/tts")
+        # 2. TTS 음성 있으면 합치기 (pet_id를 인수로 받아 DB 재조회 불필요)
+        if not pet_id:
+            doc = await _collection().find_one({"_id": ObjectId(asset_id)})
+            pet_id = doc.get("pet_id", "") if doc else ""
         tts_files = sorted(
-            tts_dir.glob(f"{pet_id}_*.mp3"),
+            _TTS_DIR.glob(f"{pet_id}_*.mp3"),
             key=lambda f: f.stat().st_mtime,
             reverse=True,
         )
@@ -97,6 +101,7 @@ async def run_liveportrait(asset_id: str, source_path: str):
             },
         )
     except Exception:
+        logger.exception("LivePortrait 처리 실패 asset_id=%s", asset_id)
         await _collection().update_one(
             {"_id": ObjectId(asset_id)},
             {"$set": {"status": "error"}},
@@ -214,4 +219,6 @@ async def run_perso(asset_id: str):
             {"$set": {"dubbed_url": dubbed_url}},
         )
     except Exception:
-        pass  # PERSO 실패는 메인 서비스에 영향 없음
+        logger.exception(
+            "PERSO 더빙 실패 asset_id=%s", asset_id
+        )  # 메인 서비스에 영향 없음

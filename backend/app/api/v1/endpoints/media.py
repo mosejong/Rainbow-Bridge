@@ -44,7 +44,7 @@ async def upload_media(
     save_path.write_bytes(contents)
 
     asset_id = await create_asset(pet_id, str(save_path))
-    background_tasks.add_task(run_liveportrait, asset_id, str(save_path))
+    background_tasks.add_task(run_liveportrait, asset_id, str(save_path), pet_id)
 
     return MediaUploadResponse(asset_id=asset_id)
 
