@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     LIVEPORTRAIT_MODE: str = "local"
     REPLICATE_API_TOKEN: str = ""
 
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379"
+
     # 안전 라우팅 (변경 금지)
     CRISIS_HOTLINE: str = "1393"
 

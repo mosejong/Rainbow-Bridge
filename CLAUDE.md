@@ -52,8 +52,11 @@
 ## 1. 우리가 만드는 것 (오해 금지)
 
 반려동물을 떠나보낸 보호자의 **펫로스(Pet Loss) 회복**을 돕는 애프터케어 서비스입니다.
+**수의사↔보호자 쌍방향 플랫폼** 방향 확정 (2026-06-05).
 
 - ✅ 기억 기반 **상징적 추모 메시지**, 감정 돌봄, 일상 복귀 지원
+- ✅ **수의사 웹** — 보호자 반려동물 기록 확인 + 조언 남기기 (쌍방향 소통)
+- ✅ 수의사 처치 안내 RAG — **기본 대처법만** 제공. 상세 진단·처방은 "내원해 주세요"로 연결. 의료 조언 대체 아님.
 - ❌ AI로 반려동물을 **부활**시키거나, 결과물을 "실제 반려동물이 돌아와 말한 것"처럼 **사실인 양 주장**하는 것 — 절대 아님
 - ✅ 사용자가 제공한 사진·추억을 바탕으로 한 **AI 재해석 추모 편지/영상/TTS** 는 가능.
 - ✅ 반려동물 **1인칭 화법(꿈 속 작별 대화)** 은 보호자 동의 + 경고 문구 + risk_level 0~1 조건 충족 시 허용. (강사 승인 2026-06-05)
@@ -80,13 +83,31 @@
 
 | 영역 | 기술 |
 |------|------|
-| Backend | FastAPI (Python), MongoDB |
-| AI / LLM | PERSO API(평가·시연), 로컬 LLM(개발) |
-| 멀티모달 | LivePortrait(로컬 / Replicate fallback), TTS |
-| Infra | Docker, Ubuntu 홈서버(김윤한), GPU 서버 RTX 5060(정환주) |
+| Backend | FastAPI (Python), MongoDB, PostgreSQL |
+| Cache | Redis — 감정 체크인 최근 기록 캐시, 회복 분석용 |
+| AI / LLM | Gemini API, PERSO API(평가·시연) |
+| RAG | ChromaDB — 추모 메시지·미션·장례 안내·수의사 처치 안내 |
+| 멀티모달 | LivePortrait(로컬 / GPU 서버), Google TTS |
+| Infra | Docker Compose, NCP 실서버, GitHub Actions CI/CD |
 
 - 백엔드는 **레이어 구조**를 지키세요: `api/`(라우터) → `services/`(로직) → `models/`·`db/`(데이터), 요청/응답은 `schemas/`(Pydantic).
 - 로컬 LLM 엔진/모델 선택은 **AI 담당(반소람·정환주)** 결정 사항. 임의로 `.env`나 문서에 채우지 마세요.
+
+### RAG 활용 지침 (반소람 담당)
+
+RAG는 다음 4곳에만 사용합니다. 컬렉션은 category 메타데이터로 분리하세요.
+
+| category | 용도 | 쿼리 방향 |
+|----------|------|----------|
+| `comfort` | 추모·위로 메시지 생성 | 감정 공감, 이별 슬픔 |
+| `mission` | 일상 복귀 미션 추천 | 회복 단계별 행동 유도 |
+| `funeral` | 장례 안내 Q&A | 절차·방법 정보 제공 |
+| `vet_protocol` | 수의사 처치 안내 | 기본 대처법 (내원 유도 포함) |
+
+```python
+# 반드시 category 필터 사용
+collection.query(query_texts=[query], where={"category": "mission"}, n_results=3)
+```
 
 ## 4. Git 협업 규칙 (요약)
 

@@ -2,7 +2,7 @@
 
 > 팀원이 자기 작업 상태를 직접 갱신하는 문서입니다.
 > 상태 바꾸면 `docs: 진행도 업데이트` 로 커밋해 주세요.
-> **최종 수정:** 2026-06-04 (모세종)
+> **최종 수정:** 2026-06-05 (모세종)
 
 ## 상태 표기
 - ⬜ 시작 전  |  🟡 진행 중  |  🔵 리뷰 중(PR)  |  ✅ 완료  |  ⛔ 막힘(blocked)
@@ -26,7 +26,7 @@
 | 0-1 | Git 레포 생성 & 문서 정비 | 모세종 | ✅ | 문서 6종 + GitHub 푸시 완료 (06-01) |
 | 0-2 | FastAPI 프로젝트 뼈대 | 모세종 | ✅ | main.py/config/db/health (06-01) |
 | 0-3 | MongoDB 연결 + 실서버 | 김윤한·모세종 | ✅ | NCP Docker MongoDB 운영 중 (06-04) |
-| 0-4 | Docker / docker-compose | 김윤한 | 🟡 | Dockerfile 추가, docker-compose 진행 중 |
+| 0-4 | Docker / docker-compose | 김윤한 | ✅ | MongoDB+백엔드+Redis 통합 compose 완료 (06-05) |
 | 0-5 | LLM 결정·세팅 | 반소람·정환주 | ✅ | Gemini 실연동 완료 (06-03) |
 | 0-6 | PERSO API 연동 테스트 | 장민수 | 🟡 | 영상 더빙·립싱크 전용. LLM·TTS 기능 없음 확인 |
 | 0-7 | GPU 서버 셋업 (RTX 5060) | 정환주 | ✅ | LivePortrait·추론용 완료 |
@@ -93,6 +93,17 @@
 
 ---
 
+### ⑨ 수의사↔보호자 쌍방향 플랫폼 (2026-06-05 방향 확정)
+| 파트 | 담당 | 상태 | 비고 |
+|------|------|------|------|
+| 수의사 회원가입·로그인 API | 김윤한 | 🟡 | POST /api/v1/vets/register, /login |
+| VetAdvice 저장 API | 김윤한 | 🟡 | POST /api/v1/diaries/{diary_id}/advice |
+| 수의사 웹 화면 | 민경이 | 🟡 | 로그인+펫 목록+조언 입력, VITE_TARGET=hospital |
+| 수의사 처치 안내 RAG | 반소람 | 🟡 | 기본 대처법만, category=vet_protocol, 내원 유도 포함 |
+| 모바일 E2E 전체 흐름 | 민경이 | ✅ | 로그인→프로필→감정→메시지→TTS→영상 완주 (06-05) |
+
+---
+
 ## 2. 멀티모달 (가산점) — 사진 → 영상
 
 | 파트 | 담당 | 상태 | 비고 |
@@ -110,12 +121,13 @@
 
 | 항목 | 담당 | 상태 | 비고 |
 |------|------|------|------|
-| NCP 실서버 배포 | 모세종 | ✅ | http://101.79.19.87:8000 운영 중 |
-| nginx 프론트 서빙 | 모세종 | ✅ | http://101.79.19.87 |
-| systemd 자동 시작 | 모세종 | ✅ | 재부팅 시 uvicorn 자동 기동 |
+| NCP 실서버 배포 | 모세종 | ✅ | Docker Compose 운영 중 (06-05) |
+| nginx 프론트 서빙 | 모세종 | ✅ | https://rainbow-bridge.duckdns.org |
+| systemd 자동 시작 | 모세종 | ✅ | Docker restart:unless-stopped 로 대체 |
 | GitHub Actions 자동 배포 | 모세종 | ✅ | dev 머지 시 NCP 자동 빌드·배포 |
-| HTTPS / 도메인 | — | ⬜ | 크로스플랫폼 목표 달성을 위해 필요 |
-| Docker compose 통합 | 김윤한 | ⬜ | |
+| HTTPS / 도메인 | 김윤한 | ✅ | DuckDNS + Let's Encrypt (rainbow-bridge.duckdns.org) |
+| Docker compose 통합 | 김윤한 | ✅ | MongoDB+백엔드+Redis 통합 완료 (06-05) |
+| Redis 캐시 | 모세종 | ✅ | 감정 체크인 최근 7회 캐시, 회복 분석 API (06-05) |
 
 ---
 
