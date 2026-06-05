@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { generateMessage } from '../api/messages';
-import { mockMessage } from '../api/mock';
+import { generateMessage, getLatestMessage } from '../api/messages';
 
 export default function MessagePage() {
   const navigate = useNavigate();
@@ -14,31 +13,50 @@ export default function MessagePage() {
 
   const petName = localStorage.getItem('pet_name') || '소중한 친구';
 
-  async function fetchMessage() {
+  function saveMessage(data) {
+    setMessage(data);
+    localStorage.setItem('message_id', data.id || data._id);
+    localStorage.setItem('message_content', data.content);
+    localStorage.setItem('message_tone', data.tone || 'warm');
+  }
+
+  async function loadMessage() {
     setLoading(true);
     setError('');
-    setMessage(null);
-
+    const petId = localStorage.getItem('pet_id');
     try {
-      const petId = localStorage.getItem('pet_id');
-      const data = await generateMessage({ pet_id: petId });
-      setMessage(data);
-      localStorage.setItem('message_id', data._id);
-      localStorage.setItem('message_content', data.content);
-      localStorage.setItem('message_tone', data.tone || 'warm');
+      // 기존 메시지 먼저 조회
+      const existing = await getLatestMessage(petId);
+      saveMessage(existing);
     } catch {
-      // 백엔드 연결 전 mock 처리
-      setMessage(mockMessage);
-      localStorage.setItem('message_id', mockMessage._id);
-      localStorage.setItem('message_content', mockMessage.content);
-      localStorage.setItem('message_tone', mockMessage.tone || 'warm');
+      // 없으면 새로 생성
+      try {
+        const data = await generateMessage({ pet_id: petId });
+        saveMessage(data);
+      } catch (e) {
+        setError('메시지 생성에 실패했어요. 다시 시도해주세요.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function regenerate() {
+    setLoading(true);
+    setError('');
+    const petId = localStorage.getItem('pet_id');
+    try {
+      const data = await generateMessage({ pet_id: petId });
+      saveMessage(data);
+    } catch {
+      setError('메시지 생성에 실패했어요. 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    fetchMessage();
+    loadMessage();
   }, []);
 
   return (
@@ -78,7 +96,7 @@ export default function MessagePage() {
               <Button variant="primary" onClick={() => navigate('/tts')}>
                 🔊 음성으로 듣기
               </Button>
-              <Button variant="ghost" onClick={fetchMessage}>
+              <Button variant="ghost" onClick={regenerate}>
                 🔄 다시 생성
               </Button>
             </div>

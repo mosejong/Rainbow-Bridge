@@ -1,14 +1,15 @@
 """타임라인 엔드포인트 — 반려동물별 추모 기록 조회."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.deps import get_current_user
 from app.db.mongodb import mongodb
 
 router = APIRouter()
 
 
 @router.get("/{pet_id}", tags=["timeline"])
-async def get_timeline(pet_id: str):
+async def get_timeline(pet_id: str, user: dict = Depends(get_current_user)):
     """특정 반려동물의 타임라인 기록을 최신순으로 반환합니다."""
     cursor = mongodb.db["timeline"].find(
         {"pet_id": pet_id},

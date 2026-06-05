@@ -99,6 +99,17 @@ _FALLBACK = {
 }
 
 
+async def get_latest_message(pet_id: str) -> MessageResponse | None:
+    doc = await _collection().find_one(
+        {"pet_id": pet_id, "source": {"$ne": "safety"}},
+        sort=[("created_at", -1)],
+    )
+    if not doc:
+        return None
+    doc["id"] = str(doc.pop("_id"))
+    return MessageResponse(**doc)
+
+
 async def create_message(data: MessageCreate) -> MessageResponse:
     crisis = assess_crisis(data.note or "", generate=generate)
     if crisis.hotline_required:
