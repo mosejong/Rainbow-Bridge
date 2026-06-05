@@ -68,6 +68,7 @@ gcp-tts-key.json
 
 # ===== RAG 벡터 DB (로컬 영속 — git 금지) =====
 ai/rag/_chroma/
+ai/rag/eval/_chroma_eval/
 # 실제 위로글 코퍼스(민감 가능) — 동작 검증용 샘플 자리표시만 커밋
 ai/rag/data/corpus.json
 
