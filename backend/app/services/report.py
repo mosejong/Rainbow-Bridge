@@ -1,41 +1,49 @@
+import app.core.ai_path  # noqa: F401
+
+from ai.evaluation.report import build_report
+
 from app.db.mongodb import mongodb
 from app.schemas.report import EmotionTrend, ReportResponse
-
-# TODO: 정환주님 ai/evaluation/report.py 의 build_report 연결 후 교체
-# from ai.evaluation.report import build_report
 
 
 async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
     """반려동물별 사용 리포트 집계.
 
-    현재는 DB에서 직접 집계하는 스텁입니다.
-    정환주님 build_report 함수와 연결 시 DB 조회 결과를 주입하면 됩니다.
+    DB 조회는 여기(백엔드)서 하고, 실제 집계는 ai/evaluation 의 순수 함수
+    build_report 에 위임(정환주 ⑧). 컬렉션 필드명을 build_report 입력
+    규약(mood·done)에 맞춰 정규화해 넘긴다.
     """
-    # 감정 추이
-    cursor = (
-        mongodb.db["emotions"]
+    # 감정: DB score → build_report 의 mood 키로 정규화
+    emotion_checkins = [
+        {"created_at": str(doc["created_at"]), "mood": doc["score"]}
+        async for doc in mongodb.db["emotions"]
         .find({"pet_id": pet_id}, {"score": 1, "created_at": 1})
         .sort("created_at", 1)
-    )
-    emotion_trend = [
-        EmotionTrend(created_at=str(doc["created_at"]), score=doc["score"])
-        async for doc in cursor
     ]
 
-    # 미션 완료율
-    missions = await mongodb.db["missions"].find({"pet_id": pet_id}).to_list(None)
-    completion_rate = None
-    if missions:
-        done = sum(1 for m in missions if m.get("completed"))
-        completion_rate = round(done / len(missions), 3)
+    # 미션: DB completed → done 키로 정규화
+    raw_missions = await mongodb.db["missions"].find({"pet_id": pet_id}).to_list(None)
+    missions = [{"done": m.get("completed")} for m in raw_missions]
 
-    # LLM 사용 횟수 (llm_logs 컬렉션 — 정환주님 logs.py 연결 전 임시)
-    total_calls = await mongodb.db["messages"].count_documents({"pet_id": pet_id})
+    # LLM 사용 로그: llm_logs 컬렉션 (messages.count 임시 → 실데이터)
+    llm_logs = await mongodb.db["llm_logs"].find({"pet_id": pet_id}).to_list(None)
+
+    report = build_report(
+        pet_id,
+        period,
+        llm_logs=llm_logs,
+        emotion_checkins=emotion_checkins,
+        missions=missions,
+    )
 
     return ReportResponse(
-        pet_id=pet_id,
-        period=period,
-        usage={"total_calls": total_calls},
-        emotion_trend=emotion_trend,
-        mission_completion_rate=completion_rate,
+        pet_id=report["pet_id"],
+        period=report["period"],
+        usage=report["usage"],
+        emotion_trend=[
+            EmotionTrend(created_at=str(row["created_at"]), score=row["mood"])
+            for row in report["emotion_trend"]
+        ],
+        mission_completion_rate=report["mission_completion_rate"],
+        revisit=report["revisit"],
     )
