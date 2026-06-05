@@ -36,6 +36,16 @@ _SYSTEM_PROMPT = """\
 - 반려동물이 '나'라고 말하는 1인칭 화법 금지.
 - 종교적 단정이나 근거 없는 위로를 강요하지 마세요.
 """
+_SYSTEM_PROMPT_1ST = """\
+당신은 무지개 다리를 건너 반려동물이 보호자에게 직접 전하는 편지를 쓰는 역할입니다.
+반려동물의 시점에서 보호자에게 따뜻한 작별 인사를 전합니다.
+[반드시 지킬 것]
+- 반려동물이 '나'로 말하는 1인칭 화법으로 씁니다.
+- 3~4문장, 한국어. 담백하고 따뜻하게.
+[절대 금지]
+- 다시 살아 돌아온다고 말하지 마세요.
+- 종교적 단정이나 근거 없는 위로를 강요하지 마세요.
+"""
 
 
 def _collection():
@@ -63,7 +73,7 @@ def _build_prompt(pet: dict, tone: str, score: int, note: str) -> str:
     )
 
 
-def _llm_generate(prompt: str) -> str | None:
+def _llm_generate(prompt: str, first_person: bool = False) -> str | None:
     """Gemini OpenAI 호환 엔드포인트 호출. 키 없으면 None 반환."""
     api_key = os.getenv("LLM_API_KEY", "")
     if not api_key:
@@ -80,7 +90,10 @@ def _llm_generate(prompt: str) -> str | None:
         resp = client.chat.completions.create(
             model=os.getenv("LLM_MODEL", "gemini-2.5-flash"),
             messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
+                {
+                    "role": "system",
+                    "content": _SYSTEM_PROMPT_1ST if first_person else _SYSTEM_PROMPT,
+                },
                 {"role": "user", "content": prompt},
             ],
             max_tokens=int(os.getenv("LLM_MAX_TOKENS", "512")),
@@ -134,7 +147,8 @@ async def create_message(data: MessageCreate) -> MessageResponse:
     tone = data.tone if data.tone in _TONE_GUIDE else "warm"
     prompt = _build_prompt(pet, tone, data.emotion_score or 5, data.note or "")
 
-    content = _llm_generate(prompt)
+    first_person = data.consent and int(crisis.risk_level) <= 1
+    content = _llm_generate(prompt, first_person=first_person)
     source = "local"
     if content is None:
         content = _FALLBACK[tone]
