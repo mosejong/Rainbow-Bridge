@@ -142,3 +142,106 @@ def test_guard_retries_then_succeeds():
         PET, {"emotion_score": 4, "note": "보고 싶어요"}, generate=flaky_generate
     )
     assert "부활" not in result["content"].replace(" ", "")
+
+
+# --- 5. 1인칭 편지 모드 (first_person=True) ---------------------------------- #
+
+
+def test_first_person_prompt_uses_different_template():
+    """first_person=True 이면 1인칭 요청 문구가 담긴 템플릿을 사용해야 한다."""
+    prompt_default = memorial_prompt.build_user_prompt(
+        name="봄이", species="강아지", period="12년", score=5
+    )
+    prompt_fp = memorial_prompt.build_user_prompt(
+        name="봄이", species="강아지", period="12년", score=5, first_person=True
+    )
+    assert prompt_default != prompt_fp
+    assert "1인칭" in prompt_fp or "꿈 속" in prompt_fp
+
+
+def test_first_person_system_prompt_allows_first_person():
+    """SYSTEM_PROMPT_FIRST_PERSON 은 1인칭 허용, 부활 단정은 여전히 금지."""
+    sp = memorial_prompt.SYSTEM_PROMPT_FIRST_PERSON
+    assert "1인칭" in sp or "나는" in sp  # 1인칭 허용 안내 있어야 함
+    assert "부활" in sp or "살아 돌아" in sp  # 부활 금지 안내 있어야 함
+
+
+def test_build_messages_first_person_uses_first_person_system_prompt():
+    messages = memorial_prompt.build_messages(
+        name="봄이", species="강아지", period="12년", score=5, first_person=True
+    )
+    assert messages[0]["content"] == memorial_prompt.SYSTEM_PROMPT_FIRST_PERSON
+    assert messages[1]["role"] == "user"
+
+
+def test_build_messages_default_uses_default_system_prompt():
+    messages = memorial_prompt.build_messages(
+        name="봄이", species="강아지", period="12년", score=5
+    )
+    assert messages[0]["content"] == memorial_prompt.SYSTEM_PROMPT
+
+
+def test_first_person_output_not_blocked():
+    """first_person=True 이면 반려동물 1인칭 출력을 차단하지 않는다."""
+    fp_output = "나는 봄이야. 같이 산책하던 아침이 나도 참 좋았어. 고마워, 엄마."
+
+    def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        assert "꿈 속" in prompt or "1인칭" in prompt  # 1인칭 모드 프롬프트 전달 확인
+        return fp_output
+
+    result = generate_message(
+        PET, {"emotion_score": 5, "note": "한번만 말해줬으면"}, generate=fake_generate,
+        first_person=True,
+    )
+    assert result["content"] == fp_output
+    assert result.get("first_person") is True
+
+
+def test_first_person_result_includes_flag():
+    """first_person=True 로 생성하면 반환 dict 에 first_person: True 가 포함된다."""
+    def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        return "나는 봄이야. 항상 곁에 있었어."
+
+    result = generate_message(
+        PET, {"emotion_score": 6}, generate=fake_generate, first_person=True
+    )
+    assert result.get("first_person") is True
+
+
+def test_default_mode_still_blocks_first_person_output():
+    """first_person=False(기본)이면 1인칭 출력은 여전히 차단된다."""
+    def bad_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        return "나는 봄이야. 잘 있어."
+
+    with pytest.raises(GuardrailViolation):
+        generate_message(PET, {"emotion_score": 5}, generate=bad_generate)
+
+
+def test_resurrection_still_blocked_in_first_person_mode():
+    """first_person=True 여도 부활/환생 단정 표현은 차단된다."""
+    def bad_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        return "나는 봄이야. 다시 살아서 돌아올게."
+
+    with pytest.raises(GuardrailViolation):
+        generate_message(
+            PET, {"emotion_score": 5}, generate=bad_generate, first_person=True
+        )
+
+
+def test_crisis_blocks_first_person_too():
+    """위기 신호가 있으면 first_person=True 여도 1393 안내가 우선이다."""
+    called = False
+
+    def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        nonlocal called
+        called = True
+        return "나는 봄이야."
+
+    result = generate_message(
+        PET,
+        {"emotion_score": 1, "note": "봄이 곁으로 나도 따라가고 싶어요"},
+        generate=fake_generate,
+        first_person=True,
+    )
+    assert called is False
+    assert CRISIS_HOTLINE in result["content"]

@@ -36,7 +36,7 @@
 | 백엔드 API | 모세종·김윤한 | 7/8 | ⑧ 리포트 build_report 연결 중 |
 | AI/LLM | 반소람·정환주 | 5/5 | 전체 완료 |
 | 프론트 화면 | 민경이 | 8/8 | 전체 완료 |
-| 멀티모달 | 장민수 | 2/4 | 사진 업로드·FFmpeg 합치기 완료, PERSO·다운로드 남음 |
+| 멀티모달 | 장민수 | 3/4 | 합치기·PERSO검증·remote서버구조 완료, 터널연결·다운로드 남음 |
 
 ### 🟦 공통 셋업
 | 항목 | 담당 | 상태 |
@@ -83,8 +83,10 @@
 | 항목 | 담당 | 상태 |
 |------|------|------|
 | 사진 업로드 API | 모세종 | ✅ |
-| LivePortrait 파이프라인 | 장민수 | 🟡 |
+| LivePortrait 파이프라인 | 장민수 | ✅ |
 | 영상+TTS 합치기 (FFmpeg) | 장민수 | ✅ |
+| remote 추론(GPU 서버) | 장민수 | 🟡 |
+| PERSO 립싱크(선택형) | 장민수 | ✅ |
 | 다운로드 제공 | 김윤한 | ⬜ |
 
 > 🔎 **PM 체크 포인트:** 표에서 ⬜/⛔ 가 몰린 파트 = 지금 도와줘야 할 곳.
@@ -171,11 +173,11 @@
 
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
-| 모세종 | — | [→](members/모세종.md) |
-| 김윤한 | — | [→](members/김윤한.md) |
-| 반소람 | 위기 차단 문구 보강, 1단계 증상 진료 안내·2단계 장례 절차 상담 신규(프롬프트+로직+테스트), RAG few-shot 추모 메시지 연결 | [→](members/반소람.md#2026-06-05-day-5) |
-| 정환주 | — | [→](members/정환주.md) |
+| 모세종 | 서비스 방향 확정(3단계·수의사↔보호자 플랫폼), PERSO 립싱크 2단계 플로우 구현·동물 한계 확인, 4종 비교 실험 설계, 1단계 DB 스키마(PetDiary·Vet·VetAdvice) + PostgreSQL 준비, PR #89~#100 관리 | [→](members/모세종.md#2026-06-05-day-5) |
+| 김윤한 | docker-compose 백엔드+MongoDB 통합, DuckDNS 도메인+Let's Encrypt HTTPS 설정, MongoDB 컨테이너 연결 수정(localhost→rainbow_mongo), media upload 검증 수정 PR 제출 | [→](members/김윤한.md#2026-06-05-day-5) |
+| 반소람 | 위기 차단 보강, 1단계 증상 진료·2단계 장례·3단계 기념일(D+30/D+100) 케어 신규, RAG corpus 56개 확장(장례·미션 신설), memorial RAG retrieve() 연결, RAG A/B 테스트 완료 | [→](members/반소람.md#2026-06-05-day-5) |
+| 정환주 | RAG 검색 파이프라인 신설(ChromaDB, PR #79)+검색 품질 실증 도구(Hit@1/MRR), 벡터DB 스터디·비교 문서(PR #73), ④ TTS 음성 다양화·실패 폴백(PR #71·#73), HHHHHMM 척도 모듈(도먼트), PERSO 아바타 핸드오프, 1단계 확장구조 역할분담 | [→](members/정환주.md#2026-06-05-day-5) |
 | 민경이 | SymptomsPage 병원 카드·HealthRecordsPage 신규·FuneralPage 신규(장례 안내) 구현, 모바일 반응형 수정, Capacitor Android 앱 전략 확정, PR #84 업데이트 | [→](members/민경이.md#2026-06-05-day-5) |
-| 장민수 | LivePortrait 영상+TTS 합치기 `merge_audio()`, driving 경로 env 분리(서버 배포 대비, PR #83), PERSO 동물 립싱크 테스트(이빨/입 자연스러움 확인) | [→](members/장민수.md#2026-06-05-day-5) |
+| 장민수 | `merge_audio()`(PR #74)·driving env 분리(#83)·PERSO 립싱크 검증+이빨 발견(#90·#91)·remote 모드+`server.py`(#95)·GPU 세팅 가이드(#96)·잔잔 driving 템플릿·PERSO 전수조사(Enterprise 1671크레딧) | [→](members/장민수.md#2026-06-05-day-5) |
 
-**팀 전체:** 멀티모달 사진→영상+음성 파이프라인 코어 완성. AI 1·2단계(증상 안내·장례 상담)+RAG 추가. 프론트 1·2단계 신규 화면 구현 + Android Capacitor 앱 전략 확정.
+**팀 전체:** **수의사↔보호자 쌍방향 플랫폼 방향 확정** (병원=웹·보호자=앱). 1단계(건강관리/증상 기록) → 2단계(장례 안내) → 3단계(펫로스 케어) 플로우 + AI RAG few-shot·1인칭 편지 모드 검증 완료. 프론트 1·2단계 신규 화면(SymptomsPage·HealthRecordsPage·FuneralPage) + Android Capacitor 전략 확정. 멀티모달 사진→영상+음성 파이프라인 완성. Docker+HTTPS 인프라 완성.

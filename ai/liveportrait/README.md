@@ -176,7 +176,7 @@ ngrok http 8001        # 발급된 https URL 을 백엔드에 전달
 LIVEPORTRAIT_MODE=local                    # 기본값
 LIVEPORTRAIT_HOME=/path/to/LivePortrait    # 5.1에서 클론한 경로
 LIVEPORTRAIT_DRIVING=/path/to/driving.mp4  # 추모용 driving(§4), 없으면 예제 d0
-LIVEPORTRAIT_MULTIPLIER=0.4
+LIVEPORTRAIT_DRIVING_MULTIPLIER=0.4
 
 # NCP 백엔드 (모세종님) — 원격 GPU 호출:
 LIVEPORTRAIT_MODE=remote

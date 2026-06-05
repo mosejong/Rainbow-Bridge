@@ -12,8 +12,12 @@
 실행 (ai 디렉터리에서):
     python -m rag.eval.eval_retrieval
     python -m rag.eval.eval_retrieval --k 5
+    # 운영/다른 corpus 평가 (대응 쿼리셋 동반 필수):
+    python -m rag.eval.eval_retrieval --corpus ../data/corpus.json --queries <쿼리셋.json>
 
-⚠️ 코퍼스/쿼리는 **평가용 데모**입니다. 운영 위로글 코퍼스는 콘텐츠 담당(반소람)이 채웁니다.
+⚠️ 기본 코퍼스/쿼리는 **평가용 데모**입니다. 운영 위로글 코퍼스는 콘텐츠 담당(반소람)이 채웁니다.
+   --corpus 로 다른 corpus 를 지정해도 적재는 항상 격리 컬렉션(rag_eval/_chroma_eval)에만 →
+   운영 consolation 컬렉션은 오염되지 않습니다.
 """
 
 from __future__ import annotations
@@ -46,18 +50,30 @@ def _short(text: str, n: int = 28) -> str:
     return text if len(text) <= n else text[:n] + "..."
 
 
-def run_eval(k: int = 3) -> dict:
-    """eval 코퍼스를 적재하고 쿼리셋으로 검색 정확도를 측정해 결과를 출력합니다."""
+def run_eval(
+    k: int = 3,
+    corpus_path: Optional[str] = None,
+    queries_path: Optional[str] = None,
+) -> dict:
+    """corpus 를 적재하고 쿼리셋으로 검색 정확도를 측정해 결과를 출력합니다.
+
+    corpus_path/queries_path 미지정 시 평가용 데모 셋(eval_corpus/eval_queries)을 씁니다.
+    어떤 corpus 를 지정하든 적재는 격리 컬렉션(rag_eval/_chroma_eval)에만 → 운영 미오염.
+    """
     # 격리 환경을 먼저 잡은 뒤 import(설정이 환경변수를 읽음).
     _setup_isolated_env()
     from ..ingest import ingest_corpus
     from ..retrieve import retrieve
 
-    n = ingest_corpus(str(_EVAL_CORPUS))
-    queries: List[dict] = json.loads(_EVAL_QUERIES.read_text(encoding="utf-8"))
+    corpus = Path(corpus_path) if corpus_path else _EVAL_CORPUS
+    q_path = Path(queries_path) if queries_path else _EVAL_QUERIES
+
+    n = ingest_corpus(str(corpus))
+    queries: List[dict] = json.loads(q_path.read_text(encoding="utf-8"))
 
     print(
-        f"\n적재 문서 {n}개 · 쿼리 {len(queries)}개 · top-{k} · 컬렉션='{os.environ['RAG_COLLECTION']}'\n"
+        f"\ncorpus='{corpus.name}' · 쿼리셋='{q_path.name}' · 적재 {n}개 · "
+        f"쿼리 {len(queries)}개 · top-{k} · 컬렉션='{os.environ['RAG_COLLECTION']}'\n"
     )
     print(f"{'쿼리':<26}{'정답':<8}{'결과(rank)':<10}{'top-1 (topic/score)'}")
     print("-" * 86)
@@ -112,8 +128,14 @@ def run_eval(k: int = 3) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description="RAG 검색 품질 실증(의미검색 정확도)")
     parser.add_argument("--k", type=int, default=3, help="top-k (기본 3)")
+    parser.add_argument(
+        "--corpus", type=str, default=None, help="평가할 corpus json 경로 (기본: eval_corpus.json)"
+    )
+    parser.add_argument(
+        "--queries", type=str, default=None, help="쿼리셋 json 경로 (기본: eval_queries.json)"
+    )
     args = parser.parse_args()
-    run_eval(k=args.k)
+    run_eval(k=args.k, corpus_path=args.corpus, queries_path=args.queries)
 
 
 if __name__ == "__main__":

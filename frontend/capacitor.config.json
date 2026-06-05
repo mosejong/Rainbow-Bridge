@@ -1,0 +1,10 @@
+{
+  "appId": "com.rainbowbridge.app",
+  "appName": "레인보우브릿지",
+  "webDir": "dist",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}
