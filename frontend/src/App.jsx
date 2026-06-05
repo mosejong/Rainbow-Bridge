@@ -10,6 +10,8 @@ import MediaPage from './pages/MediaPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import SymptomsPage from './pages/SymptomsPage';
+import HealthRecordsPage from './pages/HealthRecordsPage';
+import FuneralPage from './pages/FuneralPage';
 
 function App() {
   return (
@@ -20,6 +22,8 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/symptoms" element={<SymptomsPage />} />
+        <Route path="/health-records" element={<HealthRecordsPage />} />
+        <Route path="/funeral" element={<FuneralPage />} />
         <Route path="/emotion" element={<EmotionPage />} />
         <Route path="/message" element={<MessagePage />} />
         <Route path="/tts" element={<TtsPage />} />
