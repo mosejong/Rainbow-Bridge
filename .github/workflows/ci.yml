@@ -15,6 +15,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       ai: ${{ steps.filter.outputs.ai }}
+      frontend: ${{ steps.filter.outputs.frontend }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -25,6 +26,8 @@ jobs:
               - 'backend/**'
             ai:
               - 'ai/**'
+            frontend:
+              - 'frontend/**'
 
   # ── 백엔드 ───────────────────────────────────────────────────────
   # backend/** 변경 시에만 실행. 그 외 PR은 자동 skip → required 통과.
@@ -65,6 +68,31 @@ jobs:
             exit 0
           fi
           exit "$code"
+
+  # ── 프론트엔드 ─────────────────────────────────────────────────────
+  # frontend/** 변경 시에만 실행.
+  frontend:
+    name: 프론트엔드 빌드 (npm build)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 빌드
+        run: npm run build
 
   # ── AI ───────────────────────────────────────────────────────────
   # ai/** 변경 시에만 실행. continue-on-error: true (optional 단계).

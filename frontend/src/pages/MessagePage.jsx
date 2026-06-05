@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -14,7 +14,7 @@ export default function MessagePage() {
 
   const petName = localStorage.getItem('pet_name') || '소중한 친구';
 
-  async function fetchMessage() {
+  const fetchMessage = useCallback(async () => {
     setLoading(true);
     setError('');
     setMessage(null);
@@ -27,7 +27,6 @@ export default function MessagePage() {
       localStorage.setItem('message_content', data.content);
       localStorage.setItem('message_tone', data.tone || 'warm');
     } catch {
-      // 백엔드 연결 전 mock 처리
       setMessage(mockMessage);
       localStorage.setItem('message_id', mockMessage._id);
       localStorage.setItem('message_content', mockMessage.content);
@@ -35,11 +34,11 @@ export default function MessagePage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     fetchMessage();
-  }, []);
+  }, [fetchMessage]);
 
   return (
     <div className="min-h-screen bg-purple-50 flex items-center justify-center px-4">
@@ -73,6 +72,10 @@ export default function MessagePage() {
                 </p>
               )}
             </Card>
+
+            <p className="text-gray-400 text-xs text-center mb-4">
+              이 메시지는 AI가 생성한 추모 글입니다. 반려동물이 직접 한 말이 아닙니다.
+            </p>
 
             <div className="flex flex-col gap-3">
               <Button variant="primary" onClick={() => navigate('/tts')}>
