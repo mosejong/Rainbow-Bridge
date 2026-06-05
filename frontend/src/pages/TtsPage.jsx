@@ -5,6 +5,8 @@ import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { generateTts } from '../api/tts';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 const TONES = [
   { value: 'warm', label: '따뜻하게', emoji: '🌸' },
   { value: 'calm', label: '차분하게', emoji: '🌿' },
@@ -17,6 +19,7 @@ export default function TtsPage() {
   const [audioUrl, setAudioUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [error, setError] = useState(null);
   const audioRef = useRef(null);
 
   const petId = localStorage.getItem('pet_id');
@@ -27,11 +30,15 @@ export default function TtsPage() {
     if (!messageText) return;
     setLoading(true);
     setAudioUrl(null);
+    setError(null);
     try {
       const res = await generateTts({ pet_id: petId, text: messageText, tone: selectedTone });
-      setAudioUrl(res.audio_url);
+      const url = res.audio_url.startsWith('http')
+        ? res.audio_url
+        : `${API_BASE}${res.audio_url}`;
+      setAudioUrl(url);
     } catch {
-      // 백엔드 미연결 시 안내만
+      setError('음성 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -118,6 +125,10 @@ export default function TtsPage() {
           <p className="text-center text-gray-400 text-sm mt-3">
             먼저 추모 메시지를 생성해주세요.
           </p>
+        )}
+
+        {error && (
+          <p className="text-center text-red-400 text-sm mt-3">{error}</p>
         )}
 
         <div className="mt-4">
