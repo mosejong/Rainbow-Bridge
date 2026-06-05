@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -20,23 +20,28 @@ export default function MessagePage() {
     localStorage.setItem('message_tone', data.tone || 'warm');
   }
 
-  const loadMessage = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  useEffect(() => {
     const petId = localStorage.getItem('pet_id');
-    try {
-      const existing = await getLatestMessage(petId);
-      saveMessage(existing);
-    } catch {
+    let cancelled = false;
+
+    async function load() {
       try {
-        const data = await generateMessage({ pet_id: petId });
-        saveMessage(data);
+        const existing = await getLatestMessage(petId);
+        if (!cancelled) saveMessage(existing);
       } catch {
-        setError('메시지 생성에 실패했어요. 다시 시도해주세요.');
+        try {
+          const data = await generateMessage({ pet_id: petId });
+          if (!cancelled) saveMessage(data);
+        } catch {
+          if (!cancelled) setError('메시지 생성에 실패했어요. 다시 시도해주세요.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } finally {
-      setLoading(false);
     }
+
+    load();
+    return () => { cancelled = true; };
   }, []);
 
   async function regenerate() {
@@ -52,10 +57,6 @@ export default function MessagePage() {
       setLoading(false);
     }
   }
-
-  useEffect(() => {
-    loadMessage();
-  }, [loadMessage]);
 
   return (
     <div className="min-h-screen bg-purple-50 flex items-center justify-center px-4">

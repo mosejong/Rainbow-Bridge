@@ -48,12 +48,31 @@ async def generate_tts(data: TtsCreate) -> TtsResponse:
     except ValueError:
         tone = TtsTone.WARM  # 알 수 없는 톤은 기본값으로 안전 처리
 
-    # pet_id 를 파일명에 넣어 추적 가능하게 (출력 폴더는 uploads/tts).
     filename = f"{data.pet_id}_{tone.value}_{abs(hash(data.text)) % 10_000_000}.mp3"
-    result = await asyncio.to_thread(synthesize, data.text, tone, filename=filename)
+
+    try:
+        result = await asyncio.to_thread(synthesize, data.text, tone, filename=filename)
+    except Exception:
+        # GCP 키 없을 때 gTTS 폴백 (무료, 인증 불필요)
+        result = await asyncio.to_thread(_gtts_fallback, data.text, filename)
 
     return TtsResponse(
         audio_url=f"/uploads/tts/{filename}",
         duration=result["duration"],
         format=result["format"],
     )
+
+
+def _gtts_fallback(text: str, filename: str) -> dict:
+    """GCP TTS 실패 시 gTTS로 대체 합성."""
+    from gtts import gTTS
+
+    out_dir = Path(os.environ.get("TTS_OUTPUT_DIR", "uploads/tts"))
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / filename
+    gTTS(text=text, lang="ko").save(str(path))
+    return {
+        "audio_path": str(path),
+        "duration": round(len(text) / 5.0, 1),
+        "format": "mp3",
+    }
