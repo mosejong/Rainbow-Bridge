@@ -1,4 +1,4 @@
-"""RAG 배관 테스트 — 임베딩 API 없이 ChromaDB 왕복을 검증합니다.
+"""RAG 파이프라인 테스트 — 임베딩 API 없이 ChromaDB 왕복을 검증합니다.
 
 실제 Gemini 호출 없이(키 불필요) 동작하도록 `embed_texts`/`embed_query` 를
 결정적 가짜 벡터로 교체합니다. 키워드 5개의 등장 여부로 벡터를 만들어,
