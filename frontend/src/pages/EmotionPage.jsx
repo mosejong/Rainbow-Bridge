@@ -88,7 +88,7 @@ export default function EmotionPage() {
 
         {error && <p className="text-red-500 text-sm text-center mb-3">{error}</p>}
 
-        <Button onClick={handleSubmit} disabled={loading} variant="primary">
+        <Button onClick={handleSubmit} disabled={loading} variant="primary" className="w-full">
           {loading ? '기록 중...' : '기록하기'}
         </Button>
       </div>
