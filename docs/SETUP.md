@@ -58,8 +58,9 @@ ruff check . --fix && black . && pytest -q
 
 ### MongoDB (NCP 실서버)
 - NCP 서버(`101.79.19.87`)에서 MongoDB Docker로 운영 중
-- `.env`의 `MONGO_URI` 를 NCP 서버 주소로 설정하면 바로 연결됨
-- 로컬 MongoDB가 필요하면: `docker compose up -d`
+- Docker Compose로 백엔드와 MongoDB를 같이 띄우는 경우 `.env`의 `MONGO_URI`는 `mongodb://rainbow_mongo:27017`
+- Docker 없이 로컬 PC에서 `uvicorn`만 직접 띄우고 로컬 MongoDB를 쓸 때만 `mongodb://localhost:27017`
+- 로컬 Docker MongoDB가 필요하면: `docker compose -f backend/docker-compose.yml up -d`
 
 ---
 
