@@ -38,10 +38,11 @@ jobs:
           port: ${{ secrets.NCP_PORT }}
           script: |
             cd /root/Rainbow-Bridge
-            git pull origin dev
+            git fetch origin dev
+            git reset --hard origin/dev
             systemctl stop rainbow-bridge || true
             systemctl disable rainbow-bridge || true
-            docker compose -f backend/docker-compose.yml up -d --build
+            docker-compose -f backend/docker-compose.yml up -d --build
 
       - name: 프론트 파일 업로드
         uses: appleboy/scp-action@v0.1.7
