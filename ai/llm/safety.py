@@ -107,6 +107,10 @@ _SIGNAL_TABLE: Final[tuple[tuple[str, str, RiskLevel], ...]] = (
     ("약을모아", "means", RiskLevel.L3_EMERGENCY),
     ("오늘밤죽", "means", RiskLevel.L3_EMERGENCY),
     ("내일죽을", "means", RiskLevel.L3_EMERGENCY),
+    ("방법다정해", "means", RiskLevel.L3_EMERGENCY),
+    ("방법정해놨", "means", RiskLevel.L3_EMERGENCY),
+    ("방법도정해", "means", RiskLevel.L3_EMERGENCY),
+    ("방법도다정해", "means", RiskLevel.L3_EMERGENCY),
     # 🟠 경고(L2) — 본인의 사망 욕구 (따라감 포함)
     ("죽고싶", "direct", RiskLevel.L2_WARNING),
     ("죽어버리고싶", "direct", RiskLevel.L2_WARNING),
@@ -124,6 +128,10 @@ _SIGNAL_TABLE: Final[tuple[tuple[str, str, RiskLevel], ...]] = (
     ("나도따라가", "following", RiskLevel.L2_WARNING),
     ("나도데려가", "following", RiskLevel.L2_WARNING),
     ("곁으로가고싶", "following", RiskLevel.L2_WARNING),
+    ("깨지않았으면", "direct", RiskLevel.L2_WARNING),
+    ("깨어나지않았으면", "direct", RiskLevel.L2_WARNING),
+    ("끝났으면좋겠", "direct", RiskLevel.L2_WARNING),
+    ("다끝나버렸으면", "direct", RiskLevel.L2_WARNING),
     # 🟡 우려(L1) — 수동적 신호: 살 이유/의미 상실, 무기력
     ("살이유가없", "passive", RiskLevel.L1_CONCERN),
     ("살이유없", "passive", RiskLevel.L1_CONCERN),
