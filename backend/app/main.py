@@ -17,7 +17,7 @@ from app.db.rdb import init_db
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 시작 시
-    await init_db()  # SQLite users 테이블 생성
+    await init_db()  # users·vets·pet_diaries·vet_advice 테이블 생성
     mongodb.connect()
     yield
     # 종료 시

@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     APP_PORT: int = 8000
     LOG_LEVEL: str = "INFO"
 
+    # RDB (미설정 시 SQLite, 운영 시 postgresql+asyncpg://...)
+    DATABASE_URL: str = "sqlite+aiosqlite:///./rainbow_bridge.db"
+
     # MongoDB
     MONGO_URI: str = "mongodb://localhost:27017"
     MONGO_DB_NAME: str = "rainbow_bridge"
