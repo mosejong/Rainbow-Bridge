@@ -10,8 +10,8 @@
 | 자료 | 파일 | 설명 |
 |------|------|------|
 | 서비스 파이프라인 | [rainbow_bridge_pipeline.svg](rainbow_bridge_pipeline.svg) | 5개 서비스 영역 전체 흐름 |
-| 시스템 구성도 | [system_architecture.svg](system_architecture.svg) | 인프라·서버·외부 API 관계 |
-| 사용자 흐름도 | [user_flow.svg](user_flow.svg) | 회원가입→추모영상 사용자 여정 |
+| 시스템 구성도 | [system_architecture_final.svg](system_architecture_final.svg) | 인프라·서버·외부 API 관계 |
+| 사용자 흐름도 | [user_flow_fixed.svg](user_flow_fixed.svg) | 회원가입→추모영상 사용자 여정 |
 
 > 시각 자료는 스크럼 발표 자료로 활용. GPT 생성 SVG.
 
