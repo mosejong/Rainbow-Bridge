@@ -3,6 +3,9 @@
 > 작성: 정환주 · 대상: 백엔드 `backend/app/services/report.py` 주인(모세종)
 > AI 쪽 [`build_report`](report.py)(순수 함수)는 완성·테스트됨([tests/test_report.py](tests/test_report.py)).
 > 지금 백엔드는 `messages.count`로 **임시 집계** 중 → 아래대로 바꾸면 실데이터로 흐름.
+>
+> **재확인 2026-06-05(정환주):** `build_report` 테스트 3종 통과 재검증 완료. 백엔드 `report.py`는
+> 아직 스텁(`TODO` 주석·`messages.count_documents` 그대로) → 아래 교체안 여전히 유효. 모세종이 붙이면 됨.
 
 ---
 

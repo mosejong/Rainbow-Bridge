@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.core.deps import get_current_user
 from app.schemas.emotion import EmotionCreate, EmotionResponse
 from app.services.emotion import create_emotion
 
@@ -7,7 +9,7 @@ CRISIS_HOTLINE = "1393"
 
 
 @router.post("", response_model=EmotionResponse, status_code=201)
-async def checkin_emotion(body: EmotionCreate):
+async def checkin_emotion(body: EmotionCreate, user: dict = Depends(get_current_user)):
     emotion = await create_emotion(body)
     if emotion.risk_level >= 2:
         emotion.crisis_message = (

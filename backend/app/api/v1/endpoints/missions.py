@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.deps import get_current_user
 from app.schemas.mission import (
     MissionComplete,
     MissionItem,
@@ -13,7 +14,7 @@ router = APIRouter()
 
 
 @router.get("/{pet_id}", response_model=list[MissionResponse])
-async def list_missions(pet_id: str):
+async def list_missions(pet_id: str, user: dict = Depends(get_current_user)):
     missions = await get_missions(pet_id)
     if not missions:
         missions = await create_default_missions(pet_id)
@@ -21,7 +22,9 @@ async def list_missions(pet_id: str):
 
 
 @router.patch("/{mission_id}/complete", response_model=MissionResponse)
-async def done_mission(mission_id: str, body: MissionComplete):
+async def done_mission(
+    mission_id: str, body: MissionComplete, user: dict = Depends(get_current_user)
+):
     mission = await complete_mission(mission_id)
     if not mission:
         raise HTTPException(status_code=404, detail="미션을 찾을 수 없습니다.")

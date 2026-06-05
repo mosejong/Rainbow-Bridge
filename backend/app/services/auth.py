@@ -10,10 +10,15 @@ from app.models.user import User
 from app.schemas.auth import RegisterRequest, TokenResponse, UserResponse
 
 _pwd_ctx = CryptContext(
-    schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12, truncate_error=False
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12,
+    bcrypt__truncate_error=False,
 )
 
-_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "rainbow-bridge-secret-change-in-prod")
+_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "")
+if not _SECRET_KEY:
+    raise RuntimeError("JWT_SECRET_KEY 환경변수가 설정되지 않았습니다.")
 _ALGORITHM = "HS256"
 _EXPIRE_HOURS = int(os.getenv("JWT_EXPIRE_HOURS", "24"))
 

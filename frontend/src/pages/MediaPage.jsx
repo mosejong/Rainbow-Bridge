@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -10,7 +11,10 @@ const GUIDE = [
   '얼굴이 또렷하고 밝은 사진',
 ];
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 export default function MediaPage() {
+  const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [status, setStatus] = useState('idle'); // idle | uploading | processing | done | error
@@ -18,6 +22,7 @@ export default function MediaPage() {
   const fileRef = useRef(null);
 
   const petName = localStorage.getItem('pet_name') || '소중한 친구';
+  const ttsDone = !!localStorage.getItem('tts_done');
 
   function handleFileChange(e) {
     const f = e.target.files[0];
@@ -48,7 +53,9 @@ export default function MediaPage() {
       try {
         const res = await getMediaStatus({ asset_id: assetId });
         if (res.status === 'done') {
-          setVideoUrl(res.video_url);
+          const resultUrl = res.voiced_url || res.video_url;
+          const fullUrl = resultUrl?.startsWith('http') ? resultUrl : `${API_BASE}${resultUrl}`;
+          setVideoUrl(fullUrl);
           setStatus('done');
           return;
         }
@@ -72,6 +79,22 @@ export default function MediaPage() {
         <p className="text-gray-500 text-center text-sm mb-8">
           {petName}의 사진으로 잔잔한 추모 영상을 만들어요.
         </p>
+
+        {/* TTS 미완료 경고 */}
+        {!ttsDone && (
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-sm text-amber-700">
+            <p className="font-semibold mb-1">음성 메시지를 먼저 만들어주세요</p>
+            <p className="text-amber-600 text-xs mb-3">
+              TTS 음성이 준비되어야 영상에 목소리가 담겨요.
+            </p>
+            <button
+              onClick={() => navigate('/tts')}
+              className="text-violet-600 font-medium underline text-xs"
+            >
+              TTS 페이지로 이동 →
+            </button>
+          </div>
+        )}
 
         {/* 사진 업로드 */}
         <Card className="mb-4">
@@ -129,7 +152,7 @@ export default function MediaPage() {
           <Button
             variant="primary"
             onClick={handleUpload}
-            disabled={!file || status === 'done'}
+            disabled={!file || status === 'done' || !ttsDone}
           >
             {status === 'done' ? '영상 생성 완료 ✓' : '추모 영상 생성하기'}
           </Button>
@@ -158,6 +181,11 @@ export default function MediaPage() {
             >
               <Button variant="ghost">영상 저장하기</Button>
             </a>
+            <div className="mt-3">
+              <Button variant="primary" onClick={() => navigate('/mission')}>
+                다음 — 오늘의 미션
+              </Button>
+            </div>
           </Card>
         )}
       </div>

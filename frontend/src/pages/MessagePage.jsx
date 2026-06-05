@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { generateMessage } from '../api/messages';
-import { mockMessage } from '../api/mock';
+import { generateMessage, getLatestMessage } from '../api/messages';
 
 export default function MessagePage() {
   const navigate = useNavigate();
@@ -14,32 +13,50 @@ export default function MessagePage() {
 
   const petName = localStorage.getItem('pet_name') || '소중한 친구';
 
-  async function fetchMessage() {
+  function saveMessage(data) {
+    setMessage(data);
+    localStorage.setItem('message_id', data.id || data._id);
+    localStorage.setItem('message_content', data.content);
+    localStorage.setItem('message_tone', data.tone || 'warm');
+  }
+
+  useEffect(() => {
+    const petId = localStorage.getItem('pet_id');
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const existing = await getLatestMessage(petId);
+        if (!cancelled) saveMessage(existing);
+      } catch {
+        try {
+          const data = await generateMessage({ pet_id: petId });
+          if (!cancelled) saveMessage(data);
+        } catch {
+          if (!cancelled) setError('메시지 생성에 실패했어요. 다시 시도해주세요.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  async function regenerate() {
     setLoading(true);
     setError('');
-    setMessage(null);
-
+    const petId = localStorage.getItem('pet_id');
     try {
-      const petId = localStorage.getItem('pet_id');
       const data = await generateMessage({ pet_id: petId });
-      setMessage(data);
-      localStorage.setItem('message_id', data._id);
-      localStorage.setItem('message_content', data.content);
-      localStorage.setItem('message_tone', data.tone || 'warm');
+      saveMessage(data);
     } catch {
-      // 백엔드 연결 전 mock 처리
-      setMessage(mockMessage);
-      localStorage.setItem('message_id', mockMessage._id);
-      localStorage.setItem('message_content', mockMessage.content);
-      localStorage.setItem('message_tone', mockMessage.tone || 'warm');
+      setError('메시지 생성에 실패했어요. 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
   }
-
-  useEffect(() => {
-    fetchMessage();
-  }, []);
 
   return (
     <div className="min-h-screen bg-purple-50 flex items-center justify-center px-4">
@@ -74,11 +91,15 @@ export default function MessagePage() {
               )}
             </Card>
 
+            <p className="text-gray-400 text-xs text-center mb-4">
+              이 메시지는 AI가 생성한 추모 글입니다. 반려동물이 직접 한 말이 아닙니다.
+            </p>
+
             <div className="flex flex-col gap-3">
               <Button variant="primary" onClick={() => navigate('/tts')}>
                 🔊 음성으로 듣기
               </Button>
-              <Button variant="ghost" onClick={fetchMessage}>
+              <Button variant="ghost" onClick={regenerate}>
                 🔄 다시 생성
               </Button>
             </div>
