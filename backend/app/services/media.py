@@ -48,18 +48,35 @@ async def run_liveportrait(asset_id: str, source_path: str):
         if repo_root not in sys.path:
             sys.path.insert(0, repo_root)
 
-        from ai.liveportrait.pipeline import generate_video
+        from ai.liveportrait.pipeline import generate_video, merge_audio
 
-        result_path = await asyncio.to_thread(
+        # 1. LivePortrait 무음 영상 생성
+        video_path = await asyncio.to_thread(
             generate_video, source_path, output_dir=str(_VIDEO_DIR)
         )
+
+        # 2. TTS 음성 있으면 합치기 (uploads/tts/{pet_id}_*.mp3 최신 파일)
+        doc = await _collection().find_one({"_id": ObjectId(asset_id)})
+        pet_id = doc.get("pet_id", "") if doc else ""
+        tts_dir = Path("uploads/tts")
+        tts_files = sorted(
+            tts_dir.glob(f"{pet_id}_*.mp3"),
+            key=lambda f: f.stat().st_mtime,
+            reverse=True,
+        )
+
+        final_path = video_path
+        if tts_files:
+            final_path = await asyncio.to_thread(
+                merge_audio, video_path, str(tts_files[0]), output_dir=str(_VIDEO_DIR)
+            )
 
         await _collection().update_one(
             {"_id": ObjectId(asset_id)},
             {
                 "$set": {
                     "status": "done",
-                    "video_url": f"/uploads/videos/{Path(result_path).name}",
+                    "video_url": f"/uploads/videos/{Path(final_path).name}",
                 }
             },
         )
