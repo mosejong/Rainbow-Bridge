@@ -29,7 +29,7 @@ jobs:
           npm ci
           npm run build
 
-      - name: 백엔드 pull + 재시작
+      - name: 백엔드 pull + Docker Compose 재배포
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.NCP_HOST }}
@@ -39,7 +39,9 @@ jobs:
           script: |
             cd /root/Rainbow-Bridge
             git pull origin dev
-            systemctl restart rainbow-bridge
+            systemctl stop rainbow-bridge || true
+            systemctl disable rainbow-bridge || true
+            docker compose -f backend/docker-compose.yml up -d --build
 
       - name: 프론트 파일 업로드
         uses: appleboy/scp-action@v0.1.7
