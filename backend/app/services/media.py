@@ -168,7 +168,7 @@ async def run_perso(asset_id: str):
                     "isVideoProject": True,
                     "sourceLanguageCode": "auto",
                     "targetLanguages": [
-                        {"languageCode": "ko", "ttsModel": "ELEVEN_V2"}
+                        {"languageCode": "en", "ttsModel": "ELEVEN_V2"}
                     ],
                     "preferredSpeedType": "GREEN",
                     "title": f"rb_{asset_id}_{int(time.time())}",
