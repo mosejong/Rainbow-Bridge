@@ -10,3 +10,8 @@ export async function createPet(data) {
   const res = await api.post('/api/v1/pets', data);
   return res.data;
 }
+
+export async function getMyPets() {
+  const res = await api.get('/api/v1/pets');
+  return res.data; // [{ id, name, species, ... }]
+}
