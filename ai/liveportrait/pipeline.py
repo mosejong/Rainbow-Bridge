@@ -11,12 +11,19 @@
    상징적 추모 영상만 생성합니다. (README §0)
 
 환경 변수(.env):
-    LIVEPORTRAIT_MODE       local | replicate   (기본 local)
-    LIVEPORTRAIT_HOME       외부 LivePortrait 클론 경로 (서버는 설치 경로로 지정)
-    LIVEPORTRAIT_DRIVING    기본 모션(driving) 영상 경로 (서버는 올린 영상 경로로 지정)
+    LIVEPORTRAIT_MODE       local | remote | replicate   (기본 local)
+    LIVEPORTRAIT_HOME       외부 LivePortrait 클론 경로 (local 모드, GPU 서버)
+    LIVEPORTRAIT_DRIVING    기본 모션(driving) 영상 경로 (GPU 서버에 올린 영상)
     LIVEPORTRAIT_CONDA_ENV  conda 환경 이름      (기본 liveportrait)
     LIVEPORTRAIT_MULTIPLIER 모션 강도            (기본 0.4)
+    LIVEPORTRAIT_REMOTE_URL remote 모드일 때 터널된 GPU 서비스 주소
+                            (예: https://xxxx.ngrok.io) — 백엔드가 사용
     REPLICATE_API_TOKEN     replicate 모드일 때만
+
+모드:
+    local    — 이 머신의 GPU 로 직접 추론 (개발 PC / GPU 서버에서 server.py 가 호출)
+    remote   — 터널된 GPU 서비스(server.py)에 HTTP 요청 (NCP 백엔드가 사용)
+    replicate— Replicate 클라우드 fallback
 """
 from __future__ import annotations
 
@@ -30,6 +37,8 @@ MODE = os.getenv("LIVEPORTRAIT_MODE", "local")
 LP_HOME = Path(os.getenv("LIVEPORTRAIT_HOME", r"c:\JMS\2_project\LivePortrait"))
 CONDA_ENV = os.getenv("LIVEPORTRAIT_CONDA_ENV", "liveportrait")
 REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
+# remote 모드: 터널된 GPU 서비스(server.py) 주소. 백엔드(NCP)가 이걸로 호출.
+REMOTE_URL = os.getenv("LIVEPORTRAIT_REMOTE_URL", "").rstrip("/")
 
 # 추모 영상에 어울리는 기본 모션(잔잔한 움직임). 추후 전용 템플릿으로 교체 예정.
 # 서버 배포 대비: LIVEPORTRAIT_DRIVING 으로 경로 분리(없으면 LivePortrait 예제 d0).
@@ -140,17 +149,58 @@ def generate_video(
         output_dir: 결과 저장 폴더
     """
     source_image = Path(source_image)
-    driving_video = Path(driving_video) if driving_video else DEFAULT_DRIVING
     output_dir = Path(output_dir)
 
     if not source_image.exists():
         raise FileNotFoundError(f"source 사진 없음: {source_image}")
+
+    # remote 모드: driving 은 GPU 서버가 자기 것을 사용 → 사진만 보냄.
+    if MODE == "remote":
+        return _generate_remote(source_image, output_dir)
+
+    # local / replicate 모드는 driving 영상이 로컬에 있어야 함.
+    driving_video = Path(driving_video) if driving_video else DEFAULT_DRIVING
     if not driving_video.exists():
         raise FileNotFoundError(f"driving 영상 없음: {driving_video}")
 
     if MODE == "replicate":
         return _generate_replicate(source_image, driving_video, output_dir)
     return _generate_local(source_image, driving_video, output_dir)
+
+
+def _generate_remote(source: Path, output_dir: Path) -> Path:
+    """터널된 GPU 서비스(server.py)에 사진을 보내 무음 영상을 받아 저장.
+
+    백엔드(NCP)에서 사용. GPU 가 없는 머신에서도 정환주 GPU 서버로 추론을 위임.
+    driving 영상은 GPU 서버가 자기 LIVEPORTRAIT_DRIVING 을 사용하므로 보내지 않음.
+    """
+    if not REMOTE_URL:
+        raise LivePortraitError(
+            "LIVEPORTRAIT_REMOTE_URL 이 설정되지 않았습니다 (remote 모드)."
+        )
+    try:
+        import requests  # remote 모드에서만 필요하므로 지연 import
+    except ImportError as e:
+        raise LivePortraitError("requests 패키지 미설치: pip install requests") from e
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    out_path = output_dir / f"{source.stem}--remote.mp4"
+
+    try:
+        with open(source, "rb") as img:
+            resp = requests.post(
+                f"{REMOTE_URL}/generate",
+                files={"source": (source.name, img, "application/octet-stream")},
+                timeout=300,  # GPU 추론 ~1분, 여유 있게
+            )
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        raise LivePortraitError(f"원격 GPU 서비스 호출 실패: {e}") from e
+
+    if not resp.content:
+        raise LivePortraitError("원격 GPU 서비스가 빈 응답을 반환했습니다.")
+    out_path.write_bytes(resp.content)
+    return out_path
 
 
 def _generate_local(source: Path, driving: Path, output_dir: Path) -> Path:

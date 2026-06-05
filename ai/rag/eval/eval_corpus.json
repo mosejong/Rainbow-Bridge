@@ -1,0 +1,17 @@
+[
+  {"id": "ev-walk-1", "text": "해질 무렵 동네 골목을 천천히 함께 걷던 시간이 떠오릅니다. 그 발걸음의 리듬이 아직도 마음에 남아 있어요.", "metadata": {"eval": true, "topic": "산책"}},
+  {"id": "ev-walk-2", "text": "비 오는 날에도 우산을 받쳐 들고 둘이 나섰던 짧은 바깥 나들이가 그립습니다.", "metadata": {"eval": true, "topic": "산책"}},
+  {"id": "ev-meal-1", "text": "정해진 시간이면 그릇 앞에서 기다리던 모습, 좋아하던 간식을 내밀 때의 반짝이던 눈빛이 생각납니다.", "metadata": {"eval": true, "topic": "밥"}},
+  {"id": "ev-meal-2", "text": "입맛이 없던 날 한 입이라도 더 먹이려 애쓰던 저녁들이 마음에 사무칩니다.", "metadata": {"eval": true, "topic": "밥"}},
+  {"id": "ev-play-1", "text": "공을 던지면 신나게 달려가 물어오던 그 들뜬 몸짓, 지치지도 않고 또 하자며 조르던 순간들이요.", "metadata": {"eval": true, "topic": "놀이"}},
+  {"id": "ev-play-2", "text": "낡은 인형 하나를 온종일 흔들며 혼자서도 즐거워하던 장난기가 떠오릅니다.", "metadata": {"eval": true, "topic": "놀이"}},
+  {"id": "ev-sleep-1", "text": "햇볕 드는 창가에 동그랗게 몸을 말고 새근새근 잠들던 오후가 평화로웠습니다.", "metadata": {"eval": true, "topic": "잠"}},
+  {"id": "ev-sleep-2", "text": "내 발치에 기대어 깊이 잠든 숨소리를 들으며 같이 졸던 밤이 그립습니다.", "metadata": {"eval": true, "topic": "잠"}},
+  {"id": "ev-photo-1", "text": "함께 남긴 사진첩을 넘기다 보면 그날의 웃음과 온기가 그대로 되살아납니다.", "metadata": {"eval": true, "topic": "사진"}},
+  {"id": "ev-sick-1", "text": "병원을 오가며 약을 챙기던 날들, 조금이라도 덜 아프길 바라며 곁을 지켰던 시간이 떠오릅니다.", "metadata": {"eval": true, "topic": "아픔"}},
+  {"id": "ev-sick-2", "text": "기운 없이 누워 있던 모습을 지켜보던 일이 가장 마음 아팠지만, 끝까지 함께였습니다.", "metadata": {"eval": true, "topic": "아픔"}},
+  {"id": "ev-farewell-1", "text": "마지막으로 이름을 부르며 고맙다고, 잘 가라고 천천히 인사를 건넸던 그 순간을 기억합니다.", "metadata": {"eval": true, "topic": "작별"}},
+  {"id": "ev-farewell-2", "text": "보내드리는 마음은 무겁지만, 함께한 시간에 깊이 감사하다는 말을 전하고 싶었습니다.", "metadata": {"eval": true, "topic": "작별"}},
+  {"id": "ev-longing-1", "text": "현관문을 열 때 더 이상 마중 나오지 않는 빈자리가 문득 크게 느껴지는 날이 있습니다.", "metadata": {"eval": true, "topic": "그리움"}},
+  {"id": "ev-recover-1", "text": "슬픔에 잠겨만 있지 말고 오늘은 짧게라도 산책하며 바깥 공기를 쐬어 보는 건 어떨까요. 천천히 일상으로 돌아가도 괜찮습니다.", "metadata": {"eval": true, "topic": "일상복귀"}}
+]

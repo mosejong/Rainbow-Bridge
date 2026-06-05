@@ -1,0 +1,128 @@
+"""3단계 기념일 케어 알림 — 로직.
+
+무지개다리 D+30·D+100 시점을 감지하고, 보호자를 위한 케어 메시지를 생성합니다.
+프롬프트(대본)는 prompts/anniversary.py 에, 위기 판단은 safety.py 에 분리돼 있고,
+이 파일은 그 둘을 엮어 흐름을 담당합니다:
+
+    날짜 입력 → check_anniversary 로 트리거 여부 확인
+    → (1) 보호자 위기 선체크 → (2) note 없으면 템플릿 반환
+    → (3) note 있으면 Gemini 호출 → 결과 dict
+
+🚨 보호자가 감정 메모를 남긴 경우 위기 신호를 먼저 확인합니다.
+위기 감지(L2↑) 시 케어 메시지보다 1393 안내가 우선입니다.
+"""
+
+from __future__ import annotations
+
+from datetime import date
+from typing import Optional, Protocol
+
+from .prompts import anniversary as anniversary_prompt
+from .safety import CRISIS_HOTLINE, detect_crisis
+
+
+class GenerateFn(Protocol):
+    """provider.generate 와 맞춘 호출 시그니처 (주입용)."""
+
+    def __call__(
+        self,
+        prompt: str,
+        *,
+        max_tokens: int = 350,
+        temperature: float = 0.6,
+        json_mode: bool = False,
+    ) -> str: ...
+
+
+_MAX_TOKENS: int = 350
+_TEMPERATURE: float = 0.6  # 위로 메시지 — memorial 보다 약간 낮게(정확성↑)
+
+# 🚨 1393 은 CRISIS_HOTLINE 상수로만 — 하드코딩 금지(../../CLAUDE.md §0).
+_CRISIS_NOTICE: str = (
+    "지금 많이 힘드신 것 같아요. 혼자 견디지 않으셔도 됩니다. "
+    f"언제든 자살예방 상담전화 {CRISIS_HOTLINE}(24시간)으로 마음을 나눠 주세요."
+)
+
+
+def check_anniversary(passed_date: date, today: date) -> Optional[int]:
+    """오늘이 무지개다리 D+30 또는 D+100인지 확인합니다.
+
+    Args:
+        passed_date: 반려동물이 무지개다리를 건넌 날짜.
+        today: 확인할 날짜(보통 오늘).
+
+    Returns:
+        트리거 일수(30 또는 100). 해당 없으면 None.
+    """
+    delta = (today - passed_date).days
+    if delta in anniversary_prompt.MILESTONE_DAYS:
+        return delta
+    return None
+
+
+def generate_anniversary_care(
+    pet: dict,
+    days_since: int,
+    *,
+    note: str = "",
+    generate: GenerateFn,
+    source: str = "local",
+) -> dict:
+    """기념일 케어 메시지를 생성합니다.
+
+    Args:
+        pet: 반려동물 정보 ``{name, species, memories?}``.
+        days_since: 무지개다리 이후 일수(check_anniversary 반환값 또는 30·100).
+        note: 보호자 감정 메모 (선택). 위기 선체크에도 사용.
+        generate: LLM 호출 함수(provider.generate 또는 테스트용 가짜). **주입 필수.**
+        source: 결과 출처 표기(local·perso 등).
+
+    Returns:
+        ``{message, days_since, milestone_label, source}``.
+        위기 감지 시 ``crisis_message`` 와 ``risk_level`` 포함.
+    """
+    milestone_label = anniversary_prompt.MILESTONE_LABELS.get(
+        days_since, f"{days_since}일"
+    )
+
+    # (1) 보호자 메모에 위기 신호가 있으면 케어 메시지보다 1393 우선.
+    if note:
+        crisis = detect_crisis(note)
+        if crisis.hotline_required:
+            return {
+                "message": _CRISIS_NOTICE,
+                "days_since": days_since,
+                "milestone_label": milestone_label,
+                "source": "safety",
+                "crisis_message": _CRISIS_NOTICE,
+                "risk_level": int(crisis.risk_level),
+            }
+
+    # (2) note 없으면 고정 템플릿 반환 — Gemini 호출 없음.
+    if not note:
+        template = anniversary_prompt.MILESTONE_TEMPLATES.get(days_since, "")
+        message = template.format(name=pet.get("name", "반려동물"))
+        return {
+            "message": message,
+            "days_since": days_since,
+            "milestone_label": milestone_label,
+            "source": "template",
+        }
+
+    # (3) note 있으면 Gemini 호출 (보호자 감정에 맞춤 응답).
+    messages = anniversary_prompt.build_messages(
+        days_since,
+        name=pet.get("name", ""),
+        species=pet.get("species", ""),
+        memories=pet.get("memories"),
+        note=note,
+    )
+    prompt = f"{messages[0]['content']}\n\n{messages[1]['content']}"
+    message = generate(prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE).strip()
+
+    return {
+        "message": message,
+        "days_since": days_since,
+        "milestone_label": milestone_label,
+        "source": source,
+    }

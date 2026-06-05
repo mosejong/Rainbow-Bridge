@@ -6,8 +6,13 @@
 
 🚫 절대 경계 (../CLAUDE.md §0):
   - 반려동물을 **부활**시키지 않습니다.
-  - 반려동물이 **1인칭으로 말하게** 하지 않습니다("나 잘 있어요" 같은 화법 ❌).
+  - 반려동물 1인칭 화법은 **기본값 금지**. (first_person=True 는 §1.5 조건 충족 후에만)
   - 우리는 오직 **보호자**를 향한 기억 기반 위로만 생성합니다.
+
+✅ 1인칭 편지 모드 (first_person=True):
+  - 보호자 명시 동의 + 경고 문구 표시 + risk_level 0~1 검증을 **호출자**가 보장해야 합니다.
+  - SYSTEM_PROMPT_FIRST_PERSON 과 _USER_TEMPLATE_FIRST_PERSON 을 사용합니다.
+  - 부활/환생 단정 표현은 1인칭 모드에서도 여전히 금지입니다.
 
 위기 신호가 의심되는 입력은 메시지 생성 전에 safety.detect_crisis 가 먼저
 판단합니다(../TODO.md L-③: "생성 전 safety 선호출"). 이 프롬프트는 위기 안내
@@ -52,6 +57,24 @@ SYSTEM_PROMPT: Final[str] = """\
 - 조언·해결책을 늘어놓지 말고, 함께 슬퍼하고 곁에 있어 주세요.
 """
 
+# 1인칭 편지 모드 — §1.5 조건(보호자 동의+경고 문구+risk_level 0~1) 충족 후에만 사용.
+SYSTEM_PROMPT_FIRST_PERSON: Final[str] = """\
+당신은 반려동물을 떠나보낸 보호자가 꿈 속에서 나누는 작별 대화를 쓰는 따뜻한 글벗입니다.
+보호자가 들려준 기억을 바탕으로, 반려동물의 시점에서 보호자에게 마지막 인사를 건넵니다.
+
+[반드시 지킬 것]
+- 이것은 "꿈 속 작별 대화"입니다. 반려동물이 실제로 돌아온 것이 아님을 전제로 씁니다.
+- 반려동물의 1인칭("나는", "내가", "저는")으로 보호자에게 따뜻하게 말을 건네세요.
+- 보호자가 들려준 기억·추억을 한두 개 자연스럽게 녹여 주세요.
+- 3~4문장, 한국어. 담백하고 따뜻하게.
+
+[절대 금지]
+- "살아 돌아왔어요", "다시 만날 수 있어요" 등 부활·환생을 단정하지 마세요.
+- "지금 곁에 있어요" 등 현재 존재감을 단정하는 연출은 피하세요.
+- 종교적 단정("천국에서 기다린다" 등)이나 근거 없는 확언을 하지 마세요.
+- 말줄임표(...)를 절대 사용하지 마세요. 문장은 반드시 완전하게 끝맺으세요.
+"""
+
 
 # --------------------------------------------------------------------------- #
 # 사용자 프롬프트 — 입력(반려동물·감정·톤)을 채워 넣습니다.
@@ -70,6 +93,22 @@ _USER_TEMPLATE: Final[str] = """\
 위 기억을 바탕으로 보호자를 위로하는 추모의 글을 {tone_guide}
 3~4문장으로 써 주세요.
 반려동물은 반드시 3인칭({name}는/{name}가)으로만 쓰고, 절대 1인칭("나는", "저는")으로 말하게 하지 마세요.
+"""
+
+# 1인칭 편지 모드 — SYSTEM_PROMPT_FIRST_PERSON 과 함께 사용.
+_USER_TEMPLATE_FIRST_PERSON: Final[str] = """\
+[반려동물]
+- 이름: {name}
+- 종: {species}
+- 함께한 기간: {period}
+{memories_block}
+[보호자 감정]
+- 감정 점수: {score}/10 (1=많이 힘듦 · 10=평온)
+- 메모: {note}
+{rag_block}
+[요청]
+꿈 속 작별 대화입니다. 반려동물 {name}의 1인칭("나는", "내가")으로 보호자에게 마지막 인사를 건네는 3~4문장을 {tone_guide}
+써 주세요. 부활·환생을 단정하는 표현("살아 돌아왔어요" 등)은 쓰지 마세요.
 """
 
 
@@ -99,6 +138,7 @@ def build_user_prompt(
     memories: Optional[list[str]] = None,
     tone: str = DEFAULT_TONE,
     rag_hits: Optional[List[dict]] = None,
+    first_person: bool = False,
 ) -> str:
     """추모 메시지 생성용 사용자 프롬프트를 만듭니다.
 
@@ -111,12 +151,14 @@ def build_user_prompt(
         memories: 함께한 추억 키워드 목록(선택).
         tone: 메시지 톤. TONE_GUIDE 의 키(warm·calm·hopeful).
         rag_hits: RAG 검색 결과(retrieve() 반환값). 없으면 few-shot 생략.
+        first_person: True 이면 반려동물 1인칭 편지 모드. §1.5 조건 충족 후에만 사용.
 
     Returns:
         포맷이 채워진 사용자 프롬프트 문자열.
     """
     tone_guide = TONE_GUIDE.get(tone, TONE_GUIDE[DEFAULT_TONE])
-    return _USER_TEMPLATE.format(
+    template = _USER_TEMPLATE_FIRST_PERSON if first_person else _USER_TEMPLATE
+    return template.format(
         name=name,
         species=species,
         period=period,
@@ -128,13 +170,17 @@ def build_user_prompt(
     )
 
 
-def build_messages(**kwargs) -> list[dict[str, str]]:
+def build_messages(*, first_person: bool = False, **kwargs) -> list[dict[str, str]]:
     """OpenAI 호환 chat 형식(system+user)으로 묶어 반환.
 
     provider.generate 가 단일 문자열을 받으면 system+user 를 합쳐 쓰고,
     chat 형식을 받으면 이 리스트를 그대로 넘기면 됩니다(통합 시 결정).
+
+    Args:
+        first_person: True 이면 1인칭 편지 모드 프롬프트 사용. §1.5 조건 충족 후에만 전달.
     """
+    system = SYSTEM_PROMPT_FIRST_PERSON if first_person else SYSTEM_PROMPT
     return [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": build_user_prompt(**kwargs)},
+        {"role": "system", "content": system},
+        {"role": "user", "content": build_user_prompt(first_person=first_person, **kwargs)},
     ]

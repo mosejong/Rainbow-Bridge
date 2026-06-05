@@ -1,0 +1,14 @@
+[
+  {"query": "같이 동네 한 바퀴 돌던 게 그리워요", "expected_topic": "산책"},
+  {"query": "밖에 데리고 나가던 시간이 생각나요", "expected_topic": "산책"},
+  {"query": "사료 챙겨주던 때가 떠올라요", "expected_topic": "밥"},
+  {"query": "잘 안 먹어서 걱정하던 날들이요", "expected_topic": "밥"},
+  {"query": "장난감 가지고 신나게 뛰놀던 모습", "expected_topic": "놀이"},
+  {"query": "양지바른 데서 곤히 자던 모습이 떠올라요", "expected_topic": "잠"},
+  {"query": "같이 찍은 옛날 사진들을 보면", "expected_topic": "사진"},
+  {"query": "투병하며 간호하던 시간이 마음 아파요", "expected_topic": "아픔"},
+  {"query": "떠나보내며 마지막 인사를 건넸어요", "expected_topic": "작별"},
+  {"query": "이제 반겨주는 이가 없어 허전해요", "expected_topic": "그리움"},
+  {"query": "너무 우울한데 어떻게 다시 지내야 할지 모르겠어요", "expected_topic": "일상복귀"},
+  {"query": "고마웠다고 보내주고 싶은 마음", "expected_topic": "작별"}
+]
