@@ -42,7 +42,8 @@ jobs:
             git reset --hard origin/dev
             systemctl stop rainbow-bridge || true
             systemctl disable rainbow-bridge || true
-            docker-compose -f backend/docker-compose.yml up -d --build
+            cd backend
+            docker-compose down --remove-orphans && docker-compose up -d --build
 
       - name: 프론트 파일 업로드
         uses: appleboy/scp-action@v0.1.7
