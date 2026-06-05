@@ -21,7 +21,7 @@
 
 **1) 누구신지 / 어떤 역할인지 확인**
 - "안녕하세요! 어떤 분이신가요? (이름 또는 역할)" 처럼 물어보고, [2. 팀 & 담당 영역](#2-팀--담당-영역) 표에서 담당 폴더·작업을 파악하세요.
-- 역할을 알면 그 사람의 담당 영역(`backend/`·`ai/`·`frontend/` 등)과 [PROGRESS.md](docs/PROGRESS.md)에서 맡은 MVP 항목을 안내하세요.
+- 역할을 알면 그 사람의 담당 영역(`backend/`·`ai/`·`frontend/` 등)과 [PROGRESS.md](docs/PROGRESS.md)에서 맡은 프로토타입 항목을 안내하세요.
 
 **2) 현재 브랜치 확인 → 본인 이름 브랜치로 유도 (인당 1브랜치)**
 - 우리는 **인당 1브랜치** 전략입니다. 각자 본인 영문 이름 브랜치 하나에서만 작업합니다.
@@ -32,7 +32,7 @@
   | 김윤한 | `kimyunhan` | 민경이 | `mingyeongi` |
   | 반소람 | `bansoram` | 장민수 | `jangminsu` |
 
-- 평소 작업은 **`dev`** 에 모읍니다. `main` 은 MVP 완성·서비스 가능 시점에만 씁니다.
+- 평소 작업은 **`dev`** 에 모읍니다. `main` 은 프로토타입 완성·서비스 가능 시점에만 씁니다.
 - `git branch --show-current` 로 지금 브랜치를 확인하세요.
 - **`main`(또는 `dev`)에 있으면, 거기서 작업하지 못하게 막고** 본인 이름 브랜치로 옮기게 유도하세요. 동의를 받으면 실행:
   ```bash
@@ -93,7 +93,7 @@
 전체 내용은 [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) · [docs/GIT_GUIDE.md](docs/GIT_GUIDE.md). 핵심만:
 
 - 브랜치 전략: **인당 1브랜치 + dev 통합** — 각자 본인 영문 이름 브랜치 하나에서만 작업(`mosejong`·`kimyunhan`·`bansoram`·`junghwanju`·`mingyeongi`·`jangminsu`) → PR은 **`dev`로**.
-- `main` 은 **MVP 완성·서비스 가능 시점**에만 `dev → main` PR로 승격(PM 진행). 평소엔 `dev` 가 통합 브랜치.
+- `main` 은 **프로토타입 완성·서비스 가능 시점**에만 `dev → main` PR로 승격(PM 진행). 평소엔 `dev` 가 통합 브랜치.
 - 🚫 **`main`·`dev` 에 절대 직접 push 금지.** 둘 다 PR 머지로만 바뀝니다. 항상 내 브랜치 → PR(`dev`) → 리뷰 → 머지.
 - PR이 머지돼도 **내 브랜치는 삭제하지 않고** 계속 사용(`git merge dev`로 최신화 후 다음 작업).
 - 커밋: **Conventional Commits** + 한국어.
@@ -106,7 +106,7 @@
 
 - 자기 일지: [docs/devlog/members/](docs/devlog/members/) 의 **본인 파일**에 날짜 섹션을 맨 위에 추가.
 - 통합 일지: [docs/devlog/README.md](docs/devlog/README.md) 표에 그날 한 일 **한 줄** 요약 + 본인 일지 링크.
-- 진행도: 그날 MVP 구현 상태가 바뀌면 통합 일지의 **파트별 PM 대시보드**와 [docs/PROGRESS.md](docs/PROGRESS.md) 상태를 같이 갱신.
+- 진행도: 그날 프로토타입 구현 상태가 바뀌면 통합 일지의 **파트별 PM 대시보드**와 [docs/PROGRESS.md](docs/PROGRESS.md) 상태를 같이 갱신.
 - 클로드에게 "오늘 개발일지 정리해줘" 하면, 위 형식(개인 일지 + 통합 요약 + 진행도 반영)에 맞춰 작성하도록 도와주세요.
 
 ## 6. 자주 쓰는 명령
