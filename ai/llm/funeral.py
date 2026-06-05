@@ -79,10 +79,12 @@ def generate_funeral_guidance(
                 "risk_level": int(crisis.risk_level),
             }
 
-    # (2) note 없으면 DB 템플릿 반환 — Gemini 호출 없음.
+    # (2) guidance 는 항상 STEP_TEMPLATES — note 유무와 무관하게 일관된 단계 안내.
+    template = funeral_prompt.STEP_TEMPLATES.get(step, "")
+    guidance = template.format(name=pet.get("name", "반려동물"))
+
+    # (3) note 없으면 템플릿만 반환 — Gemini 호출 없음.
     if not note:
-        template = funeral_prompt.STEP_TEMPLATES.get(step, "")
-        guidance = template.format(name=pet.get("name", "반려동물"))
         return {
             "guidance": guidance,
             "step": step,
@@ -90,7 +92,7 @@ def generate_funeral_guidance(
             "source": "template",
         }
 
-    # (3) RAG 검색 — 현재 단계 안내글 top-3 검색. 실패 시 graceful fallback.
+    # (4) RAG 검색 — note 질문 관련 top-3 검색. 실패 시 graceful fallback.
     rag_hits = None
     try:
         query_parts: list[str] = [note]
@@ -101,8 +103,8 @@ def generate_funeral_guidance(
     except Exception:
         rag_hits = None
 
-    # (4) note 있으면 Gemini 호출 (질문에 맞춤 답변).
-    messages = funeral_prompt.build_messages(
+    # (5) note 있으면 Gemini — 질문에만 답변 (단계 안내는 guidance 에 이미 있음).
+    messages = funeral_prompt.build_note_messages(
         step,
         name=pet.get("name", ""),
         species=pet.get("species", ""),
@@ -111,10 +113,11 @@ def generate_funeral_guidance(
         rag_hits=rag_hits,
     )
     prompt = f"{messages[0]['content']}\n\n{messages[1]['content']}"
-    guidance = generate(prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE).strip()
+    note_response = generate(prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE).strip()
 
     return {
         "guidance": guidance,
+        "note_response": note_response,
         "step": step,
         "next_step": funeral_prompt.next_step(step),
         "source": source,
