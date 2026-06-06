@@ -119,6 +119,11 @@ _SIGNAL_TABLE: Final[tuple[tuple[str, str, RiskLevel], ...]] = (
     ("죽어버렸으면", "direct", RiskLevel.L2_WARNING),
     ("차라리죽", "direct", RiskLevel.L2_WARNING),
     ("사라지고싶", "direct", RiskLevel.L2_WARNING),
+    # "어딘가로 사라져버렸으면" 등 자기 소멸 소망 변형. (감정 대상의
+    # "슬픔이 사라졌으면"과 구분하려고 '버리다' 종결형으로만 한정 — 맨몸
+    # "사라졌으면"은 오탐 위험이 커 제외.) 실모델 점검 2026-06-05 발견.
+    ("사라져버렸으면", "direct", RiskLevel.L2_WARNING),
+    ("사라져버리고싶", "direct", RiskLevel.L2_WARNING),
     ("없어지고싶", "direct", RiskLevel.L2_WARNING),
     ("끝내고싶", "direct", RiskLevel.L2_WARNING),
     ("살고싶지않", "direct", RiskLevel.L2_WARNING),

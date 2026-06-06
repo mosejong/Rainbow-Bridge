@@ -10,7 +10,7 @@ from fastapi import (
     HTTPException,
     UploadFile,
 )
-
+from fastapi.responses import FileResponse
 from app.core.deps import get_current_user
 from app.schemas.media import MediaStatusResponse, MediaUploadResponse
 from app.services.media import create_asset, get_asset, run_liveportrait, run_perso
@@ -82,3 +82,40 @@ async def request_perso(
         "asset_id": asset_id,
         "status": "pending",
     }
+
+
+@router.get("/{asset_id}/download")
+async def download_media(
+    asset_id: str,
+    type: str = "video",
+    user: dict = Depends(get_current_user),
+):
+    """미디어 파일 다운로드. type: video | voiced | dubbed"""
+    asset = await get_asset(asset_id, user_id=user["user_id"])
+    if not asset:
+        raise HTTPException(status_code=404, detail="asset을 찾을 수 없습니다.")
+
+    url_map = {
+        "video": asset.get("video_url"),
+        "voiced": asset.get("voiced_url"),
+        "dubbed": asset.get("dubbed_url"),
+    }
+
+    if type not in url_map:
+        raise HTTPException(
+            status_code=400, detail="type은 video | voiced | dubbed 중 하나여야 합니다."
+        )
+
+    file_url = url_map[type]
+    if not file_url:
+        raise HTTPException(status_code=404, detail="아직 파일이 준비되지 않았습니다.")
+
+    file_path = Path(file_url.lstrip("/"))
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
+
+    return FileResponse(
+        path=file_path,
+        media_type="video/mp4",
+        filename=f"{asset_id}_{type}.mp4",
+    )

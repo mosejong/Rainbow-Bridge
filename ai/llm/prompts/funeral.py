@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from typing import Final, Optional
+from typing import Final, List, Optional
 
 # --------------------------------------------------------------------------- #
 # 단계별 고정 안내 텍스트 — note 없을 때 반환. {name} 만 치환.
@@ -135,7 +135,7 @@ _USER_TEMPLATE: Final[str] = """\
 
 [현재 단계]: {step_name}
 [이번 단계 안내 초점]: {step_focus}
-{choice_block}{note_block}\
+{choice_block}{note_block}{rag_block}\
 위 상황에서 보호자가 지금 해야 할 일을 3~5문장으로 안내해 주세요.
 {next_line}
 """
@@ -155,6 +155,75 @@ def _format_note(note: str) -> str:
     return f"[보호자 메모]: {note.strip()}\n"
 
 
+def _format_rag(hits: Optional[List[dict]]) -> str:
+    """RAG 검색 결과를 few-shot 예시 블록으로. 없으면 빈 문자열."""
+    if not hits:
+        return ""
+    examples = "\n".join(f'  - "{h["text"]}"' for h in hits)
+    return f"\n[참고 안내글 예시 — 톤과 표현 방식만 참고하세요]\n{examples}\n"
+
+
+# --------------------------------------------------------------------------- #
+# note 전용 프롬프트 — 기본 안내는 이미 전달됐으므로 질문에만 집중.
+# --------------------------------------------------------------------------- #
+SYSTEM_PROMPT_NOTE: Final[str] = """\
+당신은 반려동물을 떠나보내는 보호자 곁에서 장례 절차를 안내하는 따뜻한 안내자입니다.
+기본 장례 안내는 이미 보호자에게 전달됐습니다.
+보호자가 남긴 질문이나 고민에만 집중해서 간결하게 답해주세요.
+
+[톤 원칙]
+- 보호자가 지금 얼마나 힘든 시간인지 먼저 공감해 주세요.
+- 2~3문장으로 간결하게, 질문에 직접 답해주세요.
+- 완전한 문장으로 씁니다.
+
+[절대 금지]
+- 말줄임표(...)를 절대 사용하지 마세요.
+- 특정 장례식장·업체를 추천하지 마세요.
+- 법적·의학적 사항을 단정하지 마세요.
+- 기본 안내 내용을 다시 반복하지 마세요.
+"""
+
+_NOTE_TEMPLATE: Final[str] = """\
+[반려동물]
+- 이름: {name}
+- 종: {species}
+
+[현재 단계]: {step_name}
+{choice_block}[보호자 질문]: {note}
+{rag_block}
+위 질문에 2~3문장으로만 답해주세요.
+"""
+
+
+def build_note_messages(
+    step: str,
+    *,
+    name: str = "",
+    species: str = "",
+    choice: str = "",
+    note: str = "",
+    rag_hits: Optional[List[dict]] = None,
+) -> list[dict[str, str]]:
+    """보호자 note 질문 전용 메시지 배열.
+
+    기본 단계 안내는 이미 전달된 것으로 간주하고,
+    보호자 질문에만 간결하게 답하도록 프롬프트를 구성합니다.
+    """
+    step_name = STEP_NAMES.get(step, step)
+    user_content = _NOTE_TEMPLATE.format(
+        name=name or "반려동물",
+        species=species or "미입력",
+        step_name=step_name,
+        choice_block=_format_choice(choice),
+        note=note.strip(),
+        rag_block=_format_rag(rag_hits),
+    )
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT_NOTE},
+        {"role": "user", "content": user_content},
+    ]
+
+
 def next_step(step: str) -> Optional[str]:
     """현재 단계의 다음 단계 키를 반환합니다. 마지막 단계면 None."""
     try:
@@ -172,6 +241,7 @@ def build_messages(
     species: str = "",
     choice: str = "",
     note: str = "",
+    rag_hits: Optional[List[dict]] = None,
 ) -> list[dict[str, str]]:
     """장례 절차 상담용 OpenAI 호환 chat 메시지 배열을 만듭니다.
 
@@ -203,6 +273,7 @@ def build_messages(
         step_focus=step_focus,
         choice_block=_format_choice(choice),
         note_block=_format_note(note),
+        rag_block=_format_rag(rag_hits),
         next_line=next_line,
     )
     return [

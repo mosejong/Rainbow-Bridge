@@ -33,6 +33,14 @@ TONE_GUIDE: Final[dict[str, str]] = {
 }
 DEFAULT_TONE: Final[str] = "warm"
 
+# 회복 추이(백엔드 get_recovery 의 trend) → 톤 캘리브레이션용 한 줄 지침.
+# 톤(tone)을 덮어쓰지 않고, 같은 톤 안에서 결을 맞추도록 모델에 신호만 줍니다.
+TREND_GUIDE: Final[dict[str, str]] = {
+    "회복중": "보호자가 조금씩 회복 중이에요. 무기력하게 가라앉히지 말고 잔잔한 온기를 더하세요.",
+    "유지중": "보호자가 큰 변화 없이 지내고 있어요. 담담하게 곁에 머무르세요.",
+    "주의필요": "보호자의 감정이 최근 가라앉고 있어요. 밝게 띄우지 말고 더 조심스럽게 보듬으세요.",
+}
+
 
 # --------------------------------------------------------------------------- #
 # 시스템 프롬프트 — 윤리 경계와 작성 규칙을 항상 명시.
@@ -88,7 +96,7 @@ _USER_TEMPLATE: Final[str] = """\
 [보호자 감정]
 - 감정 점수: {score}/10 (1=많이 힘듦 · 10=평온)
 - 메모: {note}
-{rag_block}
+{recovery_block}{rag_block}
 [요청]
 위 기억을 바탕으로 보호자를 위로하는 추모의 글을 {tone_guide}
 3~4문장으로 써 주세요.
@@ -105,7 +113,7 @@ _USER_TEMPLATE_FIRST_PERSON: Final[str] = """\
 [보호자 감정]
 - 감정 점수: {score}/10 (1=많이 힘듦 · 10=평온)
 - 메모: {note}
-{rag_block}
+{recovery_block}{rag_block}
 [요청]
 꿈 속 작별 대화입니다. 반려동물 {name}의 1인칭("나는", "내가")으로 보호자에게 마지막 인사를 건네는 3~4문장을 {tone_guide}
 써 주세요. 부활·환생을 단정하는 표현("살아 돌아왔어요" 등)은 쓰지 마세요.
@@ -128,6 +136,14 @@ def _format_rag(hits: Optional[List[dict]]) -> str:
     return f"\n[참고 위로글 예시 — 톤과 표현 방식만 참고하고 내용은 직접 작성하세요]\n{examples}\n"
 
 
+def _format_recovery(recovery_trend: Optional[str]) -> str:
+    """회복 추이를 톤 캘리브레이션 한 줄로. 없거나 '데이터 없음'이면 생략."""
+    if not recovery_trend:
+        return ""
+    guide = TREND_GUIDE.get(recovery_trend.replace(" ", ""))
+    return f"- 최근 회복 추이: {guide}\n" if guide else ""
+
+
 def build_user_prompt(
     *,
     name: str,
@@ -138,6 +154,7 @@ def build_user_prompt(
     memories: Optional[list[str]] = None,
     tone: str = DEFAULT_TONE,
     rag_hits: Optional[List[dict]] = None,
+    recovery_trend: Optional[str] = None,
     first_person: bool = False,
 ) -> str:
     """추모 메시지 생성용 사용자 프롬프트를 만듭니다.
@@ -151,6 +168,9 @@ def build_user_prompt(
         memories: 함께한 추억 키워드 목록(선택).
         tone: 메시지 톤. TONE_GUIDE 의 키(warm·calm·hopeful).
         rag_hits: RAG 검색 결과(retrieve() 반환값). 없으면 few-shot 생략.
+        recovery_trend: 최근 회복 추이(백엔드 trend: "회복 중"·"유지 중"·"주의 필요").
+            톤을 덮어쓰지 않고 같은 톤 안에서 결을 맞추도록 신호만 줍니다.
+            없거나 "데이터 없음"이면 생략.
         first_person: True 이면 반려동물 1인칭 편지 모드. §1.5 조건 충족 후에만 사용.
 
     Returns:
@@ -165,6 +185,7 @@ def build_user_prompt(
         score=score,
         note=note.strip() or "(없음)",
         memories_block=_format_memories(memories),
+        recovery_block=_format_recovery(recovery_trend),
         rag_block=_format_rag(rag_hits),
         tone_guide=tone_guide,
     )

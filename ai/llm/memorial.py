@@ -123,6 +123,7 @@ def generate_message(
     source: str = "local",
     max_retries: int = 1,
     first_person: bool = False,
+    recovery_trend: Optional[str] = None,
 ) -> dict:
     """추모 메시지를 생성합니다.
 
@@ -135,6 +136,10 @@ def generate_message(
         max_retries: 가드 위반 시 재생성 횟수(소진되면 안내문으로 대체).
         first_person: True 이면 반려동물 1인칭 편지 모드(꿈 속 작별 대화).
             호출자가 보호자 동의·경고 문구 표시·risk_level 0~1 을 보장해야 합니다.
+        recovery_trend: 최근 7회 추이(백엔드 get_recovery 의 trend: "회복 중"·"유지 중"
+            ·"주의 필요"·"데이터 없음"). 톤을 덮어쓰지 않고 같은 톤 안에서 결을 맞추도록
+            프롬프트에 신호로만 넣습니다. 없으면 생략(graceful).
+            🚨 위기 선체크(아래)를 통과한 뒤에만 쓰여 위기 안내(1393) 우선순위를 깨지 않습니다.
 
     Returns:
         ``{content, tone, source}``. 위기 시에는 ``crisis_message`` 와 ``risk_level`` 포함.
@@ -164,7 +169,7 @@ def generate_message(
             if m:
                 query_parts.append(str(m))
         if query_parts:
-            rag_hits = _rag_retrieve(" ".join(query_parts), k=3)
+            rag_hits = _rag_retrieve(" ".join(query_parts), k=3, where={"category": "memorial"})
     except Exception:
         rag_hits = None
 
@@ -179,6 +184,7 @@ def generate_message(
         tone=tone,
         first_person=first_person,
         rag_hits=rag_hits,
+        recovery_trend=recovery_trend,
     )
     messages = memorial_prompt.build_messages(**prompt_kwargs)
     prompt = f"{messages[0]['content']}\n\n{messages[1]['content']}"

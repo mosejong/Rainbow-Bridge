@@ -173,11 +173,11 @@
 
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
-| 모세종 | — | [→](members/모세종.md) |
-| 김윤한 | — | [→](members/김윤한.md) |
-| 반소람 | 위기 차단 보강, 1단계 증상 진료·2단계 장례·3단계 기념일(D+30/D+100) 케어 신규(프롬프트+로직+테스트), RAG few-shot 연결, 1인칭 편지 모드 smoke test 완료 | [→](members/반소람.md#2026-06-05-day-5) |
+| 모세종 | 서비스 방향 확정(3단계·수의사↔보호자 플랫폼), PERSO 립싱크 2단계 플로우 구현·동물 한계 확인, 4종 비교 실험 설계, 1단계 DB 스키마(PetDiary·Vet·VetAdvice) + PostgreSQL 준비, PR #89~#100 관리 | [→](members/모세종.md#2026-06-05-day-5) |
+| 김윤한 | docker-compose 백엔드+MongoDB 통합, DuckDNS 도메인+Let's Encrypt HTTPS 설정, MongoDB 컨테이너 연결 수정(localhost→rainbow_mongo), media upload 검증 수정 PR 제출 | [→](members/김윤한.md#2026-06-05-day-5) |
+| 반소람 | 위기 차단 보강, 1단계 증상 진료·2단계 장례·3단계 기념일(D+30/D+100) 케어 신규, RAG corpus 56개 확장(장례·미션 신설), memorial RAG retrieve() 연결, RAG A/B 테스트 완료 | [→](members/반소람.md#2026-06-05-day-5) |
 | 정환주 | RAG 검색 파이프라인 신설(ChromaDB, PR #79)+검색 품질 실증 도구(Hit@1/MRR), 벡터DB 스터디·비교 문서(PR #73), ④ TTS 음성 다양화·실패 폴백(PR #71·#73), HHHHHMM 척도 모듈(도먼트), PERSO 아바타 핸드오프, 1단계 확장구조 역할분담 | [→](members/정환주.md#2026-06-05-day-5) |
 | 민경이 | SymptomsPage 병원 카드·HealthRecordsPage 신규·FuneralPage 신규(장례 안내) 구현, 모바일 반응형 수정, Capacitor Android 앱 전략 확정, PR #84 업데이트 | [→](members/민경이.md#2026-06-05-day-5) |
 | 장민수 | `merge_audio()`(PR #74)·driving env 분리(#83)·PERSO 립싱크 검증+이빨 발견(#90·#91)·remote 모드+`server.py`(#95)·GPU 세팅 가이드(#96)·잔잔 driving 템플릿·PERSO 전수조사(Enterprise 1671크레딧) | [→](members/장민수.md#2026-06-05-day-5) |
 
-**팀 전체:** 멀티모달 사진→영상+음성 파이프라인 코어 완성. AI 1·2·3단계(증상 안내·장례 상담·기념일 케어 D+30/D+100)+RAG few-shot+1인칭 편지 모드 검증 완료. 프론트 1·2단계 신규 화면 구현 + Android Capacitor 앱 전략 확정. Docker+HTTPS 인프라 완성.
+**팀 전체:** **수의사↔보호자 쌍방향 플랫폼 방향 확정** (병원=웹·보호자=앱). 1단계(건강관리/증상 기록) → 2단계(장례 안내) → 3단계(펫로스 케어) 플로우 + AI RAG few-shot·1인칭 편지 모드 검증 완료. 프론트 1·2단계 신규 화면(SymptomsPage·HealthRecordsPage·FuneralPage) + Android Capacitor 전략 확정. 멀티모달 사진→영상+음성 파이프라인 완성. Docker+HTTPS 인프라 완성.

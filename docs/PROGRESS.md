@@ -2,7 +2,7 @@
 
 > 팀원이 자기 작업 상태를 직접 갱신하는 문서입니다.
 > 상태 바꾸면 `docs: 진행도 업데이트` 로 커밋해 주세요.
-> **최종 수정:** 2026-06-04 (모세종)
+> **최종 수정:** 2026-06-06 (모세종)
 
 ## 상태 표기
 - ⬜ 시작 전  |  🟡 진행 중  |  🔵 리뷰 중(PR)  |  ✅ 완료  |  ⛔ 막힘(blocked)
@@ -26,9 +26,9 @@
 | 0-1 | Git 레포 생성 & 문서 정비 | 모세종 | ✅ | 문서 6종 + GitHub 푸시 완료 (06-01) |
 | 0-2 | FastAPI 프로젝트 뼈대 | 모세종 | ✅ | main.py/config/db/health (06-01) |
 | 0-3 | MongoDB 연결 + 실서버 | 김윤한·모세종 | ✅ | NCP Docker MongoDB 운영 중 (06-04) |
-| 0-4 | Docker / docker-compose | 김윤한 | 🟡 | Dockerfile 추가, docker-compose 진행 중 |
+| 0-4 | Docker / docker-compose | 김윤한 | ✅ | MongoDB+백엔드+Redis 통합 compose 완료 (06-05) |
 | 0-5 | LLM 결정·세팅 | 반소람·정환주 | ✅ | Gemini 실연동 완료 (06-03) |
-| 0-6 | PERSO API 연동 테스트 | 장민수 | 🟡 | 영상 더빙·립싱크 전용. LLM·TTS 기능 없음 확인 |
+| 0-6 | PERSO API 연동 테스트 | 장민수 | ✅ | 동물 립싱크 ❌ 구조적 불가 확인 → 드랍. LivePortrait로 대체 |
 | 0-7 | GPU 서버 셋업 (RTX 5060) | 정환주 | ✅ | LivePortrait·추론용 완료 |
 | 0-8 | 프론트 프레임워크 결정·세팅 | 민경이 | ✅ | Vite+React+Tailwind (06-02) |
 
@@ -59,7 +59,7 @@
 ### ④ 음성 톤 선택 + TTS 낭독
 | 파트 | 담당 | 상태 | 비고 |
 |------|------|------|------|
-| TTS 엔진 | 정환주 | ✅ | Google Cloud TTS 실연결 |
+| TTS 엔진 | 정환주 | 🟡 | Google Cloud TTS 실연결됨 → **ElevenLabs로 전환 예정** (성격별 목소리 매핑) |
 | API 연동 | 모세종·정환주 | ✅ | POST /tts, mp3 저장·URL 반환 |
 | 화면 | 민경이 | ✅ | TtsPage 완성 |
 
@@ -93,15 +93,26 @@
 
 ---
 
+### ⑨ 수의사↔보호자 쌍방향 플랫폼 (2026-06-05 방향 확정)
+| 파트 | 담당 | 상태 | 비고 |
+|------|------|------|------|
+| 수의사 회원가입·로그인 API | 김윤한 | 🟡 | POST /api/v1/vets/register, /login |
+| VetAdvice 저장 API | 김윤한 | 🟡 | POST /api/v1/diaries/{diary_id}/advice |
+| 수의사 웹 화면 | 민경이 | 🟡 | 로그인+펫 목록+조언 입력, VITE_TARGET=hospital |
+| 수의사 처치 안내 RAG | 반소람 | 🟡 | 기본 대처법만, category=vet_protocol, 내원 유도 포함 |
+| 모바일 E2E 전체 흐름 | 민경이 | ✅ | 로그인→프로필→감정→메시지→TTS→영상 완주 (06-05) |
+
+---
+
 ## 2. 멀티모달 (가산점) — 사진 → 영상
 
 | 파트 | 담당 | 상태 | 비고 |
 |------|------|------|------|
 | 사진 업로드 API | 모세종 | ✅ | POST /media/upload, GET /media/{asset_id} |
-| LivePortrait 파이프라인 | 장민수 | ✅ | animals 모드·7종 검증·강도 0.4, 잔잔 driving 템플릿(평균) |
-| 영상+TTS 합치기(FFmpeg) | 장민수 | ✅ | merge_audio() — 영상 loop+음성 길이 맞춤, libx264/aac, 립싱크❌ |
+| LivePortrait 파이프라인 | 장민수 | ✅ | animals 모드, driving_multiplier 0.4, TomCarper calm 드라이빙 영상, 동기화 상관계수 0.84 |
+| 영상+TTS 합치기(FFmpeg) | 장민수 | ✅ | merge_audio() — 영상 loop+음성 길이 맞춤, libx264/aac |
 | remote 추론(GPU 서버) | 장민수 | 🟡 | server.py + remote 모드(PR #95), 정환주 터널 연결 대기 |
-| PERSO 립싱크(선택형) | 장민수 | ✅ | 동물 립싱크 검증, opt-in+라벨, Enterprise 1671크레딧 |
+| PERSO 립싱크(선택형) | 장민수 | ❌ | **드랍** — 동물 얼굴 감지 구조적 불가 (방법 2 실험 결과) |
 | 다운로드 제공 | 김윤한 | ⬜ | |
 
 ---
@@ -110,12 +121,13 @@
 
 | 항목 | 담당 | 상태 | 비고 |
 |------|------|------|------|
-| NCP 실서버 배포 | 모세종 | ✅ | http://101.79.19.87:8000 운영 중 |
-| nginx 프론트 서빙 | 모세종 | ✅ | http://101.79.19.87 |
-| systemd 자동 시작 | 모세종 | ✅ | 재부팅 시 uvicorn 자동 기동 |
+| NCP 실서버 배포 | 모세종 | ✅ | Docker Compose 운영 중 (06-05) |
+| nginx 프론트 서빙 | 모세종 | ✅ | https://rainbow-bridge.duckdns.org |
+| systemd 자동 시작 | 모세종 | ✅ | Docker restart:unless-stopped 로 대체 |
 | GitHub Actions 자동 배포 | 모세종 | ✅ | dev 머지 시 NCP 자동 빌드·배포 |
-| HTTPS / 도메인 | — | ⬜ | 크로스플랫폼 목표 달성을 위해 필요 |
-| Docker compose 통합 | 김윤한 | ⬜ | |
+| HTTPS / 도메인 | 김윤한 | ✅ | DuckDNS + Let's Encrypt (rainbow-bridge.duckdns.org) |
+| Docker compose 통합 | 김윤한 | ✅ | MongoDB+백엔드+Redis 통합 완료 (06-05) |
+| Redis 캐시 | 모세종 | ✅ | 감정 체크인 최근 7회 캐시, 회복 분석 API (06-05) |
 
 ---
 

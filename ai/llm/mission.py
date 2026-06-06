@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 from typing import Optional, Protocol
 
+from ai.rag.retrieve import retrieve as _rag_retrieve
 from .prompts import mission as mission_prompt
 
 
@@ -84,6 +85,10 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
 }
 
 
+# 난이도 순서(작음 → 큼). 회복 추이로 한 단계 올리고/내릴 때 인덱스로 씁니다.
+_DIFFICULTY_ORDER: tuple[str, ...] = ("gentle", "small", "active")
+
+
 def _difficulty(emotion_score: Optional[int]) -> str:
     """감정 점수 → 난이도. 점수가 없으면 중간(small)."""
     if emotion_score is None:
@@ -93,6 +98,32 @@ def _difficulty(emotion_score: Optional[int]) -> str:
     if emotion_score <= 6:
         return "small"
     return "active"
+
+
+def _apply_trend(difficulty: str, recovery_trend: Optional[str]) -> str:
+    """최근 회복 추이로 난이도를 한 단계 보정합니다.
+
+    같은 점수라도 "올라오는 중"인지 "내려가는 중"인지로 난이도를 조절합니다
+    (차별점: 단일 점수가 아닌 최근 추이 반영).
+
+    - "회복 중"  → 한 단계 올림(gentle→small→active). 조금 더 활동적인 미션.
+    - "주의 필요" → 한 단계 내림(active→small→gentle). 더 작고 부담 없는 미션.
+    - "유지 중"·"데이터 없음"·None → 그대로.
+
+    띄어쓰기 차이("회복 중"/"회복중")에 견디도록 공백을 제거해 비교합니다.
+    """
+    if not recovery_trend:
+        return difficulty
+    key = recovery_trend.replace(" ", "")
+    try:
+        idx = _DIFFICULTY_ORDER.index(difficulty)
+    except ValueError:
+        return difficulty
+    if key == "회복중":
+        idx = min(idx + 1, len(_DIFFICULTY_ORDER) - 1)
+    elif key == "주의필요":
+        idx = max(idx - 1, 0)
+    return _DIFFICULTY_ORDER[idx]
 
 
 def _is_safe(mission: dict) -> bool:
@@ -144,6 +175,7 @@ def recommend(
     day_since: Optional[int] = None,
     history: Optional[list[str]] = None,
     *,
+    recovery_trend: Optional[str] = None,
     generate: Optional[GenerateFn] = None,
     count: int = 3,
 ) -> list[dict]:
@@ -153,15 +185,26 @@ def recommend(
         emotion_score: 보호자 감정 점수(1~10, 낮을수록 힘듦). None 이면 중간 난이도.
         day_since: 반려동물을 떠나보낸 뒤 경과일(선택).
         history: 최근 추천/완료한 미션 제목(중복 회피).
+        recovery_trend: 최근 7회 추이(백엔드 get_recovery 의 trend: "회복 중"·"유지 중"
+            ·"주의 필요"·"데이터 없음"). 점수 기반 난이도를 한 단계 보정합니다.
+            없으면 점수만 사용(graceful).
         generate: LLM 호출 함수(provider.generate). None 이면 규칙 기반만 사용.
         count: 추천 개수.
 
     Returns:
         ``[{title, description, category}, ...]`` (최대 count 개).
     """
-    difficulty = _difficulty(emotion_score)
+    difficulty = _apply_trend(_difficulty(emotion_score), recovery_trend)
     recent: set[str] = set(history or [])
     score = emotion_score if emotion_score is not None else 5
+
+    # RAG 검색 — 회복 미션 예시 검색. 실패 시 graceful fallback.
+    rag_hits = None
+    try:
+        query = mission_prompt.DIFFICULTY_GUIDE.get(difficulty, "회복 미션")
+        rag_hits = _rag_retrieve(query, k=3, where={"category": "mission"})
+    except Exception:
+        rag_hits = None
 
     missions: list[dict] = []
 
@@ -174,6 +217,8 @@ def recommend(
                 day_since=day_since,
                 recent_titles=sorted(recent),
                 count=count,
+                rag_hits=rag_hits,
+                recovery_trend=recovery_trend,
             )
             raw = generate(
                 prompt,
