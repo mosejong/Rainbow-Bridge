@@ -56,3 +56,45 @@
 - [네이버 CLOVA Voice](https://www.ncloud.com/product/aiService/clovaVoice) · [API 가이드](https://api.ncloud-docs.com/docs/ai-naver-clovavoice)
 - [ElevenLabs 가격](https://elevenlabs.io/pricing/api)
 - [타입캐스트 가격 안내](https://typecast.ai/kr/learn/answer-questions-about-typecast-pricing/)
+
+## 5. 샘플 비교 청취 결과 (스파이크 — 채우는 중)
+
+> 방법: 동일한 보호자 위로 멘트 1개를 ElevenLabs(성격 4종) vs Google 현행으로 합성해 A/B 청취.
+> 생성: `python -m ai.tts.compare_elevenlabs` → `ai/tts/_output/compare/*.mp3` (키 필요, *.mp3 비커밋)
+> 텍스트: "오늘도 마음이 많이 무거우셨죠. …" (1인칭/특정 반려동물 ❌ — 음색만 비교)
+
+### ElevenLabs (model: eleven_multilingual_v2, language_code=ko)
+
+> 🚨 **Free 플랜 제약 (2026-06-06 실측)**: Free 키는 **API 로 Library(한국어 네이티브)
+> 보이스 사용 불가** (HTTP 402 `paid_plan_required` / 400 `free_users_not_allowed`).
+> → API 합성은 **계정 기본 보이스(영어권)** 만 가능 → 아래 샘플은 한국어에 **영어 억양**이 섞임.
+> **진짜 한국어 음질·성격 매핑 테스트는 유료 Creator+ 전환 필요.** ElevenLabs 전환의 핵심 비용 변수.
+
+생성 보이스(Free 기본·자동배정 — 영어권):
+
+| 성격 | voice_id (사용) | 자연스러움(1~5) | 한국어 발음(1~5) | 감정표현(1~5) | 메모 |
+|------|----------|----------------|-----------------|---------------|------|
+| 활발 | Roger (CwhRBWXzGAHq8TQ4Fs17) | | | | 영어권 보이스 |
+| 순둥이 | Sarah (EXAVITQu4vr4xnSDxMaL) | | | | 영어권 보이스 |
+| 도도 | Laura (FGY2WhTYpPnrIDTdsKH5) | | | | 영어권 보이스 |
+| 노령 | Charlie (IKne3meq5aSn9XLyUdCD) | | | | 영어권 보이스 |
+
+한국어 네이티브 후보(유료 전환 시 사용 — 실행 시 자동 출력됨):
+`Nara-Warm`(qWofGdsKN4woEPGCzrdX 여중년 서울) · `Totoring-Calm`(d4fa1MBr1OVekaed8x4e 여청년 서울) ·
+`Jin-Warm`(rvVNwZozYG4hTIbVUvHi 남중년) · `Dae-Mature`(HHlsD8ZpKBtIAyvlCGoz 남중년 서울) ·
+`Yimi-Calm`(TLp6VWy7y0kTr5KDx4gQ 여청년 서울) · `Juha-Calm`(hmewQCBsQh48wGHkpNwo 여)
+
+### Google 현행 베이스라인 (ko-KR-Neural2-A)
+
+| 톤 | 자연스러움 | 한국어 발음 | 감정표현 | 메모 |
+|----|-----------|------------|----------|------|
+| warm | | | | |
+| calm | | | | |
+| hopeful | | | | |
+| soft | | | | |
+
+### 결론 (한 줄)
+
+- 전환 가치: ☐ 有 → 🔴2 `synthesize()` ElevenLabs 연동 후속 PR  /  ☐ 無 → Google 유지
+- 근거:
+
