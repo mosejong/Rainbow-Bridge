@@ -176,17 +176,55 @@ with open("outputs/method3_high_multiplier.mp4", "wb") as out:
 | 단점 | 배율 너무 높이면 얼굴 변형이 부자연스러울 수 있음 |
 | 단점 | driving 영상 패턴에 의존 |
 
+### 실제 테스트 조건 (2026-06-06, 모세종 — Google Colab T4)
+
+> ⚠️ 문서에 기록된 실행 방법(GPU 서버 env 변경)과 다르게, Colab에서 직접 inference_animals.py를 실행함.
+
+| 항목 | 값 |
+|------|-----|
+| 소스 이미지 | `KakaoTalk_20260601_152327.jpg` (말티즈 정면) |
+| 드라이빙 영상 | `060_TomCarper_calm_3clips.mp4` (CREMA-D calm 태그, 발화 영상) |
+| driving_multiplier | 0.4 (기본값) |
+| 옵션 | `--no_flag_stitching` |
+| 실행 환경 | Google Colab T4 GPU |
+| 출력 | concat 영상 (좌: 드라이빙 / 중: 원본 / 우: 합성 결과) |
+
+```bash
+# Colab에서 실행 순서
+!git clone https://github.com/KwaiVGI/LivePortrait
+%cd /content/LivePortrait
+!pip install -r requirements.txt -q
+# XPose CUDA 커스텀 ops 빌드 (필수)
+%cd /content/LivePortrait/src/utils/dependencies/XPose/models/UniPose/ops
+!python setup.py build install
+%cd /content/LivePortrait
+# 가중치 다운로드 (동물 모델만)
+# hf_hub_download("KwaiVGI/LivePortrait", ...) 로 liveportrait_animals/ 만 받음
+!python inference_animals.py \
+  -s /content/KakaoTalk_20260601_152327.jpg \
+  -d /content/060_TomCarper_calm_3clips.mp4 \
+  -o /content/outputs/ \
+  --no_flag_stitching \
+  --driving_multiplier 0.4
+```
+
 ### 결과
 
-**결과 파일**: `outputs/method3_high_multiplier.mp4` · **상태**: ⬜ 미실행
+**결과 파일**: `KakaoTalk_20260601_152327--060_TomCarper_calm_3clips_concat.mp4` · **상태**: ✅ 실행 완료
 
 | 항목 | 결과 |
 |------|------|
-| 입 움직임 | |
-| 음성 동기화 | |
-| 자연스러움 (1~5) | |
-| 처리시간 | |
-| 비고 | |
+| 입 움직임 | ✅ 있음 (사람 움직임의 32% 수준, 동기화 상관계수 0.84) |
+| 음성 동기화 | ❌ 없음 (TTS 미결합 — 드라이빙 영상 기반 움직임만) |
+| 자연스러움 (1~5) | 4 |
+| 처리시간 | 약 1분 20초 (Colab T4) |
+| 비고 | calm 태그 드라이빙 영상이 추모 맥락에 적합. 코 영역 미세 변형 아티팩트 있으나 추모 영상 수준에서 허용 가능. 후반 클립 전환 구간(8.8~9.7초) 블러 발생 — 단일 클립 드라이빙 영상으로 개선 가능. |
+
+#### 상세 분석 (Claude web Sonnet 4.6)
+- **입 동기화**: 상관계수 0.84, lag=0 (실시간 동기화)
+- **움직임 강도**: 사람 대비 32% (코/입 영역 avg diff 22.8 vs 눈 위쪽 8.2)
+- **아티팩트**: 코가 같이 당겨지는 변형, 후반 frame 228 diff 36.2 (블러)
+- **추모 맥락 적합도**: 과장 없는 절제된 움직임, 차분한 시선 고정 — 의도에 부합
 
 ---
 
@@ -257,12 +295,33 @@ python inference.py \
 | 설치 난이도 | 높음 | 낮음 | 최저 (env만) | 높음 |
 | 추가 비용 | 없음 | PERSO API | 없음 | 없음 |
 | 처리 속도 | 빠름 | 빠름 | 빠름 | 보통 |
-| 자연스러움 | 중간 | 미지 | 중간 | 높음 |
+| 자연스러움 | 중간 | 미지 | 4/5 | 높음 |
 | 실행 위치 | GPU 서버 | 로컬+PERSO | GPU 서버 | GPU 서버 |
-| 상태 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 상태 | ⬜ | ✅ | ✅ | ⬜ |
 
 ---
 
-## 결론 (실험 완료 후 작성)
+## 결론 (2026-06-06)
 
-> TBD — 각 방법 실행 후 위 결과 기록표를 채우고 여기에 최종 채택 방법과 이유를 작성.
+### 채택: 방법 3 — LivePortrait driving_multiplier 0.4 + calm 드라이빙 영상
+
+| 항목 | 결과 |
+|------|------|
+| PERSO 립싱크 (방법 2) | ❌ 드랍 — 동물 얼굴 감지 구조적 불가 |
+| LivePortrait (방법 3) | ✅ 채택 — 입 동기화 0.84, 자연스러움 4/5 |
+| Wav2Lip (방법 1) | ⬜ 미실행 — 방법 3 채택으로 불필요 |
+| SadTalker (방법 4) | ⬜ 미실행 — 방법 3 채택으로 불필요 |
+
+**채택 이유:**
+- PERSO는 동물 얼굴에 구조적으로 작동 안 함 (크롭 전처리로도 해결 불가)
+- LivePortrait는 동물 전용 모드(`inference_animals.py`) 제공, 별도 얼굴 감지 불필요
+- calm 태그 드라이빙 영상 + multiplier 0.4 조합이 추모 영상 맥락에 적합 (과장 없는 절제된 움직임)
+- 입 동기화 상관계수 0.84, 처리시간 약 1분 20초 (Colab T4 기준)
+
+**남은 이슈:**
+- 코 영역 미세 변형 아티팩트 — LivePortrait 구조적 한계, 허용 수준
+- 후반 클립 전환 블러 (8.8~9.7초) — 단일 클립 드라이빙 영상으로 개선 가능
+
+**다음 단계:**
+- ElevenLabs TTS + LivePortrait 영상 합치기 → 발표 데모 완성
+- 정환주: GPU 서버에서 동일 조건(TomCarper calm, multiplier 0.4) 실행 → 서비스 파이프라인 연결
