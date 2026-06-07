@@ -182,8 +182,14 @@
 
 **팀 전체:** **수의사↔보호자 쌍방향 플랫폼 방향 확정** (병원=웹·보호자=앱). 1단계(건강관리/증상 기록) → 2단계(장례 안내) → 3단계(펫로스 케어) 플로우 + AI RAG few-shot·1인칭 편지 모드 검증 완료. 프론트 1·2단계 신규 화면(SymptomsPage·HealthRecordsPage·FuneralPage) + Android Capacitor 전략 확정. 멀티모달 사진→영상+음성 파이프라인 완성. Docker+HTTPS 인프라 완성.
 
+## 2026-06-07 (Day 7)
+
+| 이름 | 한 일 (요약) | 상세 |
+|------|------------|------|
+| 정환주 | TTS 라운드2 **사람 블라인드 A/B**(세종님 피드백 반영) — 자동지표(CER·Gemini) 폐기, EL 한국어 보이스 9종 웹 수동 추출 → 각 vs Google warm 1:1 청취 → **EL 9전 9승**("기계음 해소"). Day6 "Google 유지" 뒤집힘. 결론 2부: **품질=EL 압승 / 비용(상업=유료)=PM 결정**(폴백 `voiced_url` 한정) | [→](members/정환주.md#2026-06-07-day-7) |
+
 ## 2026-06-06 (Day 6)
 
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
-| 정환주 | TTS ElevenLabs 전환 평가 스파이크 — 4성격 vs Google 4톤 샘플 비교, Free 한국어 제약 실측, STT(faster-whisper CER) 발음 분석 + Gemini 오디오 자동평가(자연/감정) 도구 신설 → **Google 유지 결론**(전환 근거 없음), ENGINE_NOTES §3 모순 정리 | [→](members/정환주.md#2026-06-06-day-6) |
+| 정환주 | TTS ElevenLabs 전환 평가 스파이크 — 4성격 vs Google 4톤 샘플 비교, Free 한국어 제약 실측, STT(faster-whisper CER) 발음 분석 + Gemini 오디오 자동평가(자연/감정) 도구 신설 → **Google 유지 결론**(전환 근거 없음), ENGINE_NOTES §3 모순 정리. ⚠️ Day7 사람 청취로 **이 결론 뒤집힘** | [→](members/정환주.md#2026-06-06-day-6) |
