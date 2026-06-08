@@ -2,9 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 
-from ..logs import KIND_MESSAGE, LLMLog, log_llm_call, measure_latency
+from ..logs import (
+    KIND_CRISIS,
+    KIND_MESSAGE,
+    LLMLog,
+    alog_llm_call,
+    log_llm_call,
+    measure_latency,
+)
 
 
 def test_total_tokens_sum():
@@ -98,4 +106,35 @@ def test_log_llm_call_inserts_one_doc():
     assert doc["kind"] == KIND_MESSAGE
     assert doc["total_tokens"] == 12
     assert doc["latency_ms"] == 42
+    assert "prompt" not in doc  # 원문 미저장
+
+
+def test_alog_llm_call_lite_inserts_one_doc():
+    # motor(async) 버전 — resp 없이 라이트 로깅(토큰 0). asyncio.run 으로 plugin 불필요.
+    inserted = []
+
+    class _StubAsyncCollection:
+        async def insert_one(self, doc):
+            inserted.append(doc)
+            return SimpleNamespace(inserted_id="stub-id")
+
+    result = asyncio.run(
+        alog_llm_call(
+            _StubAsyncCollection(),
+            kind=KIND_CRISIS,
+            latency_ms=7,
+            pet_id="p1",
+            model="gemini-2.5-flash",
+            risk_level=2,
+        )
+    )
+    assert result.inserted_id == "stub-id"
+    assert len(inserted) == 1
+    doc = inserted[0]
+    assert doc["kind"] == KIND_CRISIS
+    assert doc["pet_id"] == "p1"
+    assert doc["latency_ms"] == 7
+    assert doc["risk_level"] == 2
+    assert doc["total_tokens"] == 0  # resp 없음 → 토큰 0 (라이트 로깅)
+    assert doc["model"] == "gemini-2.5-flash"
     assert "prompt" not in doc  # 원문 미저장
