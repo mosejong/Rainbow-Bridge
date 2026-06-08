@@ -173,7 +173,10 @@ def generate_message(
         if note:
             query_parts.append(note)
         for m in (pet.get("memories") or [])[:3]:
-            if m:
+            if isinstance(m, dict):
+                parts = [m.get("keyword", ""), m.get("detail", "")]
+                query_parts.append(" ".join(p for p in parts if p))
+            elif m:
                 query_parts.append(str(m))
         if query_parts:
             rag_hits = _rag_retrieve(" ".join(query_parts), k=3, where={"category": "memorial"})

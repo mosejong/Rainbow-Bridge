@@ -120,11 +120,20 @@ _USER_TEMPLATE_FIRST_PERSON: Final[str] = """\
 """
 
 
-def _format_memories(memories: Optional[list[str]]) -> str:
-    """추억 키워드를 불릿으로. 없으면 빈 줄(블록 생략)."""
+def _format_memories(memories: Optional[list]) -> str:
+    """추억 목록을 불릿으로. {keyword, detail} dict와 str 모두 처리."""
     if not memories:
         return ""
-    lines = "\n".join(f"  - {m}" for m in memories if m and m.strip())
+    lines_parts = []
+    for m in memories:
+        if isinstance(m, dict):
+            keyword = str(m.get("keyword", "")).strip()
+            detail = str(m.get("detail", "")).strip()
+            if keyword:
+                lines_parts.append(f"  - {keyword}" + (f": {detail}" if detail else ""))
+        elif isinstance(m, str) and m.strip():
+            lines_parts.append(f"  - {m.strip()}")
+    lines = "\n".join(lines_parts)
     return f"- 함께한 추억:\n{lines}\n" if lines else ""
 
 

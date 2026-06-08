@@ -2,7 +2,7 @@
 
 > 팀원이 자기 작업 상태를 직접 갱신하는 문서입니다.
 > 상태 바꾸면 `docs: 진행도 업데이트` 로 커밋해 주세요.
-> **최종 수정:** 2026-06-06 (모세종)
+> **최종 수정:** 2026-06-08 (모세종)
 
 ## 상태 표기
 - ⬜ 시작 전  |  🟡 진행 중  |  🔵 리뷰 중(PR)  |  ✅ 완료  |  ⛔ 막힘(blocked)
@@ -52,7 +52,7 @@
 | 파트 | 담당 | 상태 | 비고 |
 |------|------|------|------|
 | 프롬프트/LLM | 반소람 | ✅ | Gemini 실연동, 가드레일 테스트 통과 |
-| API 연동 | 모세종 | ✅ | POST /messages, Gemini 실호출 |
+| API 연동 | 모세종 | ✅ | POST /messages, ai/llm/memorial 경로 통합 (RAG+가드레일 적용) |
 | 화면 | 민경이 | ✅ | MessagePage 완성 |
 - ⚠️ "반려동물인 척" ❌ → 기억 기반 **상징적 위로 메시지**
 
@@ -96,8 +96,8 @@
 ### ⑨ 수의사↔보호자 쌍방향 플랫폼 (2026-06-05 방향 확정)
 | 파트 | 담당 | 상태 | 비고 |
 |------|------|------|------|
-| 수의사 회원가입·로그인 API | 김윤한 | 🟡 | POST /api/v1/vets/register, /login |
-| VetAdvice 저장 API | 김윤한 | 🟡 | POST /api/v1/diaries/{diary_id}/advice |
+| 수의사 회원가입·로그인 API | 김윤한 | ✅ | POST /api/v1/vets/register, /login (PR #114) |
+| VetAdvice 저장 API | 김윤한 | ✅ | POST /api/v1/diaries/{diary_id}/advice (PR #114) |
 | 수의사 웹 화면 | 민경이 | 🟡 | 로그인+펫 목록+조언 입력, VITE_TARGET=hospital |
 | 수의사 처치 안내 RAG | 반소람 | 🟡 | 기본 대처법만, category=vet_protocol, 내원 유도 포함 |
 | 모바일 E2E 전체 흐름 | 민경이 | ✅ | 로그인→프로필→감정→메시지→TTS→영상 완주 (06-05) |
@@ -113,7 +113,7 @@
 | 영상+TTS 합치기(FFmpeg) | 장민수 | ✅ | merge_audio() — 영상 loop+음성 길이 맞춤, libx264/aac |
 | remote 추론(GPU 서버) | 장민수 | 🟡 | server.py + remote 모드(PR #95), 정환주 터널 연결 대기 |
 | PERSO 립싱크(선택형) | 장민수 | ❌ | **드랍** — 동물 얼굴 감지 구조적 불가 (방법 2 실험 결과) |
-| 다운로드 제공 | 김윤한 | ⬜ | |
+| 다운로드 제공 | 김윤한 | ✅ | GET /media/{asset_id}/download (기존 구현 확인) |
 
 ---
 
