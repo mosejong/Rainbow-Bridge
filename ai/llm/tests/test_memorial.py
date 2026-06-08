@@ -94,8 +94,8 @@ def test_generate_message_uses_injected_generate():
 # --- 3. 안전: 위기 입력은 1393 우선 ----------------------------------------- #
 
 
-def test_crisis_input_returns_hotline_not_message():
-    """위기 신호(L2↑)면 LLM 을 호출하지 않고 1393 안내를 우선한다."""
+def test_l3_crisis_blocks_generation():
+    """L3(긴급: 구체적 수단·계획)이면 생성을 전면 중단하고 1393 만 내보낸다."""
     called = False
 
     def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
@@ -105,12 +105,33 @@ def test_crisis_input_returns_hotline_not_message():
 
     result = generate_message(
         PET,
+        {"emotion_score": 1, "note": "유서를 쓰고 목을 매려고 해요"},
+        generate=fake_generate,
+    )
+    assert called is False  # L3 — 생성 자체를 건너뜀
+    assert result["source"] == "safety"
+    assert CRISIS_HOTLINE in result["crisis_message"]
+    assert CRISIS_HOTLINE in result["content"]
+
+
+def test_l2_crisis_generates_with_hotline():
+    """L2(경고: 사망 욕구)면 메시지는 생성하되 1393 안내를 함께 내보낸다."""
+    called = False
+
+    def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        nonlocal called
+        called = True
+        return "봄이는 늘 곁에서 환하게 웃어주었죠. 그 따뜻함은 잊지 않을게요."
+
+    result = generate_message(
+        PET,
         {"emotion_score": 1, "note": "봄이 곁으로 나도 따라가고 싶어요"},
         generate=fake_generate,
     )
-    assert called is False  # 위기 시 생성 자체를 건너뜀
-    assert CRISIS_HOTLINE in result["crisis_message"]
-    assert CRISIS_HOTLINE in result["content"]
+    assert called is True  # L2 — 생성은 진행
+    assert result["source"] != "safety"
+    assert CRISIS_HOTLINE in result["crisis_message"]  # 1393 함께 표시
+    assert result["risk_level"] == 2
 
 
 # --- 4. 가드: 부활/1인칭 출력 차단 ------------------------------------------ #
@@ -228,8 +249,8 @@ def test_resurrection_still_blocked_in_first_person_mode():
         )
 
 
-def test_crisis_blocks_first_person_too():
-    """위기 신호가 있으면 first_person=True 여도 1393 안내가 우선이다."""
+def test_l3_crisis_blocks_first_person():
+    """L3(긴급)이면 first_person=True 여도 생성 전면 중단, 1393 만 내보낸다."""
     called = False
 
     def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
@@ -239,9 +260,30 @@ def test_crisis_blocks_first_person_too():
 
     result = generate_message(
         PET,
+        {"emotion_score": 1, "note": "유서를 쓰고 목을 매려고 해요"},
+        generate=fake_generate,
+        first_person=True,
+    )
+    assert called is False  # L3 — 생성 자체 차단
+    assert CRISIS_HOTLINE in result["content"]
+
+
+def test_l2_crisis_forces_third_person():
+    """L2(경고)면 first_person=True 여도 1인칭 편지로 승격하지 않고(3인칭) 1393 을 함께 낸다."""
+    called = False
+
+    def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        nonlocal called
+        called = True
+        return "봄이는 늘 곁에서 환하게 웃어주었죠. 그 따뜻함은 잊지 않을게요."
+
+    result = generate_message(
+        PET,
         {"emotion_score": 1, "note": "봄이 곁으로 나도 따라가고 싶어요"},
         generate=fake_generate,
         first_person=True,
     )
-    assert called is False
-    assert CRISIS_HOTLINE in result["content"]
+    assert called is True  # L2 — 생성은 진행
+    assert result.get("first_person") is not True  # 1인칭 편지로 승격 안 됨(3인칭)
+    assert CRISIS_HOTLINE in result["crisis_message"]  # 1393 함께
+    assert result["risk_level"] == 2

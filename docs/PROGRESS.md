@@ -87,7 +87,7 @@
 ### ⑧ 평가 리포트
 | 파트 | 담당 | 상태 | 비고 |
 |------|------|------|------|
-| 지표/집계 | 정환주 | ✅ | ai/evaluation/report.py 완성, 핸드오프 작성 |
+| 지표/집계 | 정환주 | ✅ | report.py 완성 + llm_logs 라이트 로깅 연결(message·mission 호출부, 06-08) → usage 실데이터화 |
 | API | 모세종 | 🟡 | 스텁 존재, build_report 실연결 작업 중 |
 | 화면 | 민경이 | ✅ | ReportPage 완성 |
 

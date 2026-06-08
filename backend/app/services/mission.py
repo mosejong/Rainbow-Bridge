@@ -3,6 +3,13 @@ from datetime import datetime, timezone
 
 from bson import ObjectId
 
+from ai.evaluation.logs import (
+    COLLECTION as LLM_LOGS,
+    KIND_MISSION,
+    alog_llm_call,
+    measure_latency,
+)
+from ai.llm.config import get_config
 from ai.llm.mission import recommend as _ai_recommend
 from ai.llm.provider import generate
 from app.db.mongodb import mongodb
@@ -34,13 +41,19 @@ async def create_default_missions(pet_id: str) -> list[MissionResponse]:
         pass
 
     # 반소람님 AI 미션 추천 (Redis 점수 기반 난이도 자동 조정)
+    # ⑧ 리포트용 라이트 로깅 — LLM 호출만 측정해 finally 에서 1건 적재.
+    cfg = get_config()
+    log_ok = True
+    timer = None
     try:
-        missions_raw = _ai_recommend(
-            emotion_score=emotion_score,
-            generate=generate,
-            count=5,
-        )
+        with measure_latency() as timer:
+            missions_raw = _ai_recommend(
+                emotion_score=emotion_score,
+                generate=generate,
+                count=5,
+            )
     except Exception:
+        log_ok = False
         missions_raw = [
             {
                 "title": "오늘 산책하기",
@@ -68,6 +81,20 @@ async def create_default_missions(pet_id: str) -> list[MissionResponse]:
                 "category": "record",
             },
         ]
+    finally:
+        # best-effort — 로그 적재 실패가 미션 응답을 깨면 안 됨.
+        try:
+            await alog_llm_call(
+                mongodb.db[LLM_LOGS],
+                kind=KIND_MISSION,
+                pet_id=pet_id,
+                model=cfg.model,
+                provider=cfg.provider,
+                latency_ms=timer.ms if timer else 0,
+                ok=log_ok,
+            )
+        except Exception:
+            pass
 
     now = datetime.now(timezone.utc)
     docs = [

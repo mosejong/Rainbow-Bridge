@@ -22,6 +22,8 @@ _UPLOAD_DIR = "uploads/pets"
 
 def _collection():
     return mongodb.db["pets"]
+
+
 def _normalize_memories(memories: list | None) -> list | None:
     if not memories:
         return memories
@@ -32,6 +34,7 @@ def _normalize_memories(memories: list | None) -> list | None:
         else:
             result.append(m)
     return result
+
 
 async def create_pet(data: PetCreate, user_id: int) -> PetResponse:
     doc = data.model_dump()
