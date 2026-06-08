@@ -218,8 +218,8 @@ def test_note_custom_source():
 # --------------------------------------------------------------------------- #
 
 
-def test_crisis_note_skips_llm_and_returns_hotline():
-    """보호자 메모에 위기 신호(L2↑)가 있으면 LLM 을 호출하지 않는다."""
+def test_l3_crisis_blocks_anniversary():
+    """L3(긴급)이면 케어 메시지를 중단하고 1393 만 내보낸다."""
     called = False
 
     def fake_generate(prompt, *, max_tokens=350, temperature=0.6, json_mode=False):
@@ -230,10 +230,32 @@ def test_crisis_note_skips_llm_and_returns_hotline():
     result = generate_anniversary_care(
         PET,
         30,
-        note="봄이 곁으로 나도 따라가고 싶어요",
+        note="유서를 쓰고 목을 매려고 해요",
         generate=fake_generate,
     )
 
     assert called is False
     assert CRISIS_HOTLINE in result["crisis_message"]
     assert result["source"] == "safety"
+
+
+def test_l2_crisis_generates_anniversary_with_hotline():
+    """L2(경고)면 케어 메시지는 하되 1393 안내를 함께 내보낸다."""
+    called = False
+
+    def fake_generate(prompt, *, max_tokens=350, temperature=0.6, json_mode=False):
+        nonlocal called
+        called = True
+        return "오늘은 봄이를 더 많이 떠올리는 날이네요. 그 마음 곁에서 함께할게요."
+
+    result = generate_anniversary_care(
+        PET,
+        30,
+        note="봄이 곁으로 나도 따라가고 싶어요",
+        generate=fake_generate,
+    )
+
+    assert called is True  # L2 — 케어 메시지는 생성
+    assert result["source"] != "safety"
+    assert CRISIS_HOTLINE in result["crisis_message"]  # 1393 함께
+    assert result["risk_level"] == 2

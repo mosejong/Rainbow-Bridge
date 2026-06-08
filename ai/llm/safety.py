@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
-from enum import IntEnum
+from enum import Enum, IntEnum
 from typing import Final, Optional, Protocol
 
 from .prompts import safety as safety_prompt
@@ -54,6 +54,161 @@ class RiskLevel(IntEnum):
 
 # L2(경고) 이상부터 1393 안내를 띄웁니다.
 HOTLINE_REQUIRED_FROM: Final[RiskLevel] = RiskLevel.L2_WARNING
+
+
+# --------------------------------------------------------------------------- #
+# 위기 등급별 응답 정책 — 생성 기능(③ 메시지·triage·편지 등)이 공통으로 따릅니다.
+#   L0 정상      → 평소대로 생성
+#   L1 우려      → 생성하되 복지자원 안내 동봉(공감 강화)
+#   L2 경고      → 생성 대신 1393 안내 우선
+#   L3 긴급      → 생성 전면 중단 + 1393
+# 이분법(hotline_required)을 대체해, 호출부가 등급별로 일관 분기하도록 합니다.
+# --------------------------------------------------------------------------- #
+
+# 심리 상담·복지 자원 — L1(우려) 시 보호자에게 함께 안내.
+# 내용은 코드에 흩지 말고 이 상수에서만 참조하세요(1393 과 동일 원칙).
+#
+# 각 항목 키:
+#   name·by·note : 표시용 정보
+#   scope        : "전국" | "서울" | "온라인" — 이용 가능 지역
+#   cost         : 비용 안내. ⚠️ 유료는 변동이 커서 정확한 금액 대신 대략값만 둡니다.
+#   url          : 공식 링크 (프론트에서 안내 버튼/링크로 사용)
+#   featured     : True = 기본(상시) 노출, False = '더 보기' 토글 안에 노출.
+#                  무료 공공 + 전국 이용 가능한 곳만 True (서울 한정·민간·유료는 토글).
+#                  ※ 토글 UI 구현은 프론트(민경이) 몫. 여기선 노출 기준만 표시.
+# ⚠️ 비용·자격·URL 은 매년 바뀔 수 있어요. 운영 전 팀이 최신 정보로 재확인하세요.
+WELFARE_INTRO: Final[str] = (
+    "혼자 감당하기 버거우실 땐, 마음을 나눌 수 있는 곳이 있어요. "
+    "펫로스도 충분히 상담받을 수 있는 일이에요."
+)
+
+WELFARE_RESOURCES: Final[tuple[dict[str, object], ...]] = (
+    # ── 기본 노출(featured): 무료 공공 + 전국 ──
+    {
+        "name": "지역 정신건강복지센터",
+        "scope": "전국",
+        "cost": "전액 무료",
+        "by": "전국 시·군·구 지자체",
+        "url": "https://www.mentalhealth.go.kr/portal/health/fac/PotalHealthFacListTab1.do",
+        "note": "'사는 지역 + 정신건강복지센터' 검색. 펫로스로 인한 우울·슬픔도 상담 대상",
+        "featured": True,
+    },
+    {
+        "name": "정신건강 상담전화",
+        "scope": "전국",
+        "cost": "전액 무료",
+        "by": "1577-0199 또는 129(보건복지콜센터)",
+        "url": "https://www.mentalhealth.go.kr/",
+        "note": "전화하면 시·군·구 정신건강전문요원이 상담·지지·기관 안내 (※ 위기 시엔 1393)",
+        "featured": True,
+    },
+    # ── 토글 노출(featured=False): 서울 한정 ──
+    {
+        "name": "서울시 청년 마음건강 지원사업",
+        "scope": "서울",
+        "cost": "전액 무료",
+        "by": "서울시 (청년몽땅정보통)",
+        "url": "https://youth.seoul.go.kr/",
+        "note": "펫로스 증후군 포함 모든 심리적 어려움 상담 가능",
+        "featured": False,
+    },
+    {
+        "name": "서울심리지원센터 (4개 권역)",
+        "scope": "서울",
+        "cost": "전액 무료",
+        "by": "서울시광역심리지원센터",
+        "url": "https://www.smpsc.or.kr/",
+        "note": "예방적 차원의 상담에 적합",
+        "featured": False,
+    },
+    # ── 토글 노출: 민간·온라인(무료) ──
+    {
+        "name": "마인드카페",
+        "scope": "온라인",
+        "cost": "비대면 (무료 콘텐츠 + 유료 상담)",
+        "by": "민간 (Mindcafe)",
+        "url": "https://mindcafe.co.kr/",
+        "note": "펫로스 사별 후 상담·지원그룹·추모활동, 전국 어디서나",
+        "featured": False,
+    },
+    {
+        "name": "CALUSO (카루소)",
+        "scope": "온라인",
+        "cost": "무료",
+        "by": "비영리 펫로스통합지원기구",
+        "url": "https://caluso.org/",
+        "note": "펫로스 증후군 극복 이메일 상담",
+        "featured": False,
+    },
+    # ── 토글 노출: 일부 자기부담·유료 (금액은 대략값, 변동 큼) ──
+    {
+        "name": "청년 마음건강 지원사업",
+        "scope": "전국",
+        "cost": "일부 자기부담 (회기당 1만원 내외)",
+        "by": "보건복지부 바우처 (복지로)",
+        "url": "https://www.bokjiro.go.kr/",
+        "note": "임상심리사 1급 등 전문가 상담. PHQ-9 10점↑ 또는 기관 인정 시 신청",
+        "featured": False,
+    },
+    {
+        "name": "전국민 마음투자 지원사업",
+        "scope": "전국",
+        "cost": "대부분 바우처 지원·자기부담 소액",
+        "by": "보건복지부 (복지로 신청)",
+        "url": "https://www.bokjiro.go.kr/",
+        "note": "전국 심리상담센터에서 8회 상담. 정신건강복지센터 등에서 의뢰서 먼저",
+        "featured": False,
+    },
+    {
+        "name": "탈잉",
+        "scope": "온라인",
+        "cost": "유료 (시간제 결제)",
+        "by": "민간 (Taling)",
+        "url": "https://taling.me/",
+        "note": "음성·오픈채팅 60분, 상실감·죄책감 등 펫로스 감정 상담",
+        "featured": False,
+    },
+)
+
+# L1(우려) 생성 시 프롬프트에 덧붙이는 공감 우선 지침.
+# 정보·조언이나 대화 진행보다 공감·위로를 먼저, 충분히.
+EMPATHY_FOCUS_NOTE: Final[str] = (
+    "\n\n[중요] 지금 보호자가 힘들어하는 신호가 보여요. "
+    "정보·조언을 늘어놓거나 대화를 이어가는 데 무게를 두지 말고, "
+    "먼저 보호자의 마음에 충분히 공감하고 보듬는 데 집중하세요."
+)
+
+
+class CrisisAction(str, Enum):
+    """위기 등급에 따른 생성 측 응답 동작."""
+
+    GENERATE = "generate"  # L0 — 평소대로 생성
+    GENERATE_WITH_SUPPORT = "support"  # L1 — 생성 + 복지자원 안내 동봉
+    HOTLINE = "hotline"  # L2 — 생성 대신 1393 안내 우선
+    BLOCK = "block"  # L3 — 생성 전면 중단 + 1393
+
+
+def decide_action(risk_level: RiskLevel) -> CrisisAction:
+    """위험 등급 → 응답 동작. (높은 등급부터 검사 — 보수적)"""
+    if risk_level >= RiskLevel.L3_EMERGENCY:
+        return CrisisAction.BLOCK
+    if risk_level >= HOTLINE_REQUIRED_FROM:  # L2
+        return CrisisAction.HOTLINE
+    if risk_level >= RiskLevel.L1_CONCERN:
+        return CrisisAction.GENERATE_WITH_SUPPORT
+    return CrisisAction.GENERATE
+
+
+def crisis_notice() -> str:
+    """생성 대신 내보내는 위기 안내문(L2·L3 공통).
+
+    🚨 1393 은 CRISIS_HOTLINE 상수로만 참조 — 하드코딩 금지(../CLAUDE.md §0).
+    """
+    return (
+        "지금은 안전이 먼저입니다. "
+        "지금 많이 힘드신 것 같아요. 혼자 견디지 않으셔도 됩니다. "
+        f"언제든 자살예방 상담전화 {CRISIS_HOTLINE}(24시간)으로 마음을 나눠 주세요."
+    )
 
 
 class Subject:

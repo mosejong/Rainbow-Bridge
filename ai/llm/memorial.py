@@ -25,7 +25,15 @@ from typing import Optional, Protocol
 
 from ai.rag.retrieve import retrieve as _rag_retrieve
 from .prompts import memorial as memorial_prompt
-from .safety import CRISIS_HOTLINE, detect_crisis
+from .safety import (
+    CrisisAction,
+    EMPATHY_FOCUS_NOTE,
+    WELFARE_INTRO,
+    WELFARE_RESOURCES,
+    crisis_notice,
+    decide_action,
+    detect_crisis,
+)
 
 
 class GenerateFn(Protocol):
@@ -44,15 +52,6 @@ class GenerateFn(Protocol):
 # 생성 파라미터 기본값 (config 확정 전 잠정값).
 _MAX_TOKENS: int = 400
 _TEMPERATURE: float = 0.7
-
-# 위기 안내가 필요할 때 메시지 대신 내보내는 안내문.
-# 🚨 1393 은 CRISIS_HOTLINE 상수로만 — 하드코딩 금지(../CLAUDE.md §0).
-_CRISIS_NOTICE: str = (
-    "지금은 안전이 먼저입니다. "
-    "지금 많이 힘드신 것 같아요. 혼자 견디지 않으셔도 됩니다. "
-    f"언제든 자살예방 상담전화 {CRISIS_HOTLINE}(24시간)으로 마음을 나눠 주세요."
-)
-
 
 class GuardrailViolation(Exception):
     """생성 결과가 윤리 경계(1인칭/부활)를 넘었을 때."""
@@ -147,16 +146,24 @@ def generate_message(
     """
     note = str(emotion.get("note", "") or "")
 
-    # (1) 위기 선체크 — 본인 위기 신호가 강하면 메시지보다 안내 우선.
+    # (1) 위기 선체크 — 등급별 응답 정책(safety.decide_action).
+    #     L3(긴급)이면 생성 전면 중단, 1393 안내만. (L2 는 생성도 함께 — 아래 참고)
     crisis = detect_crisis(note)
-    if crisis.hotline_required:
+    action = decide_action(crisis.risk_level)
+    if action == CrisisAction.BLOCK:
+        notice = crisis_notice()
         return {
-            "content": _CRISIS_NOTICE,
+            "content": notice,
             "tone": tone,
             "source": "safety",
-            "crisis_message": _CRISIS_NOTICE,
+            "crisis_message": notice,
             "risk_level": int(crisis.risk_level),
         }
+
+    # 🚨 1인칭 펫 편지는 risk_level<=1 에서만. L2(경고)면 생성은 하되 강제로 3인칭으로
+    #    낮춥니다 — 위기 신호가 있는 보호자에게 반려동물 1인칭 편지는 금지(안전 최우선).
+    if action == CrisisAction.HOTLINE:
+        first_person = False
 
     # (2) RAG 검색 — note + 추억 키워드로 관련 위로글 top-3 검색.
     #     실패(DB 미적재·네트워크 오류 등) 시 graceful fallback.
@@ -188,6 +195,9 @@ def generate_message(
     )
     messages = memorial_prompt.build_messages(**prompt_kwargs)
     prompt = f"{messages[0]['content']}\n\n{messages[1]['content']}"
+    # L1(우려)·L2(경고) — 정보·대화보다 공감을 먼저 하도록 지침 추가.
+    if action in (CrisisAction.GENERATE_WITH_SUPPORT, CrisisAction.HOTLINE):
+        prompt += EMPATHY_FOCUS_NOTE
 
     # (4)+(5) 호출 후 가드 검사, 위반 시 재생성.
     last_violation = ""
@@ -200,6 +210,15 @@ def generate_message(
         )
         if violation is None:
             result = {"content": content, "tone": tone, "source": source}
+            # L1(우려) — 생성은 하되 복지자원 안내를 함께.
+            if action == CrisisAction.GENERATE_WITH_SUPPORT:
+                result["support_message"] = WELFARE_INTRO
+                result["welfare_resources"] = list(WELFARE_RESOURCES)
+                result["risk_level"] = int(crisis.risk_level)
+            # L2(경고) — 생성은 하되 1393 안내를 함께(우선 표시).
+            elif action == CrisisAction.HOTLINE:
+                result["crisis_message"] = crisis_notice()
+                result["risk_level"] = int(crisis.risk_level)
             if first_person:
                 result["first_person"] = True
             return result

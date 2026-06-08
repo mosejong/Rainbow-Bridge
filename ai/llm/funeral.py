@@ -16,7 +16,15 @@ from typing import Optional, Protocol
 
 from ai.rag.retrieve import retrieve as _rag_retrieve
 from .prompts import funeral as funeral_prompt
-from .safety import CRISIS_HOTLINE, detect_crisis
+from .safety import (
+    CrisisAction,
+    EMPATHY_FOCUS_NOTE,
+    WELFARE_INTRO,
+    WELFARE_RESOURCES,
+    crisis_notice,
+    decide_action,
+    detect_crisis,
+)
 
 
 class GenerateFn(Protocol):
@@ -35,13 +43,6 @@ class GenerateFn(Protocol):
 # 절차 안내는 정확성이 중요해 temperature 를 낮게 설정.
 _MAX_TOKENS: int = 350
 _TEMPERATURE: float = 0.5
-
-# 🚨 1393 은 CRISIS_HOTLINE 상수로만 — 하드코딩 금지(../CLAUDE.md §0).
-_CRISIS_NOTICE: str = (
-    "지금 많이 힘드신 것 같아요. 혼자 견디지 않으셔도 됩니다. "
-    f"언제든 자살예방 상담전화 {CRISIS_HOTLINE}(24시간)으로 마음을 나눠 주세요."
-)
-
 
 def generate_funeral_guidance(
     step: str,
@@ -66,16 +67,21 @@ def generate_funeral_guidance(
         ``{guidance, step, next_step, source}``.
         보호자 위기 감지 시 ``crisis_message`` 와 ``risk_level`` 포함.
     """
-    # (1) 보호자 메모에 위기 신호가 있으면 절차 안내보다 1393 우선.
+    # (1) 보호자 메모 위기 선체크 — 등급별 응답 정책(safety.decide_action).
+    #     L2(경고)·L3(긴급)이면 절차 안내보다 1393 우선.
+    action = CrisisAction.GENERATE
+    crisis = None
     if note:
         crisis = detect_crisis(note)
-        if crisis.hotline_required:
+        action = decide_action(crisis.risk_level)
+        if action == CrisisAction.BLOCK:  # L3 — 안내 중단, 1393 만
+            notice = crisis_notice()
             return {
-                "guidance": _CRISIS_NOTICE,
+                "guidance": notice,
                 "step": step,
                 "next_step": None,
                 "source": "safety",
-                "crisis_message": _CRISIS_NOTICE,
+                "crisis_message": notice,
                 "risk_level": int(crisis.risk_level),
             }
 
@@ -113,12 +119,25 @@ def generate_funeral_guidance(
         rag_hits=rag_hits,
     )
     prompt = f"{messages[0]['content']}\n\n{messages[1]['content']}"
+    # L1(우려)·L2(경고) — 절차 정보보다 공감을 먼저 하도록 지침 추가.
+    if action in (CrisisAction.GENERATE_WITH_SUPPORT, CrisisAction.HOTLINE):
+        prompt += EMPATHY_FOCUS_NOTE
     note_response = generate(prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE).strip()
 
-    return {
+    result = {
         "guidance": guidance,
         "note_response": note_response,
         "step": step,
         "next_step": funeral_prompt.next_step(step),
         "source": source,
     }
+    # L1(우려) — 절차 안내는 하되 복지자원 안내를 함께.
+    if action == CrisisAction.GENERATE_WITH_SUPPORT and crisis is not None:
+        result["support_message"] = WELFARE_INTRO
+        result["welfare_resources"] = list(WELFARE_RESOURCES)
+        result["risk_level"] = int(crisis.risk_level)
+    # L2(경고) — 절차 안내는 하되 1393 안내를 함께(우선 표시).
+    elif action == CrisisAction.HOTLINE and crisis is not None:
+        result["crisis_message"] = crisis_notice()
+        result["risk_level"] = int(crisis.risk_level)
+    return result
