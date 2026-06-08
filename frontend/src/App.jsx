@@ -12,6 +12,7 @@ import RegisterPage from './pages/RegisterPage';
 import SymptomsPage from './pages/SymptomsPage';
 import HealthRecordsPage from './pages/HealthRecordsPage';
 import FuneralPage from './pages/FuneralPage';
+import MemoriesPage from './pages/MemoriesPage';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/memories" element={<MemoriesPage />} />
         <Route path="/symptoms" element={<SymptomsPage />} />
         <Route path="/health-records" element={<HealthRecordsPage />} />
         <Route path="/funeral" element={<FuneralPage />} />
