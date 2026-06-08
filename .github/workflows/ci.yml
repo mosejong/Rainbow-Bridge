@@ -121,4 +121,6 @@ jobs:
 
       - name: pytest (ai/llm)
         working-directory: ai
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: python -m pytest llm/tests/ -q

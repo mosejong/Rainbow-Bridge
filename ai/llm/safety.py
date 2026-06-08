@@ -29,6 +29,13 @@ from .prompts import safety as safety_prompt
 # 🚨 위기 안내 번호 — 어떤 경우에도 변경/누락 금지 (자살예방 상담전화).
 CRISIS_HOTLINE: Final[str] = "1393"
 
+# 🚨 위기 안내 문구 — CRISIS_HOTLINE 과 함께 단일 출처로 관리. 임의 변경 금지.
+CRISIS_NOTICE: Final[str] = (
+    "지금은 안전이 먼저입니다. "
+    "지금 많이 힘드신 것 같아요. 혼자 견디지 않으셔도 됩니다. "
+    f"언제든 자살예방 상담전화 {CRISIS_HOTLINE}(24시간)으로 마음을 나눠 주세요."
+)
+
 
 class RiskLevel(IntEnum):
     """위험 등급 4단계 (숫자가 클수록 위험).

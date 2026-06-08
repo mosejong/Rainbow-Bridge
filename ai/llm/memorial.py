@@ -25,7 +25,7 @@ from typing import Optional, Protocol
 
 from ai.rag.retrieve import retrieve as _rag_retrieve
 from .prompts import memorial as memorial_prompt
-from .safety import CRISIS_HOTLINE, detect_crisis
+from .safety import CRISIS_HOTLINE, CRISIS_NOTICE, detect_crisis
 
 
 class GenerateFn(Protocol):
@@ -47,11 +47,6 @@ _TEMPERATURE: float = 0.7
 
 # 위기 안내가 필요할 때 메시지 대신 내보내는 안내문.
 # 🚨 1393 은 CRISIS_HOTLINE 상수로만 — 하드코딩 금지(../CLAUDE.md §0).
-_CRISIS_NOTICE: str = (
-    "지금은 안전이 먼저입니다. "
-    "지금 많이 힘드신 것 같아요. 혼자 견디지 않으셔도 됩니다. "
-    f"언제든 자살예방 상담전화 {CRISIS_HOTLINE}(24시간)으로 마음을 나눠 주세요."
-)
 
 
 class GuardrailViolation(Exception):
@@ -151,10 +146,10 @@ def generate_message(
     crisis = detect_crisis(note)
     if crisis.hotline_required:
         return {
-            "content": _CRISIS_NOTICE,
+            "content": CRISIS_NOTICE,
             "tone": tone,
             "source": "safety",
-            "crisis_message": _CRISIS_NOTICE,
+            "crisis_message": CRISIS_NOTICE,
             "risk_level": int(crisis.risk_level),
         }
 
@@ -166,7 +161,10 @@ def generate_message(
         if note:
             query_parts.append(note)
         for m in (pet.get("memories") or [])[:3]:
-            if m:
+            if isinstance(m, dict):
+                parts = [m.get("keyword", ""), m.get("detail", "")]
+                query_parts.append(" ".join(p for p in parts if p))
+            elif m:
                 query_parts.append(str(m))
         if query_parts:
             rag_hits = _rag_retrieve(" ".join(query_parts), k=3, where={"category": "memorial"})
