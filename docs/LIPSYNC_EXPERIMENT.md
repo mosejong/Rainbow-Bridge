@@ -422,7 +422,24 @@ python inference.py \
 | YOLO 커스텀 | 보통 | ★★★☆☆ | 모델 학습 필요 |
 
 → LivePortrait가 **crop 단계에서 이미 XPose로 동물 얼굴 랜드마크를 추출**하므로, 그 키포인트를 재활용하면 **추가 설치 없이** 입 열림 비율(상·하 입술 거리 / 얼굴 크기) 등을 산출 가능.
-  (검증 필요: animals 파이프라인에서 노출되는 XPose 키포인트로 입 개폐 추정이 충분한지)
+
+#### ✅ 검증 완료 (2026-06-08, 장민수) — XPose 키포인트로 입 개폐 추정 가능
+
+- LivePortrait 기본 설정 `animal_face_type = "animal_face_9"`(`src/config/crop_config.py`)이 **9개 키포인트**를 추출:
+  `[0]r-eye-r [1]r-eye-l [2]l-eye-r [3]l-eye-l [4]nose [5]lip-right [6]lip-left [7]upper-lip [8]lower-lip`
+  → **upper lip[7]·lower lip[8]이 기본 포함** (crop 시 항상 계산됨, 추가 설치 0)
+- 측정: `lip_gap = dist(upper, lower) / eye_dist`(눈 간격 정규화)
+
+| 사진 | lip_gap | 판정 |
+|------|:---:|:---:|
+| 말티즈(입 벌림) | **0.646** | 열림 |
+| 고양이 s39(입 다뭄) | 0.131 | 닫힘 |
+| 토끼(입 다뭄) | 0.073 | 닫힘 |
+| 햄스터(입 다뭄) | 0.072 | 닫힘 |
+
+→ 입 벌림 0.646 vs 입 다뭄 0.07~0.13 = **약 5배 분리**, 임계값 ~0.2~0.3으로 안전 분기 가능.
+**결론: 자동 선택의 전제(XPose로 입 개폐 추정)는 검증됨.** 구현 시 `XPoseRunner.run(img, "face", "animal_face", 0, 0)` 결과의 7·8번 키포인트 사용.
+(검증 스크립트: `output/_xpose_verify/verify_mouth.py`, 로컬)
 
 **열린 질문(회의에서 결정)**
 - driving DB 스키마: `{종, 입모양(open/closed), 추천 driving, 지표}` — 부록 A 표를 시드로 사용

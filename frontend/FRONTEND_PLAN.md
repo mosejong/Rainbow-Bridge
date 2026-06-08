@@ -1,6 +1,6 @@
 # 프론트엔드 MVP 실행 계획 — 레인보우 브릿지
 
-> 담당: 민경이 · 장민수 | 작성: 2026-06-02 | 최종 수정: 2026-06-05 | 발표: 2026-06-19 (D-14)
+> 담당: 민경이 · 장민수 | 작성: 2026-06-02 | 최종 수정: 2026-06-08 | 발표: 2026-06-19 (D-11)
 > 전체 협업 규칙: [CONTRIBUTING.md](../docs/CONTRIBUTING.md) | 아키텍처: [ARCHITECTURE.md](../docs/ARCHITECTURE.md)
 
 > **백엔드 API 주소 (ngrok, 서버 켜있는 동안 사용):**
@@ -25,6 +25,8 @@
 
 처음에는 발표 일정(6/19)만 고려해서 **PWA**를 검토했음.
 하지만 "핸드폰에 앱 아이콘 생기고, 설치해서 앱처럼 쓰고 싶다"는 요구 확인 후 → **Capacitor**로 확정.
+
+> **✅ 2026-06-05 완료**: Samsung Galaxy S918N (Android 16, One UI 8.0)에서 APK 설치 + 로그인 동작 확인
 
 | | PWA | Capacitor (확정) |
 |---|---|---|
@@ -135,7 +137,7 @@ frontend/
 ├── FRONTEND_PLAN.md       ← 이 파일
 ├── package.json
 ├── vite.config.js
-├── capacitor.config.ts    ← Capacitor 세팅 후 생성됨
+├── capacitor.config.json  ← Capacitor 설정 (CapacitorHttp 포함)
 ├── index.html
 ├── android/               ← Capacitor 세팅 후 생성됨 (Android Studio 프로젝트)
 └── src/
@@ -345,46 +347,18 @@ async function handleSubmit() {
 | 6/2~3 | Vite 세팅 + 공통 컴포넌트 + ProfilePage | 환경 세팅 |
 | 6/4~5 | EmotionPage + MessagePage + SymptomsPage 병원 카드 | TtsPage, MissionPage |
 | 6/5 | **HealthRecordsPage 신규 · FuneralPage 신규 · 모바일 반응형 수정** | |
+| 6/5 | **Capacitor Android 세팅 완료 · 실기기(Galaxy S918N) APK 설치·로그인 확인** (PR #84) | |
 | 6/6~8 | 린트 정리, dev 머지, PR 정리 | 각 페이지 마무리 |
 
-### 2주차 (6/9~6/13) — API 연동 + Android 앱 패키징
+### 2주차 (6/9~6/13) — API 연동
 
 | 날짜 | 할 일 |
 |------|------|
 | 6/9~10 | 백엔드 API 연동 (hospitals, funerals) · axiosInstance 실서버 교체 |
 | 6/11~12 | Mock 데이터 → 실제 API로 교체 (기능별) |
-| 6/12~13 | **Capacitor 세팅 + Android Studio 빌드 + 핸드폰 APK 설치 테스트** |
+| 6/12~13 | 앱 아이콘 커스텀 · 전체 플로우 연결 테스트 |
 
-#### Capacitor Android 세팅 순서 (6/12~13 예정)
-
-> 사전 조건: Android Studio + JDK 17 설치 필요
-
-```bash
-# 1. Capacitor 설치
-npm install @capacitor/core @capacitor/cli @capacitor/android
-
-# 2. 초기화 (앱 이름, 패키지명 입력)
-npx cap init "레인보우브릿지" "com.rainbowbridge.app"
-
-# 3. Vite 빌드
-npm run build
-
-# 4. Android 플랫폼 추가
-npx cap add android
-
-# 5. 빌드 결과물 동기화
-npx cap sync android
-
-# 6. Android Studio로 열기
-npx cap open android
-# → Android Studio에서 Run 버튼 → 핸드폰 연결 or 에뮬레이터
-```
-
-**APK 빌드 후 확인 사항:**
-- [ ] 홈 화면에 앱 아이콘 생성
-- [ ] 아이콘 탭 → 풀스크린 앱 실행 (주소창 없음)
-- [ ] 로그인 → 감정 체크인 → 메시지 카드 전체 플로우
-- [ ] 전화 버튼(1393) 탭 → 전화 앱 실행
+> **✅ Capacitor 세팅 + 실기기 APK 설치는 6/5에 이미 완료** (§7-A 참고)
 
 ### 3주차 (6/16~6/19) — 통합 + 발표 준비
 
@@ -396,11 +370,106 @@ npx cap open android
 
 ---
 
-## 7. Capacitor 세팅 시 주의사항
+## 7. Capacitor 세팅 — 완료 기록 (2026-06-05 ✅)
 
-### API 주소 처리
+> 실기기: Samsung Galaxy S918N (Android 16, One UI 8.0)
+> 결과: APK 설치 + 로그인/회원가입 동작 확인 완료
 
-Capacitor 앱은 `file://` 프로토콜로 실행되기 때문에 `localhost`에 접근이 안 됨. 반드시 ngrok URL 또는 실서버 주소 사용.
+### A. 핵심 해결책 — CapacitorHttp (가장 중요!)
+
+**문제**: Android 9+에서 WebView가 HTTP 연결을 기본 차단 (특히 Android 16에서 심각).
+`usesCleartextTraffic`만으로는 Android 16에서 부족했음.
+
+**최종 해결**: `capacitor.config.json`에 `CapacitorHttp: { enabled: true }` 추가.
+CapacitorHttp가 fetch/XHR 요청을 네이티브 Java HTTP로 라우팅 → WebView 제한 우회.
+
+```json
+// frontend/capacitor.config.json
+{
+  "appId": "com.rainbowbridge.app",
+  "appName": "레인보우브릿지",
+  "webDir": "dist",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}
+```
+
+### B. vite.config.js 수정
+
+```js
+// frontend/vite.config.js
+export default defineConfig({
+  plugins: [react()],
+  base: './',   // ← Capacitor file:// 프로토콜 대응 필수
+})
+```
+
+### C. AndroidManifest.xml 수정
+
+```xml
+<!-- android/app/src/main/AndroidManifest.xml -->
+android:usesCleartextTraffic="true"
+android:networkSecurityConfig="@xml/network_security_config"
+```
+
+### D. network_security_config.xml 추가
+
+```xml
+<!-- android/app/src/main/res/xml/network_security_config.xml -->
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
+```
+
+### E. 빌드 환경 설정
+
+```powershell
+# JAVA_HOME — JDK 21 (Android Studio 번들, JDK 17+ 필요)
+[System.Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\Program Files\Android\Android Studio\jbr", "User")
+
+# ANDROID_HOME
+C:\Users\kysop\AppData\Local\Android\Sdk
+```
+
+### F. Android Studio 빌드 주의사항
+
+AndroidManifest.xml 변경 후에는 증분 빌드로 미반영될 수 있음.
+반드시: **Build → Clean Project → Assemble Project → ▶ Run** 순서로 실행.
+
+### G. Capacitor 세팅 전체 흐름
+
+```bash
+# 1. Capacitor 설치 (완료)
+npm install @capacitor/core @capacitor/cli @capacitor/android
+
+# 2. 초기화 (완료)
+npx cap init "레인보우브릿지" "com.rainbowbridge.app"
+
+# 3. Vite 빌드
+npm run build
+
+# 4. Android 플랫폼 추가 (완료)
+npx cap add android
+
+# 5. 코드 변경 후 동기화 (매번)
+npx cap sync android
+
+# 6. Android Studio로 열기
+npx cap open android
+```
+
+### H. API 주소 처리
+
+Capacitor 앱은 `file://` 프로토콜로 실행되기 때문에 `localhost`에 접근 안 됨.
+반드시 ngrok URL 또는 실서버 주소 사용.
 
 ```js
 // src/api/axiosInstance.js
@@ -409,14 +478,49 @@ const api = axios.create({
 });
 ```
 
-### Android 권한 (필요 시 추가)
+### I. 미디어 재생 (video / audio)
 
-- 카카오맵 위치 기반: `android/app/src/main/AndroidManifest.xml`에 위치 권한 추가
+Capacitor WebView는 HTML5 `<video>`와 `<audio>` 둘 다 네이티브 수준으로 지원함.
+별도 플러그인 없이 사용 가능.
+
+```jsx
+{/* LivePortrait 결과물 mp4 재생 */}
+<video src={videoUrl} controls className="w-full rounded-xl" />
+
+{/* TTS 결과물 mp3 재생 */}
+<audio src={audioUrl} controls className="w-full" />
+```
+
+| 포맷 | 태그 | Capacitor 지원 |
+|------|------|---------------|
+| mp4 (H.264) | `<video>` | ✅ |
+| mp3 | `<audio>` | ✅ |
+| wav | `<audio>` | ✅ |
+| webm | `<video>` | ✅ |
+
+> 파이프라인 최종 결과물이 mp4(영상)든 mp3(음성)든 재생 문제 없음.
+> PERSO 최종 출력 포맷은 장민수·정환주님께 확인 필요.
+
+### J. Capacitor와 AI 파이프라인 적합성
+
+| 기술 | 실행 위치 | Capacitor 앱 역할 |
+|------|----------|-----------------|
+| LivePortrait | GPU 서버 | HTTP 요청 → mp4 URL 수신 |
+| RAG (ChromaDB) | 백엔드 서버 | HTTP 요청 → 텍스트 결과 수신 |
+| Gemini API | 백엔드 서버 | HTTP 요청 → 텍스트 결과 수신 |
+| Google TTS | 백엔드 서버 | HTTP 요청 → mp3 URL 수신 |
+| PERSO 립싱크 | 서버/검증 중 | HTTP 요청 → mp4 URL 수신 |
+
+모든 AI 처리가 서버사이드 → 앱은 HTTP 요청 + 결과 표시만 → **Capacitor 완벽 적합**.
+
+### K. 앱 아이콘 변경 (예정)
+
+`android/app/src/main/res/` 폴더의 아이콘 파일 교체 또는 Capacitor Assets 플러그인 사용.
+
+### L. Android 권한 (필요 시 추가)
+
+- 위치 기반 병원 검색: `AndroidManifest.xml`에 위치 권한 추가
 - 사진 업로드: 카메라·갤러리 접근 권한
-
-### 앱 아이콘 변경
-
-`android/app/src/main/res/` 폴더의 아이콘 파일을 교체하거나 Capacitor Assets 플러그인 사용.
 
 ---
 
