@@ -51,17 +51,21 @@
 
 ## 1. 우리가 만드는 것 (오해 금지)
 
-반려동물을 떠나보낸 보호자의 **펫로스(Pet Loss) 회복**을 돕는 애프터케어 서비스입니다.
-**수의사↔보호자 쌍방향 플랫폼** 방향 확정 (2026-06-05).
+반려동물 **시한부 선고부터 이별·회복까지** 함께하는 AI 케어 서비스입니다.
+**연계형(B2B2C)** — 장례업체·병원이 채널·지불자, 보호자는 무료. (방향 확정 2026-06-08)
 
+- ✅ **시한부 선고 시점 진입** — 수의사가 직접 앱 추천. 생전 추억 기록 → 장례 → 회복까지 연속
 - ✅ 기억 기반 **상징적 추모 메시지**, 감정 돌봄, 일상 복귀 지원
-- ✅ **수의사 웹** — 보호자 반려동물 기록 확인 + 조언 남기기 (쌍방향 소통)
+- ✅ **수의사 웹** — 보호자 반려동물 기록 확인 + 조언 남기기 (MVP 화면만, 실기능 연결 예정)
 - ✅ 수의사 처치 안내 RAG — **기본 대처법만** 제공. 상세 진단·처방은 "내원해 주세요"로 연결. 의료 조언 대체 아님.
 - ❌ AI로 반려동물을 **부활**시키거나, 결과물을 "실제 반려동물이 돌아와 말한 것"처럼 **사실인 양 주장**하는 것 — 절대 아님
 - ✅ 사용자가 제공한 사진·추억을 바탕으로 한 **AI 재해석 추모 편지/영상/TTS** 는 가능.
 - ✅ 반려동물 **1인칭 화법(꿈 속 작별 대화)** 은 보호자 동의 + 경고 문구 + risk_level 0~1 조건 충족 시 허용. (강사 승인 2026-06-05)
   - 경고 문구 예: "AI가 보호자가 전해준 추억을 바탕으로 재해석한 꿈 속 작별 인사입니다."
-- ✅ PERSO 립싱크/더빙은 **선택형 후처리**로 허용. 위기 상황(risk_level 2+)에서는 사용 금지.
+- ✅ LivePortrait 발화 driving — 선택형 후처리 허용. 위기 상황(risk_level 2+)에서는 영상 생성 금지.
+- ❌ PERSO 립싱크 — 동물 얼굴 적용 불가 확인으로 **드랍(2026-06-06)**. LivePortrait로 대체.
+
+> **온보딩 카피 (확정):** "아이가 강아지별로 이사를 준비하고 있어요. 남은 시간동안 가서도 행복하게 좋은 추억 만들어 보아요."
 
 > 메시지/프롬프트 작업 시 이 경계를 넘지 마세요. 위기 감정 안내 번호 **1393**은 임의 변경 금지.
 > 상세 윤리 기준 → [docs/ETHICS_추모표현_가이드.md](docs/ETHICS_추모표현_가이드.md)
@@ -74,8 +78,8 @@
 | 김윤한 | 백엔드 / 홈서버 운영 | `backend/`, 인프라 |
 | 반소람 | AI 엔지니어 | `ai/` (llm) |
 | 정환주 | AI 엔지니어 / GPU 서버 | `ai/`, GPU 인프라 |
-| 민경이 | 프론트엔드 | `frontend/` |
-| 장민수 | 멀티모달 (사진→영상) | `frontend/`, `ai/liveportrait` |
+| 민경이 | 프론트엔드 | `frontend-rn/` (React Native + Expo) |
+| 장민수 | 멀티모달 (사진→영상) | `ai/liveportrait` |
 
 > 남의 담당 영역 파일을 크게 바꿔야 하면, 먼저 알리고 별도 PR로 분리하세요.
 
@@ -85,9 +89,11 @@
 |------|------|
 | Backend | FastAPI (Python), MongoDB, PostgreSQL |
 | Cache | Redis — 감정 체크인 최근 기록 캐시, 회복 분석용 |
-| AI / LLM | Gemini API, PERSO API(평가·시연) |
+| Frontend | React Native + Expo SDK 52 (`frontend-rn/`) — 구버전 Vite+React(`frontend/`)는 deprecated |
+| AI / LLM | Gemini API |
 | RAG | ChromaDB — 추모 메시지·미션·장례 안내·수의사 처치 안내 |
-| 멀티모달 | LivePortrait(로컬 / GPU 서버), Google TTS |
+| TTS | Google Cloud TTS + LLM 감정 튜닝(히든워드 "추모용", "슬프게 읽어봐") — 강사 확정 2026-06-08 |
+| 멀티모달 | LivePortrait(로컬 / GPU 서버) + FFmpeg |
 | Infra | Docker Compose, NCP 실서버, GitHub Actions CI/CD |
 
 - 백엔드는 **레이어 구조**를 지키세요: `api/`(라우터) → `services/`(로직) → `models/`·`db/`(데이터), 요청/응답은 `schemas/`(Pydantic).
@@ -153,5 +159,6 @@ cd backend && ruff check . --fix && black . && pytest -q
 2. [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) — 협업 규칙
 3. [docs/SETUP.md](docs/SETUP.md) — 내 PC 환경 세팅
 4. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — 전체 구조
-5. [docs/ETHICS_추모표현_가이드.md](docs/ETHICS_추모표현_가이드.md) — 추모 표현 허용/금지 경계
-6. [docs/PROGRESS.md](docs/PROGRESS.md) — 내가 맡은 일
+5. [docs/SERVICE_FRAME.md](docs/SERVICE_FRAME.md) — 서비스 범위·기능 틀 (왁구) ← **방향 바뀌었으면 여기 먼저**
+6. [docs/ETHICS_추모표현_가이드.md](docs/ETHICS_추모표현_가이드.md) — 추모 표현 허용/금지 경계
+7. [docs/PROGRESS.md](docs/PROGRESS.md) — 내가 맡은 일

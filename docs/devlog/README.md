@@ -173,7 +173,13 @@
 
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
-| 반소람 | (오전) L1/L2/L3 차등 응답 라우팅·복지자원 정리 + (오후) 위기감지 완곡표현 미탐 보강·오탐 방지(애매=L1/명확죽음완곡=L2), memorial 1인칭 가드 부분일치 오탐 수정, 골든셋+10(254→289 통과), funeral 데모 점검, 미션·보상 설계노트 | [→](members/반소람.md#2026-06-08-day-6) |
+| 모세종 | FEATURE_SPEC 갱신·스크럼 문서 작성, PR #123·#125~#127 머지, 강사 스크럼 반영 SERVICE_FRAME.md 신규 작성, 시한부 선고 진입점 확정, docs 정리(archive+README) → PR #136 | [→](members/모세종.md#2026-06-08-day-8) |
+| 반소람 | L1/L2/L3 차등 응답 라우팅·복지자원(welfare_resources) 정리, 위기감지 완곡표현 미탐 보강·오탐 방지, memorial 1인칭 가드 오탐 수정, 골든셋 254→289 통과, 미션·보상 설계노트 | [→](members/반소람.md#2026-06-08-day-6) |
+| 정환주 | TTS 어린아이+감정 음색 탐색 (instruct·EQ 후처리, qwen3_emotion.py·tone_down.py 신규) → PR #134 | [→](members/정환주.md) |
+| 민경이 | Vite+React → React Native+Expo 전환 완료, 전체 화면 13개 재구현, Expo Go Android 실기기 테스트, Docker 백엔드 연결, frontend-rn README 작성 → PR #133 | [→](members/민경이.md#2026-06-08-day-8) |
+| 장민수 | remote GPU 테스트·XPose 자동선택 검증·driving 10종 랭킹(d12·d11 최강)·시한부 진입점 피벗 논의 | [→](members/장민수.md#2026-06-08-day-8) |
+
+**팀 전체:** 강사 스크럼 — 연계형(B2B2C)·시한부 선고 진입점·왁구 우선 확정. AI 위기 라우팅 L1/L2/L3 완성·머지. 프론트 React Native 전환 완료.
 
 ---
 
