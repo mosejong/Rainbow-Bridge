@@ -4,19 +4,13 @@ from bson import ObjectId
 
 from ai.llm.memorial import GuardrailViolation, generate_message
 from ai.llm.provider import generate
-from ai.llm.safety import assess_crisis
+from ai.llm.safety import CRISIS_NOTICE, assess_crisis
 
 from app.db.mongodb import mongodb
 from app.db.redis_client import get_recent_emotions
 from app.schemas.message import MessageCreate, MessageResponse
 
 CRISIS_HOTLINE = "1393"
-
-_CRISIS_NOTICE = (
-    "지금은 안전이 먼저입니다. "
-    "지금 많이 힘드신 것 같아요. 혼자 견디지 않으셔도 됩니다. "
-    f"언제든 자살예방 상담전화 {CRISIS_HOTLINE}(24시간)으로 마음을 나눠 주세요."
-)
 
 _FALLBACK = {
     "warm": "함께한 시간들이 당신 마음 깊은 곳에서 언제나 따뜻하게 빛나고 있을 거예요. 그 소중한 기억들이 당신 곁에 늘 있습니다.",
