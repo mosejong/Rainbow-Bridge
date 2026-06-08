@@ -70,7 +70,7 @@ async def create_message(data: MessageCreate) -> MessageResponse:
     if crisis.hotline_required:
         doc = {
             "pet_id": data.pet_id,
-            "content": _CRISIS_NOTICE,
+            "content": CRISIS_NOTICE,
             "tone": tone,
             "source": "safety",
             "risk_level": int(crisis.risk_level),
@@ -79,7 +79,7 @@ async def create_message(data: MessageCreate) -> MessageResponse:
         inserted = await _collection().insert_one(doc)
         doc["id"] = str(inserted.inserted_id)
         response = MessageResponse(**doc)
-        response.crisis_message = _CRISIS_NOTICE
+        response.crisis_message = CRISIS_NOTICE
         return response
 
     try:
