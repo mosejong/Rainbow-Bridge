@@ -134,7 +134,10 @@ def generate_message(
     """추모 메시지를 생성합니다.
 
     Args:
-        pet: 반려동물 정보 ``{name, species, period, memories?}`` (백엔드 pet 스키마).
+        pet: 반려동물 정보 ``{name, species, period, memories?, bucket_list?, caller_name?}``
+            (백엔드 pet 스키마). ``bucket_list`` 는 함께 하고 싶었던 일(버킷리스트),
+            ``caller_name`` 은 보호자 호칭(엄마·아빠·언니). 둘 다 선택 — 없으면 생략/기본값.
+            백엔드가 ``pet_id`` 로 조회한 버킷리스트·타임라인을 이 키에 담아 넘깁니다.
         emotion: 보호자 감정 ``{emotion_score, note?}`` (emotion_score 1~10, 낮을수록 힘듦).
         tone: 메시지 톤(warm·calm·hopeful). prompts.TONE_GUIDE 키.
         generate: LLM 호출 함수(provider.generate 또는 테스트용 가짜). **주입 필수.**
@@ -172,8 +175,9 @@ def generate_message(
     if action == CrisisAction.HOTLINE:
         first_person = False
 
-    # (2) RAG 검색 — note + 추억 키워드로 관련 위로글 top-3 검색.
+    # (2) RAG 검색 — note + 추억 + 버킷리스트 키워드로 관련 위로글 top-3 검색.
     #     실패(DB 미적재·네트워크 오류 등) 시 graceful fallback.
+    bucket_list = pet.get("bucket_list")
     rag_hits = None
     try:
         query_parts: list[str] = []
@@ -185,19 +189,28 @@ def generate_message(
                 query_parts.append(" ".join(p for p in parts if p))
             elif m:
                 query_parts.append(str(m))
+        for b in (bucket_list or [])[:3]:
+            if isinstance(b, dict):
+                parts = [b.get("keyword", "") or b.get("title", ""), b.get("detail", "")]
+                query_parts.append(" ".join(p for p in parts if p))
+            elif b:
+                query_parts.append(str(b))
         if query_parts:
             rag_hits = _rag_retrieve(" ".join(query_parts), k=3, where={"category": "memorial"})
     except Exception:
         rag_hits = None
 
     # (3) 프롬프트 조립 — 키 이름은 백엔드 스키마와 합의(pet.period, emotion_score).
+    #     버킷리스트·보호자 호칭은 pet 에서 꺼내 그대로 프롬프트로 전달(프롬프트는 동결).
     prompt_kwargs = dict(
         name=pet.get("name", ""),
         species=pet.get("species", ""),
         period=pet.get("period", ""),
+        caller_name=str(pet.get("caller_name", "") or pet.get("guardian_name", "")),
         score=int(emotion.get("emotion_score", 5)),
         note=note,
         memories=pet.get("memories"),
+        bucket_list=bucket_list,
         tone=tone,
         first_person=first_person,
         rag_hits=rag_hits,
