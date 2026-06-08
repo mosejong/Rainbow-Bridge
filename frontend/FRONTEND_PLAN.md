@@ -3,6 +3,63 @@
 > 담당: 민경이 · 장민수 | 작성: 2026-06-02 | 최종 수정: 2026-06-08 | 발표: 2026-06-19 (D-11)
 > 전체 협업 규칙: [CONTRIBUTING.md](../docs/CONTRIBUTING.md) | 아키텍처: [ARCHITECTURE.md](../docs/ARCHITECTURE.md)
 
+---
+
+## ⚠️ 플랫폼 전환 공지 (2026-06-08)
+
+**이석창 강사님 피드백 반영 → React Native + Expo로 전환 결정**
+
+> "Rainbow Bridge 프로젝트는 웹보다 앱이 맞다. React Native로 가는 게 맞음."
+> "맥북 없어도, Xcode 없어도 iOS 앱 생산 가능 (Expo EAS Build 활용)."
+
+### 전환 내용
+
+| 항목 | 기존 (Vite+Capacitor) | **신규 (React Native+Expo)** |
+|------|-----------------------|------------------------------|
+| 코드베이스 | `frontend/` | **`frontend-rn/`** |
+| 기술 | Vite, React, Capacitor | **React Native, Expo SDK 52** |
+| 라우팅 | React Router v6 | **Expo Router v4** |
+| iOS 지원 | ❌ (Mac 필요) | **✅ EAS Build (강사님 계정)** |
+| Android 지원 | ✅ | **✅** |
+| 상태 저장 | localStorage | **AsyncStorage** |
+| 오디오 | `<audio>` 태그 | **expo-av** |
+| 이미지 선택 | input file | **expo-image-picker** |
+
+### 새 프로젝트 위치
+
+```
+frontend-rn/          ← 신규 React Native + Expo 프로젝트
+├── app/              ← Expo Router (파일 기반 라우팅)
+│   ├── (auth)/       ← 로그인, 회원가입
+│   └── (app)/        ← 모든 메인 화면
+├── components/       ← Button, Card, LoadingSpinner, SafetyModal
+├── api/              ← axiosInstance + 모든 API 모듈
+├── constants/
+│   └── colors.js     ← PastelTone.jpg 기반 색상 팔레트
+└── assets/images/
+    └── icon.png      ← 민수님_마지막사진.png (레인보우 브릿지 일러스트)
+```
+
+### 시작 방법
+
+```powershell
+cd frontend-rn
+npm install
+npx expo start        # 개발 서버 시작
+# → a 키: Android 에뮬레이터 / i 키: iOS (EAS Build 필요)
+```
+
+### 색상 팔레트 (PastelTone.jpg 기반)
+
+| 용도 | 색상 | 코드 |
+|------|------|------|
+| 배경 | 크림/베이지 | `#F2EEE5` |
+| 포인트 | 파스텔 핑크 | `#E5C1C5` |
+| 보조 | 파스텔 민트 | `#C3E2DD` |
+| CTA 버튼 | 스틸 블루 | `#6ECEDA` |
+
+---
+
 > **백엔드 API 주소 (ngrok, 서버 켜있는 동안 사용):**
 > `https://preacher-posing-lair.ngrok-free.dev`
 > 로컬 확인용: `http://localhost:8000/docs`
