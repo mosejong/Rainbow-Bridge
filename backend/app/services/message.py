@@ -1,7 +1,16 @@
+import app.core.ai_path  # noqa: F401
 from datetime import datetime, timezone
 
 from bson import ObjectId
 
+from ai.evaluation.logs import (
+    COLLECTION as LLM_LOGS,
+    KIND_CRISIS,
+    KIND_MESSAGE,
+    alog_llm_call,
+    measure_latency,
+)
+from ai.llm.config import get_config
 from ai.llm.memorial import GuardrailViolation, generate_message
 from ai.llm.provider import generate
 from ai.llm.safety import CRISIS_NOTICE, assess_crisis
@@ -65,55 +74,90 @@ async def create_message(data: MessageCreate) -> MessageResponse:
     note = data.note or ""
     emotion = {"emotion_score": data.emotion_score or 5, "note": note}
 
-    # L0+L1 위기 선체크 — generate 주입으로 LLM 레이어(L1) 활성화
-    crisis = assess_crisis(note, generate=generate)
-    if crisis.hotline_required:
-        doc = {
-            "pet_id": data.pet_id,
-            "content": CRISIS_NOTICE,
-            "tone": tone,
-            "source": "safety",
-            "risk_level": int(crisis.risk_level),
-            "created_at": datetime.now(timezone.utc),
-        }
-        inserted = await _collection().insert_one(doc)
-        doc["id"] = str(inserted.inserted_id)
-        response = MessageResponse(**doc)
-        response.crisis_message = CRISIS_NOTICE
-        return response
-
+    # ⑧ 리포트용 라이트 로깅 메타 — 분기에서 채우고 finally 에서 1건 적재.
+    cfg = get_config()
+    log_kind, log_ok, log_risk = KIND_MESSAGE, True, None
+    timer = None
+    response: MessageResponse
     try:
-        result = generate_message(
-            pet=pet,
-            emotion=emotion,
-            tone=tone,
-            generate=generate,
-            source="local",
-            first_person=bool(data.consent),
-            recovery_trend=recovery_trend,
-        )
-    except GuardrailViolation:
-        result = {"content": _FALLBACK[tone], "tone": tone, "source": "fallback"}
+        with measure_latency() as timer:
+            # L0+L1 위기 선체크 — generate 주입으로 LLM 레이어(L1) 활성화
+            crisis = assess_crisis(note, generate=generate)
+            if crisis.hotline_required:
+                log_kind, log_risk = KIND_CRISIS, int(crisis.risk_level)
+                doc = {
+                    "pet_id": data.pet_id,
+                    "content": CRISIS_NOTICE,
+                    "tone": tone,
+                    "source": "safety",
+                    "risk_level": int(crisis.risk_level),
+                    "created_at": datetime.now(timezone.utc),
+                }
+                inserted = await _collection().insert_one(doc)
+                doc["id"] = str(inserted.inserted_id)
+                response = MessageResponse(**doc)
+                response.crisis_message = CRISIS_NOTICE
+            else:
+                try:
+                    result = generate_message(
+                        pet=pet,
+                        emotion=emotion,
+                        tone=tone,
+                        generate=generate,
+                        source="local",
+                        first_person=bool(data.consent),
+                        recovery_trend=recovery_trend,
+                    )
+                except GuardrailViolation:
+                    log_ok = False
+                    result = {
+                        "content": _FALLBACK[tone],
+                        "tone": tone,
+                        "source": "fallback",
+                    }
 
-    doc = {
-        "pet_id": data.pet_id,
-        "content": result["content"],
-        "tone": result.get("tone", tone),
-        "source": result.get("source", "local"),
-        "risk_level": result.get("risk_level", 0),
-        "created_at": datetime.now(timezone.utc),
-    }
-    inserted = await _collection().insert_one(doc)
-    doc["id"] = str(inserted.inserted_id)
+                doc = {
+                    "pet_id": data.pet_id,
+                    "content": result["content"],
+                    "tone": result.get("tone", tone),
+                    "source": result.get("source", "local"),
+                    "risk_level": result.get("risk_level", 0),
+                    "created_at": datetime.now(timezone.utc),
+                }
+                inserted = await _collection().insert_one(doc)
+                doc["id"] = str(inserted.inserted_id)
 
-    # 위기(safety) 메시지는 타임라인에 포함하지 않음
-    if result.get("source") != "safety":
-        await mongodb.db["pets"].update_one(
-            {"_id": ObjectId(data.pet_id)},
-            {"$push": {"timeline_refs": {"type": "message", "ref_id": doc["id"]}}},
-        )
+                # 위기(safety) 메시지는 타임라인에 포함하지 않음
+                if result.get("source") != "safety":
+                    await mongodb.db["pets"].update_one(
+                        {"_id": ObjectId(data.pet_id)},
+                        {
+                            "$push": {
+                                "timeline_refs": {
+                                    "type": "message",
+                                    "ref_id": doc["id"],
+                                }
+                            }
+                        },
+                    )
 
-    response = MessageResponse(**doc)
-    if result.get("crisis_message"):
-        response.crisis_message = result["crisis_message"]
+                response = MessageResponse(**doc)
+                if result.get("crisis_message"):
+                    response.crisis_message = result["crisis_message"]
+    finally:
+        # best-effort — 로그 적재 실패가 사용자 응답을 깨면 안 됨.
+        try:
+            await alog_llm_call(
+                mongodb.db[LLM_LOGS],
+                kind=log_kind,
+                pet_id=data.pet_id,
+                model=cfg.model,
+                provider=cfg.provider,
+                latency_ms=timer.ms if timer else 0,
+                ok=log_ok,
+                risk_level=log_risk,
+            )
+        except Exception:
+            pass
+
     return response
