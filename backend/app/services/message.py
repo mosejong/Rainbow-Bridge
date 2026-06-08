@@ -144,6 +144,11 @@ async def create_message(data: MessageCreate) -> MessageResponse:
                 response = MessageResponse(**doc)
                 if result.get("crisis_message"):
                     response.crisis_message = result["crisis_message"]
+                if result.get("support_message"):
+                    response.support_message = result["support_message"]
+                if result.get("welfare_resources"):
+                    response.welfare_resources = result["welfare_resources"]
+                    
     finally:
         # best-effort — 로그 적재 실패가 사용자 응답을 깨면 안 됨.
         try:
