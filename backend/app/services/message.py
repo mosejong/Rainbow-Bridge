@@ -4,12 +4,19 @@ from bson import ObjectId
 
 from ai.llm.memorial import GuardrailViolation, generate_message
 from ai.llm.provider import generate
+from ai.llm.safety import assess_crisis
 
 from app.db.mongodb import mongodb
 from app.db.redis_client import get_recent_emotions
 from app.schemas.message import MessageCreate, MessageResponse
 
 CRISIS_HOTLINE = "1393"
+
+_CRISIS_NOTICE = (
+    "지금은 안전이 먼저입니다. "
+    "지금 많이 힘드신 것 같아요. 혼자 견디지 않으셔도 됩니다. "
+    f"언제든 자살예방 상담전화 {CRISIS_HOTLINE}(24시간)으로 마음을 나눠 주세요."
+)
 
 _FALLBACK = {
     "warm": "함께한 시간들이 당신 마음 깊은 곳에서 언제나 따뜻하게 빛나고 있을 거예요. 그 소중한 기억들이 당신 곁에 늘 있습니다.",
@@ -61,7 +68,25 @@ async def create_message(data: MessageCreate) -> MessageResponse:
         pass
 
     tone = data.tone if data.tone in _VALID_TONES else "warm"
-    emotion = {"emotion_score": data.emotion_score or 5, "note": data.note or ""}
+    note = data.note or ""
+    emotion = {"emotion_score": data.emotion_score or 5, "note": note}
+
+    # L0+L1 위기 선체크 — generate 주입으로 LLM 레이어(L1) 활성화
+    crisis = assess_crisis(note, generate=generate)
+    if crisis.hotline_required:
+        doc = {
+            "pet_id": data.pet_id,
+            "content": _CRISIS_NOTICE,
+            "tone": tone,
+            "source": "safety",
+            "risk_level": int(crisis.risk_level),
+            "created_at": datetime.now(timezone.utc),
+        }
+        inserted = await _collection().insert_one(doc)
+        doc["id"] = str(inserted.inserted_id)
+        response = MessageResponse(**doc)
+        response.crisis_message = _CRISIS_NOTICE
+        return response
 
     try:
         result = generate_message(
