@@ -28,6 +28,7 @@
 | **ElevenLabs** | 다국어 v2 한국어 지원 | **감정 표현 최상** | 다수(복제 가능) | 무료=상업 ❌ | Starter $5/월~, API Pro $99/월 | 상업은 유료플랜부터 | **사람 블라인드 A/B에서 Google warm 9전 9승**(2026-06-07, §5). 품질 우위 확정, 단 상업=유료가 결정 변수 |
 | **MS Azure TTS** | 양호(Neural, 한국어 46종 프리뷰 추가) | **스타일(감정) 태그 — InJoon `sad` 등 ◎** | 여러 종(SunHi·InJoon·Hyunsu…) | 월 50만자 | Neural $16 /100만자 (장문 $100) | 상업 가능 | 감정 스타일이 Google보다 강점. 상세 → [AZURE_TTS_조사.md](AZURE_TTS_조사.md) |
 | (옵션) Amazon Polly | 한국어 Neural(Seoyeon) | 제한적 | 소수 | 12개월 무료 일부 | 확인 필요 | 상업 가능 | 감정/톤 약함. 후순위 |
+| **Qwen3-TTS (오픈소스)** | 한국어 지원(미청취·조사중) | **instruct 자연어로 음색·감정·운율 자유설계 ◎** | 무한(voice design/3초 클로닝) | **로컬=완전 무료** | 로컬 0 (API는 Alibaba $0.2/voice 등 별도) | **apache-2.0 = 상업 무료** | 2026-01 Alibaba 공개. 1.7B-VoiceDesign fp16 ≈3.4GB(8GB GPU 온디맨드 가능). **EL에 없는 "발랄·귀여운·어린아이" 한국어 톤을 글로 설계 가능** → §6 |
 
 > "확인 필요" = 웹에서 정확한 최신 수치 못 찾음. **추정 안 함** — 공식 페이지 직접 확인.
 
@@ -133,3 +134,36 @@
 - **Gemini 자동평가는 이해상충**(Gemini=Google 제품) + 기계가 점수. warm 5/5도 사람 청취 전엔 못 믿음 → 라운드2에서 실제로 EL에 9/9 패.
 - **라운드1 EL은 테스트 미성립** — Free가 한국어 네이티브 보이스를 막아 영어권 보이스로 한국어를 읽힌 것. 라운드2(웹 수동 한국어)로 비로소 공정 비교 성립.
 
+
+---
+
+## 6. 발랄·귀여운·어린아이 톤 탐색 + Qwen3 조사 (2026-06-08, 정환주)
+
+> 📋 **체크 요약(모델정체·VRAM·라이선스·온라인데모)** → [QWEN3_TTS_평가체크.md](QWEN3_TTS_평가체크.md)
+>
+> 동기: 라운드2 EL 9종은 **차분·따뜻** 위주. 서비스에 **발랄하고 귀여운, 가능하면
+> 어린아이 같은** 한국어 톤이 필요 → EL Voice Library 재탐색 + Qwen3-TTS 조사.
+> 탐색 스크립트: [find_voices.py](find_voices.py) (`python -m ai.tts.find_voices`, 한국어 네이티브만 필터).
+
+### 6-1. EL Voice Library 한국어 탐색 결과
+- **발랄(upbeat)**: `JY - Trendy K-Culture Vlog Girl` (seoul) `bQlkYuipD5BHEhntA5iz`
+- **귀여운(cute)**: `Annie` (seoul) `Lb7qkOn5hF8p7qfCDH8q` — 라운드2 9종 중 하나, 한국어 검증·샘플 보유(`_output/compare/el_ko_annie.mp3`)
+- 경쾌(crisp/excited): `Hana Lee`·`Milly Maple` (standard)
+- 🔴 **어린아이(kid) 한국어 네이티브 = 0종.** `search="kid"` 결과 전부 비한국어(영어권/스페인계)라 컷.
+  → **EL은 한국어 어린아이 목소리가 없음.** 발랄/귀여운 young 성인이 EL 한국어 상한.
+- ⚠️ 제약 그대로: **Free 플랜은 라이브러리 보이스를 API로 합성 불가**(`paid_plan_required`).
+  후보는 미리듣기 URL로 듣고, 채택 시 웹 수동 합성 또는 유료 전환. [[elevenlabs-free-tier-korean-limit]]
+
+### 6-2. Qwen3-TTS 조사 (왜 어린아이/발랄 톤의 답이 될 수 있나)
+- 라인업(전부 apache-2.0, 2026-01-21): `1.7B-{Base,CustomVoice,VoiceDesign}`, `0.6B-{Base,CustomVoice}`, 토크나이저. 전부 한국어(ko) 지원.
+- **VoiceDesign**: `generate_custom_voice(text, language="Korean", speaker, instruct=...)` — `instruct`에
+  **"밝고 발랄하고 귀여운, 어린아이 같은 목소리"** 같은 자연어로 음색·감정·운율을 **직접 설계**(모델카드 확인).
+  → EL에 없는 한국어 어린아이/발랄 톤을 **공짜로 무한 생성** 가능.
+- 비용/라이선스: **로컬 셀프호스팅 = 완전 무료 + 상업 사용 가능**(apache-2.0). EL 유료 구독과 결정적 차이.
+- VRAM: 1.7B fp16 ≈ 3.4GB → RTX 5060 8GB에 **온디맨드 로딩**(LLM과 공유, [CLAUDE.md §4] 원칙)이면 들어감. 현재 free 6.2GB 실측.
+
+### 6-3. 결론(잠정) / 다음
+- **EL**: 한국어 발랄·귀여운까지는 가능(JY·Annie), **어린아이는 불가**. + Free 합성 벽.
+- **Qwen3**: 어린아이·발랄 톤 자유설계 + 무료 + 상업가능. **사용자 요구엔 Qwen3가 결정적.**
+- 다음: 1.7B-VoiceDesign 로컬 설치 → 한국어 발랄/귀여운/어린아이 instruct 샘플 생성 →
+  `_output/qwen3_*.wav` 로 EL(JY·Annie)과 직접 A/B. (Windows deps 리스크는 타임박스)
