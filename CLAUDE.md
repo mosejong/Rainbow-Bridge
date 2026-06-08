@@ -29,7 +29,7 @@
   | 이름 | 브랜치 | 이름 | 브랜치 |
   |------|--------|------|--------|
   | 모세종 | `mosejong` | 정환주 | `junghwanju` |
-  | 김윤한 | `kimyunhan` | 민경이 | `mingyeongi` |
+  | 김윤한 | `kimyunhan` | 민경이 | `minkyeongyi` |
   | 반소람 | `bansoram` | 장민수 | `jangminsu` |
 
 - 평소 작업은 **`dev`** 에 모읍니다. `main` 은 프로토타입 완성·서비스 가능 시점에만 씁니다.
@@ -119,7 +119,7 @@ collection.query(query_texts=[query], where={"category": "mission"}, n_results=3
 
 전체 내용은 [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) · [docs/GIT_GUIDE.md](docs/GIT_GUIDE.md). 핵심만:
 
-- 브랜치 전략: **인당 1브랜치 + dev 통합** — 각자 본인 영문 이름 브랜치 하나에서만 작업(`mosejong`·`kimyunhan`·`bansoram`·`junghwanju`·`mingyeongi`·`jangminsu`) → PR은 **`dev`로**.
+- 브랜치 전략: **인당 1브랜치 + dev 통합** — 각자 본인 영문 이름 브랜치 하나에서만 작업(`mosejong`·`kimyunhan`·`bansoram`·`junghwanju`·`minkyeongyi`·`jangminsu`) → PR은 **`dev`로**.
 - `main` 은 **프로토타입 완성·서비스 가능 시점**에만 `dev → main` PR로 승격(PM 진행). 평소엔 `dev` 가 통합 브랜치.
 - 🚫 **`main`·`dev` 에 절대 직접 push 금지.** 둘 다 PR 머지로만 바뀝니다. 항상 내 브랜치 → PR(`dev`) → 리뷰 → 머지.
 - PR이 머지돼도 **내 브랜치는 삭제하지 않고** 계속 사용(`git merge dev`로 최신화 후 다음 작업).
