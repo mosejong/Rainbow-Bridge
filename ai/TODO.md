@@ -124,11 +124,16 @@
 
 # 🎙️ ai/tts — MVP ④ (정환주)
 
-- [x] 🎯 엔진 결정(잠정): **Google Cloud TTS** (Gemini로 GPU 뗀 상황 → 클라우드가 8GB 안전)
-- [x] 🎯 톤 옵션 정의 — `TtsTone`(warm/calm/hopeful) + `_TONE_MAP`(속도·피치) → *반소람 ③ 톤과 값 합의 필요*
+- [x] 🎯 엔진 결정(잠정): **Google Cloud TTS** → ⚠️ **2026-06-06 방향 전환: ElevenLabs 주력, Google 폴백**
+  - PERSO 드랍 → TTS가 주력 오디오 됨 → 음질이 핵심 기준으로 격상
+  - Google TTS 기계음은 추모 영상 몰입 방해 → ElevenLabs로 전환
+  - 성격별 목소리 매핑: 활발/순둥이/도도/노령 4종
+- [x] 🎯 톤 옵션 정의 — `TtsTone`(warm/calm/hopeful/soft) + `_TONE_MAP`(속도·피치) → *반소람 ③ 톤과 값 합의 필요*
 - [x] 🔧 `tts.synthesize(text, tone)` 골격 + 긴 텍스트 분할(`_split_text`)
-- [ ] 🔧 **Google Cloud TTS 인증·키 설정** (`GOOGLE_APPLICATION_CREDENTIALS`) + `pip install google-cloud-texttospeech`
-- [ ] 🧪 한국어 발음·억양 품질 점검(음성 이름 `ko-KR-Neural2-*` 비교) + 톤별 샘플 청취
+- [ ] 🔧 **ElevenLabs API 키 발급** + `pip install elevenlabs` + 한국어 목소리 샘플 청취
+- [ ] 🎯 성격 4종 목소리 매핑 확정 (활발/순둥이/도도/노령) + ElevenLabs voice_id 기록
+- [ ] 🔧 `tts.synthesize()` ElevenLabs 연동 + Google 폴백 분기
+- [ ] 🧪 성격별 샘플 TTS 생성 → 추모 영상에 붙여서 감정 테스트
 - [ ] 🔧 `duration` 추정값 → 정확값(ffprobe 등)으로 교체, MP3 합치기 정밀화(pydub)
 - [ ] 🔌 출력 포맷·저장 위치 백엔드 `MediaAsset` 와 합의 / `POST /api/v1/tts` 스텁(**김윤한**과) → 장민수 플레이어 언블락
 - [ ] 🔧 `_output/` 음성 파일 `.gitignore` 등록 확인
