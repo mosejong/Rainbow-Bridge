@@ -295,6 +295,12 @@ _SIGNAL_TABLE: Final[tuple[tuple[str, str, RiskLevel], ...]] = (
     ("깨어나지않았으면", "direct", RiskLevel.L2_WARNING),
     ("끝났으면좋겠", "direct", RiskLevel.L2_WARNING),
     ("다끝나버렸으면", "direct", RiskLevel.L2_WARNING),
+    # 완곡 사망 욕구 변형 — 실모델 점검 2026-06-08 발견(LLM 레이트리밋 폴백 시
+    # 규칙이 놓치던 케이스). "영원히 쉬다/안 깨어남"을 '끝'의 완곡으로 쓰는 표현.
+    # (단순 피로/이벤트 회피와 겹치는 '그만 쉬고 싶다'·'내일이 안 왔으면'은
+    #  아래 passive(L1)로 분류 — 오탐 방지.)
+    ("영원히쉬고싶", "direct", RiskLevel.L2_WARNING),
+    ("안깨어났으면", "direct", RiskLevel.L2_WARNING),
     # 🟡 우려(L1) — 수동적 신호: 살 이유/의미 상실, 무기력
     ("살이유가없", "passive", RiskLevel.L1_CONCERN),
     ("살이유없", "passive", RiskLevel.L1_CONCERN),
@@ -307,6 +313,32 @@ _SIGNAL_TABLE: Final[tuple[tuple[str, str, RiskLevel], ...]] = (
     ("무기력", "passive", RiskLevel.L1_CONCERN),
     ("아무것도하기싫", "passive", RiskLevel.L1_CONCERN),
     ("아무의욕이없", "passive", RiskLevel.L1_CONCERN),
+    # 소진·의미상실 완곡 — 실모델 점검 2026-06-08 발견(규칙 미탐 보강).
+    # '버틸 힘이 없다'는 단순 피로(운동 등)와 겹쳐서, 감정적 소진을 가리키는
+    # '더 이상/더는' 동반형으로만 한정한다(오탐 방지).
+    ("더이상버틸힘이없", "passive", RiskLevel.L1_CONCERN),
+    ("더는버틸힘이없", "passive", RiskLevel.L1_CONCERN),
+    ("더이상버틸힘없", "passive", RiskLevel.L1_CONCERN),
+    ("더는버틸힘없", "passive", RiskLevel.L1_CONCERN),
+    ("일어나는것도의미가없", "passive", RiskLevel.L1_CONCERN),
+    ("사는게의미가없", "passive", RiskLevel.L1_CONCERN),
+    # 완곡·이벤트 회피와 겹치는 표현 — L2(1393 우선)는 과함, L1(공감)으로.
+    # ('그만 쉬고 싶다'=단순 피로, '내일이 안 왔으면'=시험·일 회피 가능)
+    ("그만쉬고싶", "passive", RiskLevel.L1_CONCERN),
+    ("내일이안왔으면", "passive", RiskLevel.L1_CONCERN),
+    ("내일이오지않았으면", "passive", RiskLevel.L1_CONCERN),
+    # 절망·자기무가치·소진 완곡 — 규칙 미탐 보강(2026-06-08).
+    # 일상/애도 표현과 겹칠 수 있어 패턴을 좁히고 L1(공감)으로만 둔다.
+    #   '이 세상에 없었으면'은 애도("이런 슬픔이 세상에 없었으면")와 겹쳐 L2는 과함 →
+    #   L1 로 두고 진짜 자기소멸은 LLM(L1 레이어)이 L2 로 올린다.
+    ("이세상에없었으면", "passive", RiskLevel.L1_CONCERN),
+    ("살아갈자신이없", "passive", RiskLevel.L1_CONCERN),
+    ("살아갈자신없", "passive", RiskLevel.L1_CONCERN),
+    ("다그만두고싶", "passive", RiskLevel.L1_CONCERN),
+    ("나같은건없어도", "passive", RiskLevel.L1_CONCERN),
+    ("숨쉬는것도힘들", "passive", RiskLevel.L1_CONCERN),
+    ("숨쉬기도힘들", "passive", RiskLevel.L1_CONCERN),
+    ("숨쉬는것조차", "passive", RiskLevel.L1_CONCERN),
 )
 
 # 반려동물 죽음·이별을 가리키는 단서(공백 제거 기준).
