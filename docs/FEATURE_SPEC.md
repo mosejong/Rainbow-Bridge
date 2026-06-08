@@ -76,7 +76,7 @@
 | 영역 | 기술 |
 |------|------|
 | Backend | FastAPI, MongoDB, PostgreSQL, Redis |
-| AI / LLM | Gemini API (Qwen3 검토 중) |
+| AI / LLM | Gemini API |
 | RAG | ChromaDB (comfort·mission·funeral·vet_protocol) |
 | TTS | Google TTS (Qwen3 / ElevenLabs 검토 중) |
 | 멀티모달 | LivePortrait (로컬 + GPU 서버) + FFmpeg |
