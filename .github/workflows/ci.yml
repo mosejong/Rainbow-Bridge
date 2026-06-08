@@ -115,7 +115,9 @@ jobs:
           python-version: "3.11"
 
       - name: 의존성 설치
-        run: pip install pytest httpx openai python-dotenv
+        # chromadb 포함 — memorial/mission/funeral 이 ai.rag.retrieve(→chromadb)를
+        # import 하므로 없으면 test 수집 단계에서 ImportError 로 막힘.
+        run: pip install pytest httpx openai python-dotenv chromadb
 
       - name: pytest (ai/llm)
         working-directory: ai
