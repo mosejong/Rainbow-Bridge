@@ -13,7 +13,7 @@ from ai.evaluation.logs import (
 from ai.llm.config import get_config
 from ai.llm.memorial import GuardrailViolation, generate_message
 from ai.llm.provider import generate
-from ai.llm.safety import CRISIS_NOTICE, assess_crisis
+from ai.llm.safety import CRISIS_NOTICE, assess_crisis, CrisisAction, decide_action
 
 from app.db.mongodb import mongodb
 from app.db.redis_client import get_recent_emotions
@@ -83,7 +83,8 @@ async def create_message(data: MessageCreate) -> MessageResponse:
         with measure_latency() as timer:
             # L0+L1 위기 선체크 — generate 주입으로 LLM 레이어(L1) 활성화
             crisis = assess_crisis(note, generate=generate)
-            if crisis.hotline_required:
+            action = decide_action(crisis.risk_level)
+            if action == CrisisAction.BLOCK:
                 log_kind, log_risk = KIND_CRISIS, int(crisis.risk_level)
                 doc = {
                     "pet_id": data.pet_id,
@@ -148,7 +149,7 @@ async def create_message(data: MessageCreate) -> MessageResponse:
                     response.support_message = result["support_message"]
                 if result.get("welfare_resources"):
                     response.welfare_resources = result["welfare_resources"]
-                    
+
     finally:
         # best-effort — 로그 적재 실패가 사용자 응답을 깨면 안 됨.
         try:
