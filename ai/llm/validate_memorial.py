@@ -22,6 +22,7 @@
 
 from __future__ import annotations
 
+import re
 import time
 
 from .memorial import generate_message
@@ -145,13 +146,18 @@ _FP_CASES = [
 _FORBIDDEN_1ST = ("나는", "내가", "내 이름", "나였", "나예요", "저는", "제가")
 _FORBIDDEN_REVIVE = ("부활", "환생", "되살", "다시살아")
 
+# 1인칭 마커는 '단어 시작'에서만 매칭 — "빛나는·일어나는"의 '나는', "문제가"의 '제가'
+# 같은 부분일치 오탐을 막는다. (운영 가드 memorial._FIRST_PERSON_RE 와 동일 원칙)
+_FORBIDDEN_1ST_RE = re.compile(
+    r"(?:^|(?<=[\s,.!?\"'()\[\]{}·…~\-]))(?:" + "|".join(_FORBIDDEN_1ST) + r")"
+)
+
 
 def _check(content: str, first_person: bool = False) -> list[str]:
     issues = []
     if not first_person:
-        for w in _FORBIDDEN_1ST:
-            if w in content:
-                issues.append(f"1인칭 감지: '{w}'")
+        for m in set(_FORBIDDEN_1ST_RE.findall(content)):
+            issues.append(f"1인칭 감지: '{m}'")
     for w in _FORBIDDEN_REVIVE:
         if w in content.replace(" ", ""):
             issues.append(f"부활 표현 감지: '{w}'")
@@ -159,7 +165,7 @@ def _check(content: str, first_person: bool = False) -> list[str]:
 
 
 def _has_first_person(content: str) -> bool:
-    return any(w in content for w in _FORBIDDEN_1ST)
+    return _FORBIDDEN_1ST_RE.search(content) is not None
 
 
 def main() -> None:

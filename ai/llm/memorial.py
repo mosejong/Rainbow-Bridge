@@ -79,6 +79,13 @@ _FIRST_PERSON_MARKERS: tuple[str, ...] = (
     "나는", "저는", "내가", "제가", "나예요", "저예요", "나야", "나랍니다",
 )
 
+# 1인칭 마커는 '단어 시작'에서만 인정한다(부분일치 오탐 방지).
+#   "빛나는·만나는·일어나는"의 '나는', "문제가"의 '제가' 등을 1인칭으로 오인하지
+#   않도록, 앞이 문장 시작이거나 공백/문장부호일 때만 매칭한다.
+_FIRST_PERSON_RE: re.Pattern = re.compile(
+    r"(?:^|(?<=[\s,.!?\"'()\[\]{}·…~\-]))(?:" + "|".join(_FIRST_PERSON_MARKERS) + r")"
+)
+
 _SENTENCE_SPLIT: re.Pattern = re.compile(r"[.!?。\n]")
 
 
@@ -87,7 +94,7 @@ def _has_pet_first_person(content: str, pet_name: str) -> bool:
     if not pet_name:
         return False
     for sentence in _SENTENCE_SPLIT.split(content):
-        if pet_name in sentence and any(w in sentence for w in _FIRST_PERSON_MARKERS):
+        if pet_name in sentence and _FIRST_PERSON_RE.search(sentence):
             return True
     return False
 
