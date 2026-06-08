@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
+  StyleSheet, Text, View, TextInput, TouchableOpacity,
+  Image, KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { register } from '../../api/auth';
-import { COLORS } from '../../constants/colors';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -38,28 +38,37 @@ export default function RegisterScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
+    <LinearGradient
+      colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']}
+      locations={[0, 0.35, 0.6, 1]}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.innerContainer}
         >
-          <View style={styles.header}>
-            <Text style={styles.logo}>🌈</Text>
-            <Text style={styles.title}>회원가입</Text>
-            <Text style={styles.subtitle}>레인보우 브릿지와 함께해요</Text>
+          {/* 상단 이미지 영역 */}
+          <View style={styles.imageWrapper}>
+            <Image
+              source={require('../../assets/마지막사진.jpeg')}
+              style={styles.mainImage}
+            />
           </View>
 
-          <View style={styles.form}>
+          {/* 하단 폼 영역 */}
+          <View style={styles.bottomFormWrapper}>
+            <View style={styles.textContainer}>
+              <Text style={styles.koreanTitle}>회원가입</Text>
+              <Text style={styles.koreanSubtitle}>레인보우 브릿지와 함께해요</Text>
+            </View>
+
             <TextInput
               style={styles.input}
               value={name}
               onChangeText={setName}
               placeholder="이름"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor="#A89FBC"
               autoCorrect={false}
             />
             <TextInput
@@ -67,7 +76,7 @@ export default function RegisterScreen() {
               value={email}
               onChangeText={setEmail}
               placeholder="이메일"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor="#A89FBC"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -77,80 +86,137 @@ export default function RegisterScreen() {
               value={password}
               onChangeText={setPassword}
               placeholder="비밀번호 (6자 이상)"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor="#A89FBC"
               secureTextEntry
             />
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
+              activeOpacity={0.8}
+              style={styles.buttonShadow}
               onPress={handleRegister}
               disabled={loading}
-              activeOpacity={0.85}
             >
-              {loading
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={styles.buttonText}>회원가입</Text>
-              }
+              <LinearGradient
+                colors={['#DDEDEA', '#DAEAF6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.loginButton}
+              >
+                {loading
+                  ? <ActivityIndicator color="#5B4E75" />
+                  : <Text style={styles.loginButtonText}>회원가입</Text>
+                }
+              </LinearGradient>
             </TouchableOpacity>
-          </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>이미 계정이 있으신가요? </Text>
-            <Link href="/(auth)/login" asChild>
-              <TouchableOpacity>
-                <Text style={styles.link}>로그인</Text>
-              </TouchableOpacity>
-            </Link>
+            <View style={styles.footerContainer}>
+              <Text style={styles.footerText}>이미 계정이 있으신가요? </Text>
+              <Link href="/(auth)/login" asChild>
+                <TouchableOpacity activeOpacity={0.6}>
+                  <Text style={styles.signupText}>로그인</Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
-  flex: { flex: 1 },
-  scroll: {
-    flexGrow: 1,
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
+  innerContainer: { flex: 1 },
+
+  imageWrapper: {
+    flex: 0.42,
     justifyContent: 'center',
-    paddingHorizontal: 28,
-    paddingVertical: 40,
-  },
-  header: { alignItems: 'center', marginBottom: 44 },
-  logo: { fontSize: 52, marginBottom: 10 },
-  title: { fontSize: 26, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 6 },
-  subtitle: { fontSize: 14, color: COLORS.textSecondary },
-  form: { gap: 12 },
-  input: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    fontSize: 15,
-    color: COLORS.textPrimary,
-    borderWidth: 1.5,
-    borderColor: COLORS.divider,
-    marginBottom: 2,
-  },
-  error: { color: COLORS.danger, fontSize: 13, textAlign: 'center', marginVertical: 4 },
-  button: {
-    backgroundColor: COLORS.cta,
-    borderRadius: 16,
-    paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 6,
-    shadowColor: COLORS.cta,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    paddingTop: 30,
   },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
-  footerText: { color: COLORS.textSecondary, fontSize: 14 },
-  link: { color: COLORS.primary, fontSize: 14, fontWeight: '700' },
+  mainImage: {
+    width: 220,
+    height: 220,
+    borderRadius: 40,
+    resizeMode: 'cover',
+    shadowColor: '#C4D4E8',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+
+  bottomFormWrapper: {
+    flex: 0.58,
+    paddingHorizontal: 28,
+    alignItems: 'center',
+  },
+  textContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  koreanTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#5B4E75',
+    marginBottom: 6,
+  },
+  koreanSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#8A7D9E',
+  },
+  input: {
+    backgroundColor: '#FFFFFF',
+    width: '100%',
+    height: 54,
+    borderRadius: 16,
+    paddingHorizontal: 22,
+    fontSize: 16,
+    color: '#4A4A4A',
+    marginBottom: 12,
+    shadowColor: '#8A7D9E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 1,
+  },
+  error: {
+    color: '#E57373',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  buttonShadow: {
+    width: '100%',
+    marginTop: 4,
+    shadowColor: '#DAEAF6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  loginButton: {
+    width: '100%',
+    height: 54,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    color: '#5B4E75',
+    fontSize: 17,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  footerContainer: {
+    flexDirection: 'row',
+    marginTop: 14,
+    alignItems: 'center',
+  },
+  footerText: { fontSize: 14, color: '#8A7D9E' },
+  signupText: { fontSize: 14, fontWeight: 'bold', color: '#5B4E75' },
 });

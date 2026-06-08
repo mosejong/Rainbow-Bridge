@@ -91,6 +91,57 @@ def test_generate_message_uses_injected_generate():
     assert result["tone"] == memorial_prompt.DEFAULT_TONE
 
 
+# --- 2.5 배선: pet 의 버킷리스트·보호자 호칭이 프롬프트로 흘러가는지 ---------- #
+
+
+def test_generate_message_injects_bucket_list_and_caller():
+    """pet 의 bucket_list·caller_name 이 실제 프롬프트에 박혀야 한다(C 배선)."""
+    captured = {}
+
+    def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        captured["prompt"] = prompt
+        return "봄이와 함께한 시간이 당신을 따뜻하게 지켜줄 거예요."
+
+    pet = {
+        "name": "봄이",
+        "species": "강아지",
+        "period": "12년",
+        "memories": ["노란 공놀이"],
+        "bucket_list": ["같이 해 뜨는 거 보기", "바다 보여주기"],
+        "caller_name": "엄마",
+    }
+    generate_message(pet, {"emotion_score": 3, "note": "보고 싶어요"}, generate=fake_generate)
+    prompt = captured["prompt"]
+    assert "같이 해 뜨는 거 보기" in prompt
+    assert "바다 보여주기" in prompt
+    assert "버킷리스트" in prompt
+    assert "엄마" in prompt
+
+
+def test_generate_message_caller_falls_back_to_guardian_name():
+    """caller_name 이 없으면 guardian_name 으로 대체된다."""
+    captured = {}
+
+    def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        captured["prompt"] = prompt
+        return "봄이의 따뜻함이 오래 머물기를 바랍니다."
+
+    pet = {"name": "봄이", "species": "강아지", "period": "12년", "guardian_name": "아빠"}
+    generate_message(pet, {"emotion_score": 5}, generate=fake_generate)
+    assert "아빠" in captured["prompt"]
+
+
+def test_generate_message_works_without_bucket_list():
+    """버킷리스트·호칭이 없어도(기존 호출) 정상 동작한다(기본값 '보호자')."""
+    def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        return "봄이와 나눈 시간이 당신 곁에 머물기를 바랍니다."
+
+    result = generate_message(
+        PET, {"emotion_score": 4, "note": "보고 싶어요"}, generate=fake_generate
+    )
+    assert result["source"] == "local"
+
+
 # --- 3. 안전: 위기 입력은 1393 우선 ----------------------------------------- #
 
 

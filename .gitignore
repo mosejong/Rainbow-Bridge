@@ -90,3 +90,6 @@ desktop.ini
 # ===== 예외: 문서용 샘플은 허용하려면 아래처럼 화이트리스트 =====
 # !docs/assets/sample.mp4
 nohup.out
+
+# ===== AI 검증 스크립트 실행 로그 (validate_*.py 출력 덤프 · 테스트 아님 · 커밋 금지) =====
+validate_*_result.txt
