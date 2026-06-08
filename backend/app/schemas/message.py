@@ -20,4 +20,10 @@ class MessageResponse(BaseModel):
     source: str = Field(..., description="생성 출처 (local·perso·stub)")
     risk_level: int = Field(0, description="위기 수준 (0=정상, 2=위기 시 1393 우선)")
     crisis_message: Optional[str] = Field(None, description="위기 시 1393 안내")
+    support_message: Optional[str] = Field(
+        None, description="L1 우려 시 복지자원 안내 문구"
+    )
+    welfare_resources: Optional[list[dict]] = Field(
+        None, description="L1 우려 시 심리상담 자원 목록"
+    )
     created_at: datetime
