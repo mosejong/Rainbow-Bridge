@@ -173,7 +173,13 @@
 
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
+| 모세종 | FEATURE_SPEC 갱신·스크럼 문서 작성, PR #123·#125~#127 머지, 강사 스크럼 반영 SERVICE_FRAME.md 신규 작성, 시한부 선고 진입점 확정, docs 정리(archive+README) → PR #136 | [→](members/모세종.md#2026-06-08-day-8) |
 | 반소람 | (오전) L1/L2/L3 차등 응답 라우팅·복지자원 정리 + (오후) 위기감지 완곡표현 미탐 보강·오탐 방지(애매=L1/명확죽음완곡=L2), memorial 1인칭 가드 부분일치 오탐 수정, 골든셋+10(254→289 통과), funeral 데모 점검, 미션·보상 설계노트 | [→](members/반소람.md#2026-06-08-day-6) |
+| 정환주 | TTS 어린아이+감정 음색 탐색 (instruct·EQ 후처리, qwen3_emotion.py·tone_down.py 신규) → PR #134 | [→](members/정환주.md) |
+| 민경이 | **프론트 React Native 전환** — Vite+Capacitor → Expo SDK 52, 전체 화면 재구현(13개), 앱 아이콘 교체(레인보우브릿지 일러스트), Expo Go Android 실기기 테스트 완료, Docker 백엔드 연결, PR 제출·머지 (#133) | [→](members/민경이.md#2026-06-08-day-8) |
+| 장민수 | remote GPU 테스트(통신·코드 정상, 서버 driving 누락 발견·정환주 핸드오프) + 고정 터널 URL `.env` 기록, XPose 입 개폐 자동선택 검증(5배 분리, PR #120), ETHICS 영상 윤리 PERSO→LivePortrait 갱신(PR #124), 회복게이트 중간보상·저장정책 정리, 영상 톤·강도 실험(ambient~발화, driving 10종 랭킹 d12·d11 최강) | [→](members/장민수.md#2026-06-08-day-8) |
+
+**팀 전체:** 강사 스크럼 — 연계형(B2B2C)·시한부 선고 진입점·왁구 우선 확정. AI 위기 라우팅 L1/L2/L3 완성·머지. 프론트 React Native 전환 완료. 멀티모달: remote 경로 검증·XPose 자동선택 검증·영상 강도 탐색.
 
 ---
 
