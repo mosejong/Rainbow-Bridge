@@ -184,3 +184,37 @@ def log_llm_call(
         risk_level=risk_level,
     )
     return save_log(collection, log)
+
+
+async def alog_llm_call(
+    collection: Any,
+    *,
+    kind: str,
+    latency_ms: int,
+    ok: bool = True,
+    pet_id: Optional[str] = None,
+    provider: str = "gemini",
+    model: Optional[str] = None,
+    risk_level: Optional[int] = None,
+    resp: Any = None,
+) -> Any:
+    """`log_llm_call` 의 motor(async) 버전 — 백엔드 호출부에서 진짜 1줄.
+
+    `resp` 가 없어도(None) 동작합니다(토큰 0). 토큰을 빼고 **횟수·종류·지연·
+    성공여부**만 남기는 라이트 로깅에 그대로 맞습니다. 토큰까지 남기려면 OpenAI
+    호환 응답 객체를 `resp` 로 넘기세요.
+
+    ⚠️ best-effort 로 쓰세요: 로그 저장 실패가 **사용자 응답을 깨면 안 됩니다.**
+    호출부에서 `try/except Exception: pass` 로 감싸세요.
+    """
+    log = LLMLog.from_openai(
+        resp,
+        kind=kind,
+        pet_id=pet_id,
+        provider=provider,
+        model=model,
+        latency_ms=latency_ms,
+        ok=ok,
+        risk_level=risk_level,
+    )
+    return await collection.insert_one(log.to_doc())
