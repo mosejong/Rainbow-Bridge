@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import SafetyModal from '../../components/SafetyModal';
 import { generateMessage, getLatestMessage } from '../../api/messages';
 import { COLORS } from '../../constants/colors';
 
@@ -15,6 +16,7 @@ export default function MessageScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [petName, setPetName] = useState('소중한 친구');
+  const [safetyOpen, setSafetyOpen] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem('pet_name').then((v) => v && setPetName(v));
@@ -26,6 +28,9 @@ export default function MessageScreen() {
     await AsyncStorage.setItem('message_id', data.id || data._id || '');
     await AsyncStorage.setItem('message_content', data.content || '');
     await AsyncStorage.setItem('message_tone', data.tone || 'warm');
+    if (data.risk_level >= 2 || data.source === 'safety') {
+      setSafetyOpen(true);
+    }
   }
 
   async function loadMessage() {
@@ -62,6 +67,7 @@ export default function MessageScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <SafetyModal isOpen={safetyOpen} onClose={() => setSafetyOpen(false)} />
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>{petName}와(과)의 추억</Text>
         <Text style={styles.subtitle}>소중한 기억을 담아 메시지를 만들었어요.</Text>
