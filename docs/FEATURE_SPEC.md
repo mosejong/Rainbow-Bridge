@@ -78,7 +78,7 @@
 | Backend | FastAPI, MongoDB, PostgreSQL, Redis |
 | AI / LLM | Gemini API |
 | RAG | ChromaDB (comfort·mission·funeral·vet_protocol) |
-| TTS | Google TTS (ElevenLabs 비교 검토 중) |
+| TTS | Google TTS (기본) + Qwen3·ElevenLabs 등 비교 테스트 중 |
 | 멀티모달 | LivePortrait (로컬 + GPU 서버) + FFmpeg |
 | 인프라 | Docker Compose, NCP 실서버, GitHub Actions CI/CD |
 | 프론트 | Vite + React + Tailwind + Capacitor (Android) |
