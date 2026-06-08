@@ -1,3 +1,10 @@
+# ⚠️ DEPRECATED — 이 폴더는 더 이상 사용하지 않습니다
+
+> **작업 폴더가 바뀌었습니다.** `frontend-rn/` 에서 작업하세요 (React Native + Expo SDK 52).
+> 이 폴더(`frontend/`)는 구버전 Vite+React 코드로, 2026-06-08 이후 유지보수하지 않습니다.
+
+---
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

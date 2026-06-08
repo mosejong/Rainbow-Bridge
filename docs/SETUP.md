@@ -64,32 +64,26 @@ ruff check . --fix && black . && pytest -q
 
 ---
 
-## 2. 프론트엔드 (민경이, 장민수)
+## 2. 프론트엔드 (민경이) — React Native + Expo
+
+> ⚠️ `frontend/`(구버전 Vite+React)는 더 이상 사용하지 않습니다. **`frontend-rn/`** 에서 작업하세요.
+> 자세한 가이드: [frontend-rn/README.md](../frontend-rn/README.md)
 
 ```bash
-cd frontend
-npm install
+cd frontend-rn
+npm install --legacy-peer-deps
 
-# 개발 서버 실행
-npm run dev
-# → http://localhost:5173
+# 개발 서버 실행 (Expo Go 앱으로 QR 스캔)
+npx expo start --clear
 ```
 
 ### 백엔드 연결 설정
-`frontend/.env` 파일:
+`frontend-rn/.env` 파일 (없으면 직접 생성):
 ```
-# NCP 실서버 (팀 공용)
-VITE_API_BASE_URL=http://101.79.19.87:8000
-
-# 로컬 백엔드 쓸 때
-# VITE_API_BASE_URL=http://localhost:8000
+EXPO_PUBLIC_API_URL=http://<내 PC IP>:8000
 ```
-
-### 빌드
-```bash
-npm run build
-# dist/ 폴더 생성 → NCP nginx로 서빙
-```
+> ⚠️ `localhost`는 폰에서 안 됩니다. 실제 IP를 써야 해요.
+> Windows: `ipconfig | Select-String "IPv4"` 로 확인
 
 ---
 
@@ -116,9 +110,9 @@ npm run build
 - 설치: `pip install -r ai/requirements.txt`
 - ⚠️ 보호자 대상 낭독만. 반려동물 목소리 흉내 금지.
 
-### 3-3. PERSO API (장민수 — 영상 더빙 전용)
-- LLM·TTS 기능 없음 확인. 영상 더빙·립싱크 전용.
-- `.env` 채울 값: `PERSO_API_KEY`, `PERSO_API_BASE_URL`
+### 3-3. PERSO API — ~~드랍 (2026-06-06)~~
+> 동물 얼굴 감지 구조적 불가 확인으로 드랍. LivePortrait 발화 driving으로 대체.
+> `PERSO_API_KEY` 환경변수는 무시해도 됩니다.
 
 ### AI 테스트 실행
 ```bash

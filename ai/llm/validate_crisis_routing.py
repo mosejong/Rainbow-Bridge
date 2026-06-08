@@ -1,6 +1,6 @@
 """위기 등급별 응답 라우팅 검증 — L0/L1/L2/L3 차등 + 복지자원 + 공감 우선.
 
-safety.decide_action 정책이 4개 생성 기능(③ 메시지·triage·funeral·anniversary)에
+safety.decide_action 정책이 3개 생성 기능(③ 메시지·funeral·anniversary)에
 일관되게 적용되는지 확인하는 수동 점검 도구. 가짜 generate 로 동작 → API 불필요·즉시.
 
   L0 정상 → 평소 생성
@@ -24,7 +24,7 @@ from .safety import (
     decide_action,
     detect_crisis,
 )
-from . import anniversary, funeral, memorial, triage
+from . import anniversary, funeral, memorial
 
 # Windows 터미널 인코딩 우회 — UTF-8 강제
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -60,10 +60,6 @@ def _call_memorial(note, f):
     )
 
 
-def _call_triage(note, f):
-    return triage.generate_triage("기침을 해요", _PET, note=note, generate=f)
-
-
 def _call_funeral(note, f):
     return funeral.generate_funeral_guidance("after_death", _PET, note=note, generate=f)
 
@@ -74,7 +70,6 @@ def _call_anniversary(note, f):
 
 _FUNCS = (
     ("memorial", _call_memorial),
-    ("triage", _call_triage),
     ("funeral", _call_funeral),
     ("anniversary", _call_anniversary),
 )
