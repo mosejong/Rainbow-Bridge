@@ -28,7 +28,7 @@ def _normalize_memories(memories: list | None) -> list | None:
     result = []
     for m in memories:
         if isinstance(m, str):
-            result.append({"keyword": m, "detail": None})
+            result.append({"keyword": m, "detail": ""})
         else:
             result.append(m)
     return result
