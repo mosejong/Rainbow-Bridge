@@ -32,7 +32,7 @@ async def register_vet(db: AsyncSession, data: VetRegisterRequest) -> VetRespons
 
 async def login_vet(db: AsyncSession, email: str, password: str) -> VetTokenResponse:
     vet = await db.scalar(select(Vet).where(Vet.email == email))
-    if not vet:
+    if not vet or not vet.is_active:
         raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다.")
 
     try:
