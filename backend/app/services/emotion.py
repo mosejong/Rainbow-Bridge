@@ -8,6 +8,13 @@ from app.schemas.emotion import EmotionCreate, EmotionResponse, RecoveryResponse
 
 CRISIS_HOTLINE = "1393"
 
+# ── 회복 게이트 임계값 ──────────────────────────────────────────
+# 미션 난이도 확정 후 조정하세요 (모세종 담당)
+_GATE_MIN_CHECKINS = 3  # 최소 체크인 횟수
+_GATE_MIN_AVG_SCORE = 5.0  # 평균 감정 점수 하한 (1~10)
+_GATE_MAX_RISK = 1  # 허용 최대 risk_level (2 이상이면 잠금 유지)
+# ────────────────────────────────────────────────────────────────
+
 
 def _collection():
     return mongodb.db["emotions"]
@@ -74,12 +81,21 @@ async def get_recovery(pet_id: str) -> RecoveryResponse:
     # 회복률: 평균 점수를 10점 만점 기준 %
     recovery_pct = round(avg * 10)
 
+    latest_risk = records[0]["risk_level"]
+    content_unlocked = (
+        len(records) >= _GATE_MIN_CHECKINS
+        and avg >= _GATE_MIN_AVG_SCORE
+        and latest_risk <= _GATE_MAX_RISK
+        and trend != "주의 필요"
+    )
+
     return RecoveryResponse(
         pet_id=pet_id,
         total_checkins=len(records),
         avg_score=avg,
         trend=trend,
         recovery_pct=recovery_pct,
-        latest_risk_level=records[0]["risk_level"],
+        latest_risk_level=latest_risk,
         records=records,
+        content_unlocked=content_unlocked,
     )
