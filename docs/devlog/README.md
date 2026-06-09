@@ -173,6 +173,7 @@
 
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
+| 모세종 | PR #157~#178 리뷰·머지(22건), 발표 시나리오 스크립트 35분 구조 완성(피벗 슬라이드·시연 영상 피날레), GPU 역할 분리 결정(TTS↔LP 2터널), 장민수 ngrok GPU 가이드 작성, E2E NCP 실서버 통과 확인 | [→](members/모세종.md#2026-06-09-day-9) |
 | 반소람 | 미션 회복근거(rationale·5분류↔5이론) 부착 + 미션 풀 30→60 확장, 일상복귀 신호 분석 틀(`recovery_signal`)+발표 시뮬, RAG 사용처 정리(comfort 정리·3곳 확정), 추모(3인칭) 별명 본문 전체 일관 호명 수정 | [→](members/반소람.md) |
 | 정환주 | **TTS remote 실연동 검증 성공**(NCP→GPU 왕복: Google폴백 mp3 → 세종 재배포 후 Qwen3 wav 8.5초 전환 확인, ngrok 200 도달) + CLI `--gender man/woman` 수정(PR #162)·GPU_SERVER §12 인계문서(PR #164)·PR #163 리뷰, **LivePortrait 엔진이 정환주 GPU에 미설치 발견** → 영상 = 민수 3060 별도 터널 구조로 결정·ngrok 한도 리스크 분석 | [→](members/정환주.md#2026-06-09-day-9) |
 | 민경이 | 봉투 애니메이션 3단계·welfare 섹션·미션 rationale 아이콘, 버킷리스트·일기 신규 화면, 재방문자 AsyncStorage 초기화, 키보드 가림·ForwardRef 에러 수정, 헤더 홈/로그아웃 버튼 추가 | [→](members/민경이.md#2026-06-09-day-9) |
