@@ -94,21 +94,6 @@
 
 ---
 
-## 2026-06-02 (Day 2)
-
-| 이름 | 한 일 (요약) | 상세 |
-|------|------------|------|
-| 모세종 | 반려동물 프로필·감정 체크인·미션 추천 API 추가, 서비스 시나리오 초안 작성 | [→](members/모세종.md) |
-| 김윤한 | — | [→](members/김윤한.md) |
-| 반소람 | — | [→](members/반소람.md) |
-| 정환주 | — | [→](members/정환주.md) |
-| 민경이 | — | [→](members/민경이.md) |
-| 장민수 | LivePortrait 환경 세팅 완료·animals 모드(고양이) 영상 생성 확인, 강사 피드백 반영, 서비스 시나리오 확정 참여 | [→](members/장민수.md#2026-06-02-day-2) |
-
-**팀 전체:** 백엔드 핵심 API 추가, LivePortrait 멀티모달 기술 검증, 서비스 시나리오 확정(6/5 데드라인).
-
----
-
 ## 2026-06-01 (Day 1)
 
 | 이름 | 한 일 (요약) | 상세 |
@@ -144,7 +129,7 @@
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
 | 모세종 | PR #28~#32 리뷰·머지, risk_level 0~3·Gemini 실연동·CI AI 의존성 수정(PR #31) | [→](members/모세종.md) |
-| 김윤한 | llm_logs 컬렉션 연결 작업 (backend/kyh 브랜치 푸시, PR 미제출) | [→](members/김윤한.md) |
+| 김윤한 | PR #34 반영(PII 제거·router 충돌 해소), llm_log.py 재수정, assess_crisis() 추가, GET /hospitals 카카오맵 API 연동 완료 | [→](members/김윤한.md) |
 | 반소람 | Gemini provider.py 연동 완성, 84종 테스트 통과, 백엔드 스키마 키 정렬(PR #29) | [→](members/반소람.md) |
 | 정환주 | TTS·평가 골격 테스트 10종, ai/requirements.txt, SETUP TTS 셋업 문서(PR #32) | [→](members/정환주.md) |
 | 민경이 | EmotionPage·MessagePage 구현, PR #28 Approve(PR #30) | [→](members/민경이.md#2026-06-03-day-3) |
@@ -159,7 +144,7 @@
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
 | 모세종 | NCP 실서버 배포(systemd·nginx·GitHub Actions 자동배포), 로그인·미디어 API 구현, 버그 수정 3건, PR #48~#59 관리 | [→](members/모세종.md) |
-| 김윤한 | llm_logs API PR #34 제출·수정 (PII 원문 제거, router 충돌 해소) | [→](members/김윤한.md) |
+| 김윤한 | Docker Compose 완성·MongoDB 볼륨 마운트, Gemini API 키 설정, Dockerfile 추가, L1 위기감지 연동, HDD 500GB 마운트 | [→](members/김윤한.md) |
 | 반소람 | ⑤ 미션 추천+규칙 풀 확장(30개), ⑦ L1+골든셋 30개 보강, ③ 품질 검증(Gemini 6종 통과), 159종 통과 | [→](members/반소람.md#2026-06-04-day-4) |
 | 정환주 | Gemini·Google Cloud TTS 키 발급·실연결, **백엔드 TTS 실연결(PR #40)** — ④ TTS 가짜→진짜, 환경 정합(PR #35), 팀 PR 리뷰 3건(#33·#36·#38), 추모 윤리 경계 정리, PROGRESS 갱신·build_report 핸드오프(PR #58) | [→](members/정환주.md#2026-06-04-day-4) |
 | 민경이 | EmotionPage score 매핑·MissionPage·ReportPage·LoginPage·RegisterPage 구현, 실서버 연결 테스트 완료 | [→](members/민경이.md#2026-06-04-day-4) |
@@ -169,29 +154,18 @@
 
 ---
 
-## 2026-06-09 (Day 9)
+## 2026-06-05 (Day 5)
 
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
-| 모세종 | PR #157~#178 리뷰·머지(22건), 발표 시나리오 스크립트 35분 구조 완성(피벗 슬라이드·시연 영상 피날레), GPU 역할 분리 결정(TTS↔LP 2터널), 장민수 ngrok GPU 가이드 작성, E2E NCP 실서버 통과 확인 | [→](members/모세종.md#2026-06-09-day-9) |
-| 반소람 | 미션 회복근거(rationale·5분류↔5이론) 부착 + 미션 풀 30→60 확장, 일상복귀 신호 분석 틀(`recovery_signal`)+발표 시뮬, RAG 사용처 정리(comfort 정리·3곳 확정), 추모(3인칭) 별명 본문 전체 일관 호명 수정 | [→](members/반소람.md) |
-| 정환주 | **TTS remote 실연동 검증 성공**(NCP→GPU 왕복: Google폴백 mp3 → 세종 재배포 후 Qwen3 wav 8.5초 전환 확인, ngrok 200 도달) + CLI `--gender man/woman` 수정(PR #162)·GPU_SERVER §12 인계문서(PR #164)·PR #163 리뷰, **LivePortrait 엔진이 정환주 GPU에 미설치 발견** → 영상 = 민수 3060 별도 터널 구조로 결정·ngrok 한도 리스크 분석 | [→](members/정환주.md#2026-06-09-day-9) |
-| 민경이 | 봉투 애니메이션 3단계·welfare 섹션·미션 rationale 아이콘, 버킷리스트·일기 신규 화면, 재방문자 AsyncStorage 초기화, 키보드 가림·ForwardRef 에러 수정, 헤더 홈/로그아웃 버튼 추가 | [→](members/민경이.md#2026-06-09-day-9) |
-| 장민수 | 펫로스 회복 논문근거 보강(ICG α=0.93·예기비탄·효과크기 g=0.388/0.41·Continuing Bonds 게이트 근거, PR #165), LP 본체가 장민수 PC에만 존재 규명→발표 호스트 **소람 PC 전환**, 소람용 LP 설치 가이드 작성(함정3개·PowerShell호환, PR #171), 발표 사전녹화 백업본 2종 생성·검증(06_backup, 1·3인칭 BGM) | [→](members/장민수.md#2026-06-09-day-9) |
+| 모세종 | 서비스 방향 확정(3단계·수의사↔보호자 플랫폼), PERSO 립싱크 2단계 플로우 구현·동물 한계 확인, 4종 비교 실험 설계, 1단계 DB 스키마(PetDiary·Vet·VetAdvice) + PostgreSQL 준비, PR #89~#100 관리 | [→](members/모세종.md#2026-06-05-day-5) |
+| 김윤한 | docker-compose 백엔드+MongoDB 통합, DuckDNS 도메인+Let's Encrypt HTTPS 설정, MongoDB 컨테이너 연결 수정(localhost→rainbow_mongo), media upload 검증 수정 PR 제출, 미디어 다운로드 API 추가(PR #111) | [→](members/김윤한.md#2026-06-05-day-5) |
+| 반소람 | 위기 차단 보강, 1단계 증상 진료·2단계 장례·3단계 기념일(D+30/D+100) 케어 신규, RAG corpus 56개 확장(장례·미션 신설), memorial RAG retrieve() 연결, RAG A/B 테스트 완료 | [→](members/반소람.md#2026-06-05-day-5) |
+| 정환주 | RAG 검색 파이프라인 신설(ChromaDB, PR #79)+검색 품질 실증 도구(Hit@1/MRR), 벡터DB 스터디·비교 문서(PR #73), ④ TTS 음성 다양화·실패 폴백(PR #71·#73), HHHHHMM 척도 모듈(도먼트), PERSO 아바타 핸드오프, 1단계 확장구조 역할분담 | [→](members/정환주.md#2026-06-05-day-5) |
+| 민경이 | SymptomsPage 병원 카드·HealthRecordsPage 신규·FuneralPage 신규(장례 안내) 구현, 모바일 반응형 수정, Capacitor Android 앱 전략 확정, PR #84 업데이트 | [→](members/민경이.md#2026-06-05-day-5) |
+| 장민수 | `merge_audio()`(PR #74)·driving env 분리(#83)·PERSO 립싱크 검증+이빨 발견(#90·#91)·remote 모드+`server.py`(#95)·GPU 세팅 가이드(#96)·잔잔 driving 템플릿·PERSO 전수조사(Enterprise 1671크레딧) | [→](members/장민수.md#2026-06-05-day-5) |
 
----
-
-## 2026-06-08 (Day 8)
-
-| 이름 | 한 일 (요약) | 상세 |
-|------|------------|------|
-| 모세종 | FEATURE_SPEC 갱신·스크럼 문서 작성, PR #123·#125~#127 머지, 강사 스크럼 반영 SERVICE_FRAME.md 신규 작성, 시한부 선고 진입점 확정, docs 정리(archive+README) → PR #136 | [→](members/모세종.md#2026-06-08-day-8) |
-| 반소람 | (오전) L1/L2/L3 차등 응답 라우팅·복지자원 정리 + (오후) 위기감지 완곡표현 미탐 보강·오탐 방지(애매=L1/명확죽음완곡=L2), memorial 1인칭 가드 부분일치 오탐 수정, 골든셋+10(254→289 통과), funeral 데모 점검, 미션·보상 설계노트 | [→](members/반소람.md#2026-06-08-day-6) |
-| 정환주 | TTS 어린아이+감정 음색 탐색 (instruct·EQ 후처리, qwen3_emotion.py·tone_down.py 신규) → PR #134 | [→](members/정환주.md) |
-| 민경이 | **프론트 React Native 전환** — Vite+Capacitor → Expo SDK 52, 전체 화면 재구현(13개), 앱 아이콘 교체(레인보우브릿지 일러스트), Expo Go Android 실기기 테스트 완료, Docker 백엔드 연결, PR 제출·머지 (#133) | [→](members/민경이.md#2026-06-08-day-8) |
-| 장민수 | remote GPU 테스트(통신·코드 정상, 서버 driving 누락 발견·정환주 핸드오프) + 고정 터널 URL `.env` 기록, XPose 입 개폐 자동선택 검증(5배 분리, PR #120), ETHICS 영상 윤리 PERSO→LivePortrait 갱신(PR #124), 회복게이트 중간보상·저장정책 정리, 영상 톤·강도 실험(ambient~발화, driving 10종 랭킹 d12·d11 최강) | [→](members/장민수.md#2026-06-08-day-8) |
-
-**팀 전체:** 강사 스크럼 — 연계형(B2B2C)·시한부 선고 진입점·왁구 우선 확정. AI 위기 라우팅 L1/L2/L3 완성·머지. 프론트 React Native 전환 완료. 멀티모달: remote 경로 검증·XPose 자동선택 검증·영상 강도 탐색.
+**팀 전체:** **수의사↔보호자 쌍방향 플랫폼 방향 확정** (병원=웹·보호자=앱). 1단계(건강관리/증상 기록) → 2단계(장례 안내) → 3단계(펫로스 케어) 플로우 + AI RAG few-shot·1인칭 편지 모드 검증 완료. 프론트 1·2단계 신규 화면(SymptomsPage·HealthRecordsPage·FuneralPage) + Android Capacitor 전략 확정. 멀티모달 사진→영상+음성 파이프라인 완성. Docker+HTTPS 인프라 완성.
 
 ---
 
@@ -210,15 +184,28 @@
 
 ---
 
-## 2026-06-05 (Day 5)
+## 2026-06-08 (Day 8)
 
 | 이름 | 한 일 (요약) | 상세 |
 |------|------------|------|
-| 모세종 | 서비스 방향 확정(3단계·수의사↔보호자 플랫폼), PERSO 립싱크 2단계 플로우 구현·동물 한계 확인, 4종 비교 실험 설계, 1단계 DB 스키마(PetDiary·Vet·VetAdvice) + PostgreSQL 준비, PR #89~#100 관리 | [→](members/모세종.md#2026-06-05-day-5) |
-| 김윤한 | docker-compose 백엔드+MongoDB 통합, DuckDNS 도메인+Let's Encrypt HTTPS 설정, MongoDB 컨테이너 연결 수정(localhost→rainbow_mongo), media upload 검증 수정 PR 제출 | [→](members/김윤한.md#2026-06-05-day-5) |
-| 반소람 | 위기 차단 보강, 1단계 증상 진료·2단계 장례·3단계 기념일(D+30/D+100) 케어 신규, RAG corpus 56개 확장(장례·미션 신설), memorial RAG retrieve() 연결, RAG A/B 테스트 완료 | [→](members/반소람.md#2026-06-05-day-5) |
-| 정환주 | RAG 검색 파이프라인 신설(ChromaDB, PR #79)+검색 품질 실증 도구(Hit@1/MRR), 벡터DB 스터디·비교 문서(PR #73), ④ TTS 음성 다양화·실패 폴백(PR #71·#73), HHHHHMM 척도 모듈(도먼트), PERSO 아바타 핸드오프, 1단계 확장구조 역할분담 | [→](members/정환주.md#2026-06-05-day-5) |
-| 민경이 | SymptomsPage 병원 카드·HealthRecordsPage 신규·FuneralPage 신규(장례 안내) 구현, 모바일 반응형 수정, Capacitor Android 앱 전략 확정, PR #84 업데이트 | [→](members/민경이.md#2026-06-05-day-5) |
-| 장민수 | `merge_audio()`(PR #74)·driving env 분리(#83)·PERSO 립싱크 검증+이빨 발견(#90·#91)·remote 모드+`server.py`(#95)·GPU 세팅 가이드(#96)·잔잔 driving 템플릿·PERSO 전수조사(Enterprise 1671크레딧) | [→](members/장민수.md#2026-06-05-day-5) |
+| 모세종 | FEATURE_SPEC 갱신·스크럼 문서 작성, PR #123·#125~#127 머지, 강사 스크럼 반영 SERVICE_FRAME.md 신규 작성, 시한부 선고 진입점 확정, docs 정리(archive+README) → PR #136 | [→](members/모세종.md#2026-06-08-day-8) |
+| 김윤한 | L1 응답 스키마 연동(MessageResponse welfare_resources 필드 추가), services/message.py CrisisAction.BLOCK 분기 수정, PR #128 생성·CI 통과·머지·NCP 배포 완료 | [→](members/김윤한.md) |
+| 반소람 | (오전) L1/L2/L3 차등 응답 라우팅·복지자원 정리 + (오후) 위기감지 완곡표현 미탐 보강·오탐 방지(애매=L1/명확죽음완곡=L2), memorial 1인칭 가드 부분일치 오탐 수정, 골든셋+10(254→289 통과), funeral 데모 점검, 미션·보상 설계노트 | [→](members/반소람.md#2026-06-08-day-6) |
+| 정환주 | TTS 어린아이+감정 음색 탐색 (instruct·EQ 후처리, qwen3_emotion.py·tone_down.py 신규) → PR #134 | [→](members/정환주.md) |
+| 민경이 | **프론트 React Native 전환** — Vite+Capacitor → Expo SDK 52, 전체 화면 재구현(13개), 앱 아이콘 교체(레인보우브릿지 일러스트), Expo Go Android 실기기 테스트 완료, Docker 백엔드 연결, PR 제출·머지 (#133) | [→](members/민경이.md#2026-06-08-day-8) |
+| 장민수 | remote GPU 테스트(통신·코드 정상, 서버 driving 누락 발견·정환주 핸드오프) + 고정 터널 URL `.env` 기록, XPose 입 개폐 자동선택 검증(5배 분리, PR #120), ETHICS 영상 윤리 PERSO→LivePortrait 갱신(PR #124), 회복게이트 중간보상·저장정책 정리, 영상 톤·강도 실험(ambient~발화, driving 10종 랭킹 d12·d11 최강) | [→](members/장민수.md#2026-06-08-day-8) |
 
-**팀 전체:** **수의사↔보호자 쌍방향 플랫폼 방향 확정** (병원=웹·보호자=앱). 1단계(건강관리/증상 기록) → 2단계(장례 안내) → 3단계(펫로스 케어) 플로우 + AI RAG few-shot·1인칭 편지 모드 검증 완료. 프론트 1·2단계 신규 화면(SymptomsPage·HealthRecordsPage·FuneralPage) + Android Capacitor 전략 확정. 멀티모달 사진→영상+음성 파이프라인 완성. Docker+HTTPS 인프라 완성.
+**팀 전체:** 강사 스크럼 — 연계형(B2B2C)·시한부 선고 진입점·왁구 우선 확정. AI 위기 라우팅 L1/L2/L3 완성·머지. 프론트 React Native 전환 완료. 멀티모달: remote 경로 검증·XPose 자동선택 검증·영상 강도 탐색.
+
+---
+
+## 2026-06-09 (Day 9)
+
+| 이름 | 한 일 (요약) | 상세 |
+|------|------------|------|
+| 모세종 | PR #157~#178 리뷰·머지(22건), 발표 시나리오 스크립트 35분 구조 완성(피벗 슬라이드·시연 영상 피날레), GPU 역할 분리 결정(TTS↔LP 2터널), 장민수 ngrok GPU 가이드 작성, E2E NCP 실서버 통과 확인 | [→](members/모세종.md#2026-06-09-day-9) |
+| 김윤한 | TTS Qwen3 GPU 서버 HTTP 연동·Google TTS 폴백 구조(PR #155), play_count + 로그인 접속 로그 추가, build_report play_count·session_count 집계 확장, NCP 재배포·TTS 왕복 테스트 완료 | [→](members/김윤한.md) |
+| 반소람 | 미션 회복근거(rationale·5분류↔5이론) 부착 + 미션 풀 30→60 확장, 일상복귀 신호 분석 틀(`recovery_signal`)+발표 시뮬, RAG 사용처 정리(comfort 정리·3곳 확정), 추모(3인칭) 별명 본문 전체 일관 호명 수정 | [→](members/반소람.md) |
+| 정환주 | **TTS remote 실연동 검증 성공**(NCP→GPU 왕복: Google폴백 mp3 → 세종 재배포 후 Qwen3 wav 8.5초 전환 확인, ngrok 200 도달) + CLI `--gender man/woman` 수정(PR #162)·GPU_SERVER §12 인계문서(PR #164)·PR #163 리뷰, **LivePortrait 엔진이 정환주 GPU에 미설치 발견** → 영상 = 민수 3060 별도 터널 구조로 결정·ngrok 한도 리스크 분석 | [→](members/정환주.md#2026-06-09-day-9) |
+| 민경이 | 봉투 애니메이션 3단계·welfare 섹션·미션 rationale 아이콘, 버킷리스트·일기 신규 화면, 재방문자 AsyncStorage 초기화, 키보드 가림·ForwardRef 에러 수정, 헤더 홈/로그아웃 버튼 추가 | [→](members/민경이.md#2026-06-09-day-9) |
+| 장민수 | 펫로스 회복 논문근거 보강(ICG α=0.93·예기비탄·효과크기 g=0.388/0.41·Continuing Bonds 게이트 근거, PR #165), LP 본체가 장민수 PC에만 존재 규명→발표 호스트 **소람 PC 전환**, 소람용 LP 설치 가이드 작성(함정3개·PowerShell호환, PR #171), 발표 사전녹화 백업본 2종 생성·검증(06_backup, 1·3인칭 BGM) | [→](members/장민수.md#2026-06-09-day-9) |
