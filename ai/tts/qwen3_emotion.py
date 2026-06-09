@@ -177,8 +177,13 @@ _PACE = {
     "normal": ", speaking at a natural pace",
     "fast": ", speaking a bit faster",
 }
-# 항상 붙는 꼬리 — 속삭임/숨소리/성인 톤 차단
+# 항상 붙는 꼬리 — 속삭임/숨소리/성인 톤 차단 (어린이용)
 _TAIL = ", speaking out loud at a normal distance, not whispering, not breathy, clearly a child and not an adult"
+
+# 성인 앵커 — 3인칭 추모 낭독용(메시지 읽어주기). g = man / woman.
+_ADULT_ANCHOR = "A Korean adult {g}, with a clear, natural, mature voice"
+# 성인 꼬리 — 속삭임/숨소리만 차단(어린이 단정 문구 제외).
+_ADULT_TAIL = ", speaking out loud at a normal distance, not whispering, not breathy"
 
 
 def build_instruct(
@@ -191,16 +196,22 @@ def build_instruct(
     emotion: str = "none",
     clarity: int = 0,
 ) -> str:
-    g = "boy" if gender == "boy" else "girl"
+    if gender in ("man", "woman"):  # 성인 — age 무시, 성인 앵커/꼬리 사용
+        anchor = _ADULT_ANCHOR.format(g=gender)
+        tail = _ADULT_TAIL
+    else:  # 어린이 — boy/girl
+        g = "boy" if gender == "boy" else "girl"
+        anchor = _CHILD_ANCHOR.format(g=g, age=_AGE[age])
+        tail = _TAIL
     return (
-        _CHILD_ANCHOR.format(g=g, age=_AGE[age])
+        anchor
         + _WARMTH[warmth]
         + _BRIGHT[bright]
         + _PITCH[pitch]
         + _EMOTION[emotion]
         + _CLARITY[clarity]
         + _PACE[pace]
-        + _TAIL
+        + tail
     )
 
 
