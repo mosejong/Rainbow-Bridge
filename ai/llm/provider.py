@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import time
 from functools import lru_cache
-from typing import Optional
+from typing import Final, Optional
 
 from openai import (
     APIConnectionError,
@@ -31,6 +31,14 @@ from .config import get_config
 
 class LLMError(RuntimeError):
     """LLM 호출이 재시도 후에도 실패했을 때."""
+
+
+# generate() 가 끝내 실패(LLMError)했을 때 상위(생성 기능)에서 쓰는 안내문.
+# 🚫 실패를 '가짜 생성물'로 숨기지 마세요 — 반드시 명백한 안내문으로만 노출.
+#    (펫로스 특성상 가짜 추모 메시지를 진짜로 오해하면 위험)
+LLM_UNAVAILABLE_NOTICE: Final[str] = (
+    "지금은 메시지를 준비하지 못했어요. 잠시 후 다시 시도해 주세요."
+)
 
 
 @lru_cache(maxsize=8)

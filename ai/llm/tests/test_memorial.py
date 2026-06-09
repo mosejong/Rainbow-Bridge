@@ -338,3 +338,20 @@ def test_l2_crisis_forces_third_person():
     assert result.get("first_person") is not True  # 1인칭 편지로 승격 안 됨(3인칭)
     assert CRISIS_HOTLINE in result["crisis_message"]  # 1393 함께
     assert result["risk_level"] == 2
+
+
+# --- 5. graceful: LLM 인프라 실패(LLMError) → 안내문 대체 --------------------- #
+
+
+def test_llm_unavailable_returns_notice():
+    """전 키·모델 소진(LLMError) 시, 가짜 추모글이 아니라 안내문(source=unavailable)."""
+    from ..provider import LLM_UNAVAILABLE_NOTICE, LLMError
+
+    def failing_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        raise LLMError("모든 키·모델 소진")
+
+    result = generate_message(
+        PET, {"emotion_score": 5, "note": "봄이가 보고 싶어요"}, generate=failing_generate
+    )
+    assert result["source"] == "unavailable"
+    assert result["content"] == LLM_UNAVAILABLE_NOTICE

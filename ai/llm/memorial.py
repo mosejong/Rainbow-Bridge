@@ -25,6 +25,7 @@ from typing import Optional, Protocol
 
 from ai.rag.retrieve import retrieve as _rag_retrieve
 from .prompts import memorial as memorial_prompt
+from .provider import LLM_UNAVAILABLE_NOTICE, LLMError
 from .safety import (
     CrisisAction,
     EMPATHY_FOCUS_NOTE,
@@ -223,15 +224,22 @@ def generate_message(
         prompt += EMPATHY_FOCUS_NOTE
 
     # (4)+(5) 호출 후 가드 검사, 위반 시 재생성.
+    #   LLM 인프라 실패(LLMError: 전 키·모델 소진 등)는 앱이 터지지 않게
+    #   '명백한 안내문'으로 graceful 대체(source=unavailable). 가짜 추모글 금지.
     last_violation = ""
-    for _ in range(max_retries + 1):
-        content = generate(
-            prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE
-        ).strip()
-        violation = _violates_guardrail(
-            content, pet_name=pet.get("name", ""), first_person=first_person
-        )
-        if violation is None:
+    try:
+        attempts = range(max_retries + 1)
+        for _ in attempts:
+            content = generate(
+                prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE
+            ).strip()
+            violation = _violates_guardrail(
+                content, pet_name=pet.get("name", ""), first_person=first_person
+            )
+            if violation is not None:
+                last_violation = violation
+                continue
+
             result = {"content": content, "tone": tone, "source": source}
             # L1(우려) — 생성은 하되 복지자원 안내를 함께.
             if action == CrisisAction.GENERATE_WITH_SUPPORT:
@@ -245,9 +253,15 @@ def generate_message(
             if first_person:
                 result["first_person"] = True
             return result
-        last_violation = violation
+    except LLMError:
+        # 전 키·모델 소진 등 인프라 실패 → 안내문으로 graceful 대체(앱 안 터지게).
+        return {
+            "content": LLM_UNAVAILABLE_NOTICE,
+            "tone": tone,
+            "source": "unavailable",
+        }
 
-    # 재시도까지 실패 → 위험한 출력을 내보내지 않고 차단.
+    # 재시도까지 가드 위반 → 위험한 출력을 내보내지 않고 차단.
     raise GuardrailViolation(
         f"생성 결과가 윤리 경계를 반복해서 위반했습니다 ({last_violation})."
     )
