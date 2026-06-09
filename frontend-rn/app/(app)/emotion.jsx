@@ -6,6 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import SafetyModal from '../../components/SafetyModal';
 import Button from '../../components/Button';
 import { postEmotion } from '../../api/emotions';
@@ -63,6 +64,11 @@ export default function EmotionScreen() {
   }
 
   return (
+    <LinearGradient
+      colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']}
+      locations={[0, 0.35, 0.6, 1]}
+      style={styles.gradient}
+    >
     <SafeAreaView style={styles.safe}>
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -121,14 +127,16 @@ export default function EmotionScreen() {
         }}
       />
     </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+  gradient: { flex: 1 },
+  safe: { flex: 1 },
   scroll: { paddingHorizontal: 24, paddingVertical: 36 },
-  title: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', marginBottom: 6 },
-  subtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 28 },
+  title: { fontSize: 22, fontWeight: '700', color: '#5B4E75', textAlign: 'center', marginBottom: 6 },
+  subtitle: { fontSize: 14, color: '#8A7D9E', textAlign: 'center', marginBottom: 28 },
   moodList: { gap: 10, marginBottom: 24 },
   moodBtn: {
     flexDirection: 'row',

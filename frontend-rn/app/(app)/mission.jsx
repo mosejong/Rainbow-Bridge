@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -52,13 +53,16 @@ export default function MissionScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <LoadingSpinner message="미션을 불러오고 있어요..." />
-      </SafeAreaView>
+      <LinearGradient colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={styles.gradient}>
+        <SafeAreaView style={styles.safe}>
+          <LoadingSpinner message="미션을 불러오고 있어요..." />
+        </SafeAreaView>
+      </LinearGradient>
     );
   }
 
   return (
+    <LinearGradient colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={styles.gradient}>
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>오늘의 미션</Text>
@@ -85,10 +89,15 @@ export default function MissionScreen() {
                 <Text style={styles.missionEmoji}>{mission.completed ? '✅' : '🌱'}</Text>
                 <View style={styles.missionInfo}>
                   <Text style={[styles.missionTitle, mission.completed && styles.missionTitleDone]}>
-                    {mission.title}
+                    {'📋 '}{mission.title}
                   </Text>
                   {mission.description ? (
                     <Text style={styles.missionDesc}>{mission.description}</Text>
+                  ) : null}
+                  {mission.rationale ? (
+                    <Text style={styles.missionRationale}>
+                      {'💡 '}{mission.rationale}{mission.category ? ` — (${mission.category})` : ''}
+                    </Text>
                   ) : null}
                 </View>
               </View>
@@ -112,11 +121,13 @@ export default function MissionScreen() {
         ) : null}
       </ScrollView>
     </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+  gradient: { flex: 1 },
+  safe: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingVertical: 32 },
   title: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', marginBottom: 6 },
   subtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 24 },
@@ -133,6 +144,7 @@ const styles = StyleSheet.create({
   missionTitle: { fontSize: 15, fontWeight: '600', color: COLORS.textPrimary },
   missionTitleDone: { textDecorationLine: 'line-through', color: COLORS.textLight },
   missionDesc: { fontSize: 13, color: COLORS.textSecondary, marginTop: 3 },
+  missionRationale: { fontSize: 12, color: '#9B8DB8', marginTop: 6, lineHeight: 17 },
   completeBtn: { marginTop: 12 },
   allDone: { textAlign: 'center', color: COLORS.primary, fontWeight: '700', fontSize: 15, marginTop: 20 },
 });

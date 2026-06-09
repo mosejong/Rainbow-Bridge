@@ -24,6 +24,10 @@ async def get_current_user(
             raise HTTPException(
                 status_code=401, detail="인증 정보가 유효하지 않습니다."
             )
-        return {"user_id": int(user_id), "email": payload.get("email", "")}
+        return {
+            "user_id": int(user_id),
+            "email": payload.get("email", ""),
+            "nickname": payload.get("nickname", ""),
+        }
     except JWTError:
         raise HTTPException(status_code=401, detail="인증 정보가 유효하지 않습니다.")
