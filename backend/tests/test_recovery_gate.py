@@ -58,10 +58,10 @@ async def test_gate_locked_when_avg_score_low():
 
 @pytest.mark.asyncio
 async def test_gate_locked_when_crisis():
-    """최근 risk_level 2 이상이면 잠금 유지."""
+    """창(window) 내 어디든 risk 2+ 있으면 잠금 유지 — 최신만 보지 않음."""
     records = _make_records(
         scores=[8, 7, 6, 5, 7],
-        risks=[2, 0, 0, 0, 0],  # 최신 기록 risk=2
+        risks=[0, 0, 2, 0, 0],  # 최신은 0이지만 2회 전에 L3 위기
     )
     with patch(
         "app.services.emotion.get_recent_emotions", new=AsyncMock(return_value=records)
@@ -69,6 +69,38 @@ async def test_gate_locked_when_crisis():
         result = await get_recovery("pet_test_4")
 
     assert result.content_unlocked is False
+
+
+@pytest.mark.asyncio
+async def test_allow_first_person_only_when_no_risk():
+    """content_unlocked이어도 창 내 risk>0 있으면 1인칭 편지 잠금."""
+    records = _make_records(
+        scores=[8, 7, 6, 5, 6],
+        risks=[0, 0, 0, 1, 0],  # risk=1 기록이 있음
+    )
+    with patch(
+        "app.services.emotion.get_recent_emotions", new=AsyncMock(return_value=records)
+    ):
+        result = await get_recovery("pet_test_first_person_1")
+
+    assert result.content_unlocked is True  # 일반 컨텐츠는 열림
+    assert result.allow_first_person is False  # 1인칭은 잠금
+
+
+@pytest.mark.asyncio
+async def test_allow_first_person_when_all_safe():
+    """창 내 risk 전부 0이면 1인칭 편지 허용."""
+    records = _make_records(
+        scores=[8, 7, 6, 6, 7],
+        risks=[0, 0, 0, 0, 0],
+    )
+    with patch(
+        "app.services.emotion.get_recent_emotions", new=AsyncMock(return_value=records)
+    ):
+        result = await get_recovery("pet_test_first_person_2")
+
+    assert result.content_unlocked is True
+    assert result.allow_first_person is True
 
 
 @pytest.mark.asyncio

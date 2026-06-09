@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL =
   process.env.EXPO_PUBLIC_API_URL ||
-  'https://preacher-posing-lair.ngrok-free.dev';
+  'https://rainbow-bridge.duckdns.org';
 
 const api = axios.create({
   baseURL: API_URL,

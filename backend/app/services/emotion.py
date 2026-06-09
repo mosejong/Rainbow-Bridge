@@ -64,7 +64,7 @@ async def get_recovery(pet_id: str) -> RecoveryResponse:
             records=[],
         )
 
-    scores = [r["score"] for r in records]
+    scores = [r.get("score", 0) for r in records]
     avg = round(sum(scores) / len(scores), 1)
 
     # 회복 추이: 최근 절반 vs 앞쪽 절반 점수 비교
@@ -81,13 +81,18 @@ async def get_recovery(pet_id: str) -> RecoveryResponse:
     # 회복률: 평균 점수를 10점 만점 기준 %
     recovery_pct = round(avg * 10)
 
-    latest_risk = records[0]["risk_level"]
+    # 창(window) 내 최대 risk — 직전 L3 위기가 있었으면 여전히 잠금 유지
+    max_risk = max(r.get("risk_level", 0) for r in records)
+    latest_risk = records[0].get("risk_level", 0)
+
     content_unlocked = (
         len(records) >= _GATE_MIN_CHECKINS
         and avg >= _GATE_MIN_AVG_SCORE
-        and latest_risk <= _GATE_MAX_RISK
+        and max_risk <= _GATE_MAX_RISK
         and trend != "주의 필요"
     )
+    # 1인칭 편지는 창 내 위기 기록이 전혀 없을 때만 허용
+    allow_first_person = content_unlocked and max_risk == 0
 
     return RecoveryResponse(
         pet_id=pet_id,
@@ -98,4 +103,5 @@ async def get_recovery(pet_id: str) -> RecoveryResponse:
         latest_risk_level=latest_risk,
         records=records,
         content_unlocked=content_unlocked,
+        allow_first_person=allow_first_person,
     )

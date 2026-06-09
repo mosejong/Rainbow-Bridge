@@ -67,10 +67,11 @@ ai/tts/*.json
 gcp-tts-key.json
 
 # ===== RAG 벡터 DB (로컬 영속 — git 금지) =====
-# 임베딩 결과물(바이너리)은 추적 안 함 → `python -m rag.ingest` 로 재생성.
+# 벡터 DB 바이너리는 추적 안 함 → 각자 `cd ai && python -m rag.ingest`로 재생성.
 ai/rag/_chroma/
 ai/rag/eval/_chroma_eval/
-# corpus.json(텍스트 원본)은 추적함 → 팀이 받아 ingest 하면 검색 복구.
+# 코퍼스 텍스트 원본(corpus.json)은 팀 공유·diff·윤리경계 리뷰 위해 추적합니다.
+# (민감 원문은 넣지 말 것 — 윤리 경계 안에서 공유 가능한 텍스트만)
 
 # ===== Docker / DB =====
 *.sqlite3

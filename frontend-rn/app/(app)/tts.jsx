@@ -18,7 +18,7 @@ const TONES = [
 
 const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ||
-  'https://preacher-posing-lair.ngrok-free.dev';
+  'https://rainbow-bridge.duckdns.org';
 
 export default function TtsScreen() {
   const router = useRouter();

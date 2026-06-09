@@ -40,3 +40,7 @@ class RecoveryResponse(BaseModel):
         False,
         description="추모 컨텐츠 공개 여부 — 회복 게이트 통과 시 True",
     )
+    allow_first_person: bool = Field(
+        False,
+        description="1인칭 편지 허용 여부 — content_unlocked + 창 내 위기 기록 없음(max_risk=0)",
+    )
