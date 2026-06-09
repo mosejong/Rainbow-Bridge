@@ -18,6 +18,7 @@ export default function ProfileScreen() {
     species: '강아지',
     start_date: '',
     end_date: '',
+    guardian_title: '',
   });
   const [error, setError] = useState('');
 
@@ -104,6 +105,18 @@ export default function ProfileScreen() {
                   keyboardType="numeric"
                 />
               </View>
+            </View>
+
+            {/* 보호자 호칭 */}
+            <View style={styles.field}>
+              <Text style={styles.label}>보호자 호칭</Text>
+              <TextInput
+                style={styles.input}
+                value={form.guardian_title}
+                onChangeText={(v) => setForm((p) => ({ ...p, guardian_title: v }))}
+                placeholder="예) 엄마, 아빠"
+                placeholderTextColor="#A89FBC"
+              />
             </View>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}

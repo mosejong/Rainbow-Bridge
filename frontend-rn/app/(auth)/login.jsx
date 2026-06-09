@@ -8,7 +8,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { login } from '../../api/auth';
-import { getMyPets } from '../../api/pets';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -27,18 +26,7 @@ export default function LoginScreen() {
     try {
       const { access_token } = await login({ email: email.trim(), password });
       await AsyncStorage.setItem('access_token', access_token);
-      try {
-        const pets = await getMyPets();
-        if (pets && pets.length > 0) {
-          await AsyncStorage.setItem('pet_id', pets[0].id || pets[0]._id);
-          await AsyncStorage.setItem('pet_name', pets[0].name);
-          router.replace('/(app)/emotion');
-        } else {
-          router.replace('/(app)/profile');
-        }
-      } catch {
-        router.replace('/(app)/profile');
-      }
+      router.replace('/(app)/profile');
     } catch (err) {
       setError(err.response?.data?.detail || '이메일 또는 비밀번호를 확인해주세요.');
     } finally {
