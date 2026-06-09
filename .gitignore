@@ -55,6 +55,7 @@ ai/**/checkpoints/
 *.mov
 *.wav
 *.mp3
+!frontend-rn/assets/audio/*.mp3
 uploads/
 generated/
 ai/tts/_output/

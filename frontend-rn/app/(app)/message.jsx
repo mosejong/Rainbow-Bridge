@@ -13,11 +13,8 @@ import { generateMessage, getLatestMessage } from '../../api/messages';
 import { generateTts } from '../../api/tts';
 import { COLORS } from '../../constants/colors';
 
-// BGM 파일 — 민수님 작업 완료 후 주석 해제
-// const BGM_3RD = require('../../assets/audio/bgm_3rd.mp3');
-// const BGM_1ST = require('../../assets/audio/bgm_1st.mp3');
-const BGM_3RD = null;
-const BGM_1ST = null;
+const BGM_3RD = require('../../assets/audio/bgm_3rd.mp3');
+const BGM_1ST = require('../../assets/audio/bgm_1st.mp3');
 
 const LINE_DELAY = 1500;
 const LINE_DURATION = 900;
