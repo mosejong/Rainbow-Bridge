@@ -1,7 +1,8 @@
-"""④ TTS 서비스 — ai/tts(Google Cloud TTS)를 백엔드 응답으로 연결.
+"""④ TTS 서비스 — Qwen3 GPU 서버(B안) 또는 Google Cloud TTS 폴백.
 
-추모 메시지(보호자 대상 위로 낭독)를 음성으로 합성해, 프론트가 재생할 수 있는
-정적 URL(`/uploads/tts/...`)로 돌려줍니다.
+구조(B안):
+    프론트 → POST /tts (NCP 백엔드) → HTTP → 정환주 GPU 서버 /synthesize → Qwen3
+TTS_SERVER_URL 미설정 시 Google TTS → gTTS 순으로 폴백.
 
 ⚠️ 윤리: 보호자 대상 낭독만. 반려동물 1인칭/목소리 흉내 ❌ (../CLAUDE.md §1).
 """
@@ -12,6 +13,7 @@ import os
 import sys
 from pathlib import Path
 
+import httpx
 from dotenv import load_dotenv
 from google.auth.exceptions import DefaultCredentialsError
 
@@ -23,10 +25,9 @@ logger = logging.getLogger(__name__)
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # 백엔드는 backend/ 에서 실행돼 루트 .env 를 자동 로드하지 않음 → 명시 로드.
-# (Google 클라이언트는 GOOGLE_APPLICATION_CREDENTIALS 를 os.environ 에서 직접 읽음)
 load_dotenv(_REPO_ROOT / ".env")
 
-# 인증 키 경로가 상대경로면 루트 기준 절대경로로 보정 (백엔드 cwd 문제 회피).
+# 인증 키 경로가 상대경로면 루트 기준 절대경로로 보정.
 _cred = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
 if _cred and not os.path.isabs(_cred):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str((_REPO_ROOT / _cred).resolve())
@@ -34,23 +35,75 @@ if _cred and not os.path.isabs(_cred):
 # 합성 결과를 정적 서빙 폴더(main.py 의 /uploads 마운트)에 바로 저장.
 os.environ.setdefault("TTS_OUTPUT_DIR", "uploads/tts")
 
-# ai/tts import 하려면 레포 루트가 sys.path 에 있어야 함(backend/ 에서 실행되므로).
+# ai/tts import 하려면 레포 루트가 sys.path 에 있어야 함.
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from ai.tts import TtsTone, synthesize  # noqa: E402
+# tone(감성) → Qwen3 보이스 키 매핑
+_TONE_TO_VOICE: dict[str, str] = {
+    "warm": "girl",
+    "hopeful": "girl",
+    "calm": "boy",
+}
+_DEFAULT_VOICE = "girl"
+
+
+def _map_tone_to_voice(tone: str) -> str:
+    """프론트 tone 값을 Qwen3 AVAILABLE_VOICES 키로 변환."""
+    return _TONE_TO_VOICE.get(tone.lower(), _DEFAULT_VOICE)
 
 
 async def generate_tts(data: TtsCreate) -> TtsResponse:
     """추모 메시지를 음성으로 합성해 재생용 URL 을 반환합니다.
 
-    synthesize() 는 동기·블로킹(네트워크) 호출이라 스레드에서 실행해
-    이벤트 루프를 막지 않습니다.
+    TTS_SERVER_URL 설정 시 Qwen3 GPU 서버(B안)로 호출.
+    미설정 시 Google TTS → gTTS 순으로 폴백.
     """
+    tts_server_url = os.environ.get("TTS_SERVER_URL", "").strip()
+
+    if tts_server_url:
+        return await _qwen3_remote(data, tts_server_url)
+    else:
+        return await _google_tts_fallback(data)
+
+
+async def _qwen3_remote(data: TtsCreate, server_url: str) -> TtsResponse:
+    """Qwen3 GPU 서버 /synthesize 호출 (B안)."""
+    voice = _map_tone_to_voice(data.tone)
+    filename = f"{data.pet_id}_{voice}_{abs(hash(data.text)) % 10_000_000}.wav"
+
+    out_dir = Path(os.environ.get("TTS_OUTPUT_DIR", "uploads/tts"))
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / filename
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        resp = await client.post(
+            f"{server_url.rstrip('/')}/synthesize",
+            json={"text": data.text, "tone": voice},
+        )
+        resp.raise_for_status()
+
+        # 응답 wav 파일 저장
+        out_path.write_bytes(resp.content)
+
+        duration = float(resp.headers.get("X-Audio-Duration", 0))
+        fmt = resp.headers.get("X-Audio-Format", "wav")
+
+    return TtsResponse(
+        audio_url=f"/uploads/tts/{filename}",
+        duration=duration,
+        format=fmt,
+    )
+
+
+async def _google_tts_fallback(data: TtsCreate) -> TtsResponse:
+    """TTS_SERVER_URL 미설정 시 Google TTS → gTTS 폴백."""
+    from ai.tts import TtsTone, synthesize  # noqa: E402
+
     try:
         tone = TtsTone(data.tone)
     except ValueError:
-        tone = TtsTone.WARM  # 알 수 없는 톤은 기본값으로 안전 처리
+        tone = TtsTone.WARM
 
     filename = f"{data.pet_id}_{tone.value}_{abs(hash(data.text)) % 10_000_000}.mp3"
 
