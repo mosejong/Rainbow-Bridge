@@ -1,18 +1,29 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+import { Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Video, ResizeMode } from 'expo-av';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import { uploadMedia } from '../../api/media';
+import { uploadMedia, getMediaStatus } from '../../api/media';
+import { API_URL } from '../../api/axiosInstance';
 import { COLORS } from '../../constants/colors';
+
+const POLL_INTERVAL = 5000; // 5초 간격 폴링
+const POLL_MAX = 60; // 최대 ~5분 대기
 
 export default function MediaScreen() {
   const [imageUri, setImageUri] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [statusMsg, setStatusMsg] = useState('');
   const [error, setError] = useState('');
+  const pollRef = useRef(null);
+
+  // 화면 이탈 시 폴링 정리
+  useEffect(() => () => clearTimeout(pollRef.current), []);
 
   async function pickImage() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -27,24 +38,61 @@ export default function MediaScreen() {
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
       setVideoUrl(null);
+      setError('');
     }
   }
 
   async function handleGenerate() {
     if (!imageUri) return;
+    clearTimeout(pollRef.current);
     setLoading(true);
     setError('');
+    setVideoUrl(null);
+    setStatusMsg('사진을 올리고 있어요...');
     try {
+      const petId = await AsyncStorage.getItem('pet_id');
+      if (!petId) {
+        setError('반려동물 정보가 없어요. 먼저 프로필을 등록해주세요.');
+        setLoading(false);
+        return;
+      }
       const formData = new FormData();
       const filename = imageUri.split('/').pop();
       formData.append('file', { uri: imageUri, name: filename, type: 'image/jpeg' });
-      const res = await uploadMedia(formData);
-      setVideoUrl(res.video_url);
+      formData.append('pet_id', petId);
+      const { asset_id } = await uploadMedia(formData);
+      setStatusMsg('추모 영상을 만들고 있어요... (최대 1~2분)');
+      pollStatus(asset_id, 0);
     } catch {
       setError('영상 생성에 실패했어요. 다시 시도해주세요.');
-    } finally {
       setLoading(false);
     }
+  }
+
+  // 영상 생성은 서버 백그라운드 작업 → done 될 때까지 폴링
+  function pollStatus(assetId, attempt) {
+    pollRef.current = setTimeout(async () => {
+      try {
+        const res = await getMediaStatus(assetId);
+        // 음성 합쳐진 voiced_url 우선, 없으면 무음 video_url. 상대경로 → 서버주소 붙임
+        const url = res.voiced_url || res.video_url;
+        if (res.status === 'done' && url) {
+          setVideoUrl(`${API_URL}${url}`);
+          setLoading(false);
+        } else if (res.status === 'error') {
+          setError('영상 생성 중 문제가 생겼어요. 다른 사진으로 시도해보세요.');
+          setLoading(false);
+        } else if (attempt >= POLL_MAX) {
+          setError('영상 생성이 오래 걸리고 있어요. 잠시 후 다시 시도해주세요.');
+          setLoading(false);
+        } else {
+          pollStatus(assetId, attempt + 1);
+        }
+      } catch {
+        setError('상태 확인에 실패했어요. 다시 시도해주세요.');
+        setLoading(false);
+      }
+    }, POLL_INTERVAL);
   }
 
   return (
@@ -63,7 +111,7 @@ export default function MediaScreen() {
               <>
                 <Text style={styles.uploadIcon}>📷</Text>
                 <Text style={styles.uploadLabel}>사진 선택</Text>
-                <Text style={styles.uploadHint}>갤러리에서 반려동물 사진을 골라주세요</Text>
+                <Text style={styles.uploadHint}>정면을 바라보는 또렷한 사진일수록 좋아요</Text>
               </>
             )}
           </TouchableOpacity>
@@ -72,7 +120,7 @@ export default function MediaScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {loading ? (
-          <LoadingSpinner message="추모 영상을 만들고 있어요..." />
+          <LoadingSpinner message={statusMsg || '잠시만 기다려주세요...'} />
         ) : (
           <Button
             onPress={handleGenerate}
@@ -87,7 +135,17 @@ export default function MediaScreen() {
         {videoUrl ? (
           <Card style={styles.resultCard}>
             <Text style={styles.resultTitle}>🎞️ 추모 영상이 준비됐어요</Text>
-            <Text style={styles.resultUrl} numberOfLines={2}>{videoUrl}</Text>
+            <Video
+              source={{ uri: videoUrl }}
+              style={styles.video}
+              useNativeControls
+              resizeMode={ResizeMode.CONTAIN}
+              isLooping
+              shouldPlay
+            />
+            <Text style={styles.disclaimer}>
+              AI가 보호자가 전해준 기억을 바탕으로 재해석한 추모 영상이에요.
+            </Text>
           </Card>
         ) : null}
       </ScrollView>
@@ -113,6 +171,7 @@ const styles = StyleSheet.create({
   error: { color: COLORS.danger, fontSize: 13, textAlign: 'center', marginBottom: 12 },
   btn: { marginBottom: 16 },
   resultCard: { backgroundColor: '#F0F8F6', borderColor: COLORS.secondary, borderWidth: 1 },
-  resultTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8 },
-  resultUrl: { fontSize: 12, color: COLORS.textSecondary },
+  resultTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 12 },
+  video: { width: '100%', aspectRatio: 1, borderRadius: 12, backgroundColor: '#000' },
+  disclaimer: { fontSize: 12, color: COLORS.textSecondary, marginTop: 10, lineHeight: 18 },
 });
