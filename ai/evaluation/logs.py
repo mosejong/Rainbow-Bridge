@@ -27,7 +27,7 @@ KIND_MESSAGE: Final[str] = "message"  # ③ 추모 메시지
 KIND_MISSION: Final[str] = "mission"  # ⑤ 미션 추천
 KIND_CRISIS: Final[str] = "crisis"  # ⑦ 위기 감지
 KIND_FUNERAL: Final[str] = "funeral"  # 2단계 장례 상담
-KIND_TRIAGE: Final[str] = "triage"  # 1단계 증상 진료 안내
+KIND_VET_PROTOCOL: Final[str] = "vet_protocol"  # 수의사 처치 안내(기본 대처법·내원 유도) RAG
 
 
 def _now() -> datetime:
