@@ -133,10 +133,13 @@ with gr.Blocks(title="레인보우브릿지 한국어 TTS") as demo:
             with gr.Column():
                 d_text = gr.Textbox(label="읽을 문장 (한국어)", value=_DEFAULT_TEXT, lines=3)
                 with gr.Row():
-                    d_gender = gr.Radio(["boy", "girl"], value="boy", label="성별")
+                    d_gender = gr.Radio(
+                        ["boy", "girl", "man", "woman"], value="man",
+                        label="성별 (boy/girl 어린이 · man/woman 성인=3인칭 낭독용)",
+                    )
                     d_age = gr.Radio(
                         ["younger", "child", "older"], value="child",
-                        label="나이 (younger 5세 / child 7세 / older 10세)",
+                        label="나이 (어린이만 적용 · 성인은 무시: younger 5 / child 7 / older 10)",
                     )
                 d_warmth = gr.Slider(0, 3, value=1, step=1, label="다정함 (0 담백 ↔ 3 다정·느끼위험)")
                 d_bright = gr.Slider(0, 3, value=2, step=1, label="밝기 (0 쳐짐 ↔ 3 들뜸)")
