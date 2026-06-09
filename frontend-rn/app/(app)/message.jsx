@@ -21,6 +21,20 @@ const LINE_DURATION = 900;
 const BGM_FADE_DURATION = 500;
 const TTS_START_OFFSET = LINE_DURATION / 2;
 
+function makeFallbackMessage(petName) {
+  const name = petName || '소중한 친구';
+  return {
+    id: 'local',
+    content: `${name}와 함께했던 모든 순간들이 얼마나 소중했는지 기억해요.\n그 따뜻한 기억들은 언제나 마음속에 살아있을 거예요.\n지금 많이 힘드시겠지만, 조금씩 천천히 나아가도 괜찮아요.\n${name}는 보호자와 함께한 시간을 언제나 행복하게 기억할 거예요.`,
+    tone: 'warm',
+    first_person: false,
+    source: 'local',
+    risk_level: 0,
+    content_unlocked: true,
+    allow_first_person: false,
+  };
+}
+
 function speciesIcon(species) {
   if (species === '강아지') return '🐾';
   if (species === '고양이') return '🐱';
@@ -98,17 +112,18 @@ export default function MessageScreen() {
   }
 
   async function loadMessage() {
+    const petId = await AsyncStorage.getItem('pet_id');
+    const petNameLocal = await AsyncStorage.getItem('pet_name') || '소중한 친구';
     try {
-      const petId = await AsyncStorage.getItem('pet_id');
+      const existing = await getLatestMessage(petId);
+      await saveMessage(existing);
+    } catch {
       try {
-        const existing = await getLatestMessage(petId);
-        await saveMessage(existing);
-      } catch {
         const data = await generateMessage({ pet_id: petId });
         await saveMessage(data);
+      } catch {
+        await saveMessage(makeFallbackMessage(petNameLocal));
       }
-    } catch {
-      setError('메시지 생성에 실패했어요. 다시 시도해주세요.');
     }
   }
 
@@ -166,8 +181,13 @@ export default function MessageScreen() {
     setPhase('loading');
     try {
       const petId = await AsyncStorage.getItem('pet_id');
-      const data = await generateMessage({ pet_id: petId });
-      await saveMessage(data);
+      const petNameLocal = await AsyncStorage.getItem('pet_name') || '소중한 친구';
+      try {
+        const data = await generateMessage({ pet_id: petId });
+        await saveMessage(data);
+      } catch {
+        await saveMessage(makeFallbackMessage(petNameLocal));
+      }
     } catch {
       setError('메시지 생성에 실패했어요. 다시 시도해주세요.');
     }
