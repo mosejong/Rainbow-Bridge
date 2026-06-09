@@ -110,4 +110,21 @@ LLM_MODEL=qwen2.5-7b-instruct
 4. ⑧ 평가 집계 (GPU 거의 안 씀 — 틈틈이)
 ```
 > LivePortrait(가산점)는 **장민수 담당** — 정환주 작업 아님. 같은 GPU 쓰면 VRAM만 협의.
+
+---
+
+## 11. LivePortrait remote 터널 (→ 장민수 인계)
+
+GPU 서버(:8001 LivePortrait)를 ngrok static domain 으로 외부 노출 — 장민수 remote 추론용. (GPU 인프라=정환주, 소비 코드=장민수)
+
+- **고정 URL**: `https://rerun-devious-reaffirm.ngrok-free.dev` — ngrok 무료 **static domain**(2026-06-08 확정). 재시작·재발급해도 안 바뀜.
+- **터널 명령**: `ngrok http --url=rerun-devious-reaffirm.ngrok-free.dev 8001` (`--domain` deprecated → `--url`).
+- **자동시작**: 로그온 시 uvicorn(:8001)+ngrok 자동 기동(HKCU Run `RainbowBridgeGPU`, 레포 밖 스크립트).
+- **백엔드 연결(장민수가 본인 `.env` 에)**:
+  ```
+  LIVEPORTRAIT_MODE=remote
+  LIVEPORTRAIT_REMOTE_URL=https://rerun-devious-reaffirm.ngrok-free.dev
+  ```
+  소비처 = [liveportrait/pipeline.py](liveportrait/pipeline.py) `os.getenv("LIVEPORTRAIT_REMOTE_URL")`. (`.env.example` 엔 빈 값 + 위 주소 주석)
+- **제약**: 로그온해야 뜸(잠금/미로그온 시 X) / PC 절전·종료 시 중단 / ngrok 무료라 동시 1터널.
 </content>

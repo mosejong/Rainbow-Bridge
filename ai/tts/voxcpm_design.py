@@ -33,12 +33,33 @@ _TEXT = (
     "천천히 호흡하며 오늘 하루를 보내셔도 괜찮아요."
 )
 
-# (파일라벨, 영어 음색 묘사) — 괄호로 본문 앞에 붙임. 어린이 여아 2 + 남아 2.
+# (파일라벨, 영어 음색 묘사) — 괄호로 본문 앞에 붙임.
+# 밝고 발랄한 톤은 제외하고, 추모 낭독에 맞는 차분한 어린이 톤만 비교한다.
 _DESIGNS: tuple[tuple[str, str], ...] = (
-    ("girl", "A cute, bright, playful little Korean girl, cheerful and lively voice"),
-    ("girl_soft", "A sweet, gentle, soft little girl, tender and innocent voice"),
-    ("boy", "A cheerful, playful, innocent little Korean boy, bright and lively voice"),
-    ("boy_soft", "A soft, gentle, calm little boy, warm and tender voice"),
+    (
+        "girl_calm",
+        "A calm little Korean girl, soft, warm, gentle, innocent and comforting voice",
+    ),
+    (
+        "girl_whisper",
+        "A quiet little Korean girl, very soft, tender, shy and peaceful voice",
+    ),
+    (
+        "girl_warm",
+        "A gentle little Korean girl, warm, slow, sincere and soothing voice",
+    ),
+    (
+        "boy_calm",
+        "A calm little Korean boy, soft, warm, gentle, innocent and comforting voice",
+    ),
+    (
+        "boy_whisper",
+        "A quiet little Korean boy, very soft, tender, shy and peaceful voice",
+    ),
+    (
+        "boy_warm",
+        "A gentle little Korean boy, warm, slow, sincere and soothing voice",
+    ),
 )
 
 # Voice Design 변동성 대비 재현용 시드(고정). 별로면 바꿔서 재생성.
