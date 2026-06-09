@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000">
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8.8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+  </marker>
+  <style>
+    text { font-family: "Noto Sans KR", "Noto Sans CJK KR", "Malgun Gothic", Arial, sans-serif; }
+    .title { font-weight: 900; fill: #6d28d9; }
+    .sub { fill: #64748b; }
+    .section { font-size: 13px; font-weight: 900; }
+    .box-title { font-weight: 800; fill: #111827; }
+    .box-sub { fill: #475569; }
+    .label { font-size: 11px; font-weight: 800; fill: #334155; }
+  </style>
+</defs>
+<rect width="100%" height="100%" fill="#f7fffb"/>
+<text x="28" y="40" class="title" font-size="26">레인보우 브릿지 — 사용자 흐름도</text>
+<text x="28" y="62" class="sub" font-size="12">수정본 · 메인 흐름과 분기선을 분리하고 겹치는 라벨을 제거한 버전</text>
+
+<rect x="190" y="88" width="410" height="860" rx="28" fill="#ffffff" opacity="0.52"/>
+<rect x="630" y="88" width="140" height="860" rx="28" fill="#ecfeff" opacity="0.78"/>
+<text x="395" y="110" text-anchor="middle" class="section" fill="#6d28d9">메인 흐름</text>
+<text x="700" y="110" text-anchor="middle" class="section" fill="#0f766e">분기 조건</text>
+<rect x="210" y="130" width="370" height="54" rx="18" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+<text x="395.0" y="148.0" text-anchor="middle" dominant-baseline="middle" class="box-title" font-size="15">1. 회원가입 / 로그인</text>
+<text x="395.0" y="164.5" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="11">JWT / SQLite</text>
+<rect x="210" y="245" width="370" height="54" rx="18" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+<text x="395.0" y="263.0" text-anchor="middle" dominant-baseline="middle" class="box-title" font-size="15">2. 반려동물 프로필 등록</text>
+<text x="395.0" y="279.5" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="11">이름 · 종 · 함께한 기간 · 추억 키워드</text>
+<rect x="210" y="350" width="370" height="54" rx="18" fill="#ccfbf1" stroke="#14b8a6" stroke-width="2"/>
+<text x="395.0" y="368.0" text-anchor="middle" dominant-baseline="middle" class="box-title" font-size="15">3. 감정 체크인</text>
+<text x="395.0" y="384.5" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="11">위기 감지 L0~L3 · 1393 안내</text>
+<rect x="210" y="485" width="370" height="54" rx="18" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+<text x="395.0" y="494.0" text-anchor="middle" dominant-baseline="middle" class="box-title" font-size="15">4. 추모 메시지 생성</text>
+<text x="395.0" y="510.5" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="11">Gemini LLM · RAG</text>
+<text x="395.0" y="527.0" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="11">few-shot</text>
+<rect x="210" y="590" width="370" height="54" rx="18" fill="#ccfbf1" stroke="#14b8a6" stroke-width="2"/>
+<text x="395.0" y="608.0" text-anchor="middle" dominant-baseline="middle" class="box-title" font-size="15">5. TTS 낭독</text>
+<text x="395.0" y="624.5" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="11">Google Cloud TTS · 톤 선택</text>
+<rect x="210" y="720" width="370" height="54" rx="18" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+<text x="395.0" y="729.0" text-anchor="middle" dominant-baseline="middle" class="box-title" font-size="15">6. 추모 영상 만들기</text>
+<text x="395.0" y="745.5" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="11">사진 업로드 → LivePortrait →</text>
+<text x="395.0" y="762.0" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="11">음성 합치기</text>
+<rect x="210" y="825" width="370" height="54" rx="18" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+<text x="395.0" y="843.0" text-anchor="middle" dominant-baseline="middle" class="box-title" font-size="15">7. 일상 복귀 미션</text>
+<text x="395.0" y="859.5" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="11">오늘의 미션 추천 / 완료 체크</text>
+<rect x="210" y="910" width="370" height="54" rx="18" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+<text x="395.0" y="928.0" text-anchor="middle" dominant-baseline="middle" class="box-title" font-size="15">8. 타임라인 / 평가 리포트</text>
+<text x="395.0" y="944.5" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="11">감정 추이 차트 · 미션 완료율</text>
+<line x1="395" y1="184" x2="395" y2="245" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<line x1="395" y1="299" x2="395" y2="350" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<line x1="395" y1="404" x2="395" y2="485" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<line x1="395" y1="539" x2="395" y2="590" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<line x1="395" y1="644" x2="395" y2="720" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<line x1="395" y1="774" x2="395" y2="825" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<line x1="395" y1="879" x2="395" y2="910" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<polygon points="696.0,180 742,212.0 696.0,244 650,212.0" fill="#ecfeff" stroke="#14b8a6" stroke-width="2"/>
+<text x="696.0" y="204.0" text-anchor="middle" dominant-baseline="middle" class="box-title" font-size="13">기존 펫</text>
+<text x="696.0" y="219.0" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="10.5">있음?</text>
+<path d="M 580 157 L 615 157 L 650 212" fill="none" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<rect x="591" y="146" width="48" height="20" rx="10" fill="#ffffff" opacity="0.98"/>
+<text x="615" y="158" text-anchor="middle" dominant-baseline="middle" class="label">판단</text>
+<path d="M 650 212 L 615 212 L 615 272 L 580 272" fill="none" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" stroke-dasharray="6 6"/>
+<rect x="591" y="201" width="48" height="20" rx="10" fill="#ffffff" opacity="0.98"/>
+<text x="615" y="213" text-anchor="middle" dominant-baseline="middle" class="label">No</text>
+<path d="M 696 244 L 696 377 L 580 377" fill="none" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<rect x="672" y="366" width="48" height="20" rx="10" fill="#ffffff" opacity="0.98"/>
+<text x="696" y="378" text-anchor="middle" dominant-baseline="middle" class="label">Yes</text>
+<polygon points="696.0,410 742,442.0 696.0,474 650,442.0" fill="#ecfeff" stroke="#14b8a6" stroke-width="2"/>
+<text x="696.0" y="434.0" text-anchor="middle" dominant-baseline="middle" class="box-title" font-size="13">risk</text>
+<text x="696.0" y="449.0" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="10.5">L2 이상?</text>
+<path d="M 580 377 L 615 377 L 650 442" fill="none" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<rect x="591" y="366" width="48" height="20" rx="10" fill="#ffffff" opacity="0.98"/>
+<text x="615" y="378" text-anchor="middle" dominant-baseline="middle" class="label">판단</text>
+<path d="M 696 474 L 696 512 L 580 512" fill="none" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<rect x="672" y="501" width="48" height="20" rx="10" fill="#ffffff" opacity="0.98"/>
+<text x="696" y="513" text-anchor="middle" dominant-baseline="middle" class="label">No</text>
+<rect x="38" y="410" width="118" height="64" rx="18" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+<text x="97.0" y="433.0" text-anchor="middle" dominant-baseline="middle" class="box-title" font-size="13">1393 안내</text>
+<text x="97.0" y="449.5" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="11">위기 라우팅</text>
+<line x1="650" y1="442" x2="156" y2="442" stroke="#ef4444" stroke-width="2.2" marker-end="url(#arrow)" />
+<rect x="379.0" y="431.0" width="48" height="20" rx="10" fill="#ffffff" opacity="0.98"/>
+<text x="403.0" y="443.0" text-anchor="middle" dominant-baseline="middle" class="label">Yes</text>
+<path d="M 97 474 L 97 850 L 210 852" fill="none" stroke="#ef4444" stroke-width="2.2" marker-end="url(#arrow)" stroke-dasharray="6 6"/>
+<rect x="73" y="839" width="48" height="20" rx="10" fill="#ffffff" opacity="0.98"/>
+<text x="97" y="851" text-anchor="middle" dominant-baseline="middle" class="label">기록</text>
+<polygon points="696.0,640 742,672.0 696.0,704 650,672.0" fill="#ecfeff" stroke="#14b8a6" stroke-width="2"/>
+<text x="696.0" y="664.0" text-anchor="middle" dominant-baseline="middle" class="box-title" font-size="13">TTS</text>
+<text x="696.0" y="679.0" text-anchor="middle" dominant-baseline="middle" class="box-sub" font-size="10.5">완료?</text>
+<path d="M 580 617 L 615 617 L 650 672" fill="none" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<rect x="591" y="606" width="48" height="20" rx="10" fill="#ffffff" opacity="0.98"/>
+<text x="615" y="618" text-anchor="middle" dominant-baseline="middle" class="label">판단</text>
+<path d="M 696 704 L 696 747 L 580 747" fill="none" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" />
+<rect x="672" y="736" width="48" height="20" rx="10" fill="#ffffff" opacity="0.98"/>
+<text x="696" y="748" text-anchor="middle" dominant-baseline="middle" class="label">Yes</text>
+<rect x="630" y="720" width="140" height="46" rx="15" fill="#ffffff" stroke="#99f6e4" stroke-width="1.4"/>
+<text x="700" y="739" text-anchor="middle" font-size="10.8" font-weight="900" fill="#0f766e">TTS 없으면</text>
+<text x="700" y="756" text-anchor="middle" font-size="10.2" fill="#475569">사진 업로드 비활성화</text>
+<path d="M 742 672 L 770 672 L 770 743 L 770 743" fill="none" stroke="#64748b" stroke-width="2.2" marker-end="url(#arrow)" stroke-dasharray="6 6"/>
+<rect x="746" y="661" width="48" height="20" rx="10" fill="#ffffff" opacity="0.98"/>
+<text x="770" y="673" text-anchor="middle" dominant-baseline="middle" class="label">No</text>
+<rect x="36" y="960" width="728" height="28" rx="14" fill="#ffffff" opacity="0.95"/>
+<text x="400" y="978" text-anchor="middle" font-size="11" fill="#475569">분기선은 모두 우측/좌측 여백에서만 처리하고, 카드 위를 가로지르는 선과 불필요한 라벨을 제거함</text>
+</svg>

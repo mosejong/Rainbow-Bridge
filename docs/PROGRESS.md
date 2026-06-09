@@ -30,7 +30,7 @@
 | 0-5 | LLM 결정·세팅 | 반소람·정환주 | ✅ | Gemini 실연동 완료 (06-03) |
 | 0-6 | PERSO API 연동 테스트 | 장민수 | ✅ | 동물 립싱크 ❌ 구조적 불가 확인 → 드랍. LivePortrait로 대체 |
 | 0-7 | GPU 서버 셋업 (RTX 5060) | 정환주 | ✅ | LivePortrait·추론용 완료 |
-| 0-8 | 프론트 프레임워크 결정·세팅 | 민경이 | ✅ | Vite+React+Tailwind (06-02) |
+| 0-8 | 프론트 프레임워크 결정·세팅 | 민경이 | ✅ | React Native + Expo SDK 52 전환 완료 (06-08, `frontend-rn/`) |
 
 ---
 

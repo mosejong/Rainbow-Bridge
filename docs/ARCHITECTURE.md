@@ -1,7 +1,7 @@
 # 🗺️ 시스템 아키텍처 (ARCHITECTURE)
 
 > 전체 그림을 이해하기 위한 문서입니다. 세부 구현은 코드/각 영역 담당 결정.
-> **최종 수정:** 2026-06-05
+> **최종 수정:** 2026-06-08
 
 ---
 
@@ -24,8 +24,8 @@
                                 │  HTTPS
                                 ▼
                  ┌─────────────────────────────┐
-                 │  rainbow-bridge.duckdns.org  │  Vite + React + Tailwind
-                 │  (nginx, Let's Encrypt SSL)  │  (민경이, 장민수)
+                 │  rainbow-bridge.duckdns.org  │  React Native + Expo (민경이)
+                 │  (nginx, Let's Encrypt SSL)  │  LivePortrait GPU 서버 (장민수)
                  └──────────────┬──────────────┘
                                 │ /api/ 프록시
                                 ▼
@@ -39,7 +39,6 @@
     │  MongoDB   │   │ SQLite RDB │  │    외부 AI API     │
     │ (Docker)  │   │ (users 인증)│  │  Gemini API (LLM)  │
     └────────────┘   └────────────┘  │  Google Cloud TTS  │
-                                     │  PERSO API (영상)  │
                                      │  카카오맵 API      │
                                      └───────────────────┘
                                               │
@@ -135,7 +134,7 @@ User { id(int PK), email(unique), password_hash, nickname, is_active, created_at
 | TTS | **Google Cloud TTS** (`ko-KR-Neural2-A`) | warm/calm/soft 톤, gTTS 폴백 |
 | RAG 검색 | **ChromaDB** + Gemini 임베딩 | 위로글 코퍼스 few-shot 주입 |
 | 영상 생성 | **LivePortrait** (animals 모드) | driving_multiplier=0.4 |
-| 영상 더빙·립싱크 | **PERSO API** | 선택적 후처리 단계 (voiced_url 입력) |
+| 영상 더빙·립싱크 | **LivePortrait 발화 driving** | 선택형 후처리 (조건부 허용) — PERSO 드랍(2026-06-06) |
 
 ---
 
@@ -171,7 +170,7 @@ POST /tts { pet_id, text, tone } → Google Cloud TTS 합성
 사진 업로드(POST /media/upload) [TTS 완료 필수]
    → LivePortrait(animals 모드, 강도 0.4) → 무음 영상
    → TTS mp3 + FFmpeg 합치기 → voiced_url (서비스 기본 결과물)
-   → (선택) POST /media/{id}/perso → PERSO 립싱크 → dubbed_url
+   → (선택, 조건부) 발화 driving → LivePortrait → voiced_url (1인칭 B안 조건 충족 시)
 ```
 
 ### 위기 감지 플로우
@@ -203,7 +202,7 @@ POST /tts { pet_id, text, tone } → Google Cloud TTS 합성
 | `/api/v1/hospitals` | GET | 동물병원 검색 (카카오맵) |
 | `/api/v1/media/upload` | POST | 사진 업로드 → LivePortrait |
 | `/api/v1/media/{id}` | GET | 영상 생성 상태 조회 |
-| `/api/v1/media/{id}/perso` | POST | PERSO 립싱크 요청 |
+| `/api/v1/media/{id}/perso` | POST | ~~PERSO 립싱크~~ (드랍 2026-06-06) |
 | `/uploads/*` | GET | 정적 파일 서빙 (tts, media) |
 
 ---
@@ -215,4 +214,4 @@ POST /tts { pet_id, text, tone } → Google Cloud TTS 합성
 - **"반려동물인 척" 1인칭 응답 생성 금지** — 보호자 대상 상징적 위로 메시지만.
 - 사진/영상 등 개인 자료는 git 미포함, `uploads/` 서버 로컬 보관.
 - 비밀번호: bcrypt 해싱, JWT 인증 전 엔드포인트 적용.
-- PERSO 립싱크: 기술 검증용. 서비스 메인은 voiced_url(잔잔한 영상+TTS) 사용.
+- 멀티모달: LivePortrait(잔잔한 ambient 기본) + 발화 driving(선택형, 조건부). PERSO 드랍.

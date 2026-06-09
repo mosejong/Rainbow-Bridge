@@ -1,0 +1,138 @@
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Card from '../../components/Card';
+import Button from '../../components/Button';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import { getMissions, completeMission } from '../../api/missions';
+import { mockMissions } from '../../api/mock';
+import { COLORS } from '../../constants/colors';
+
+export default function MissionScreen() {
+  const [missions, setMissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [completing, setCompleting] = useState(null);
+  const [petName, setPetName] = useState('소중한 친구');
+
+  useEffect(() => {
+    AsyncStorage.getItem('pet_name').then((v) => v && setPetName(v));
+    fetchMissions();
+  }, []);
+
+  async function fetchMissions() {
+    try {
+      const petId = await AsyncStorage.getItem('pet_id');
+      const data = await getMissions({ pet_id: petId });
+      setMissions(data);
+    } catch {
+      setMissions(mockMissions);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleComplete(missionId) {
+    setCompleting(missionId);
+    try {
+      const updated = await completeMission({ mission_id: missionId });
+      setMissions((prev) =>
+        prev.map((m) => (m.id === missionId ? updated : m))
+      );
+    } catch {
+      setMissions((prev) =>
+        prev.map((m) => (m.id === missionId ? { ...m, completed: true } : m))
+      );
+    } finally {
+      setCompleting(null);
+    }
+  }
+
+  const doneCount = missions.filter((m) => m.completed).length;
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <LoadingSpinner message="미션을 불러오고 있어요..." />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Text style={styles.title}>오늘의 미션</Text>
+        <Text style={styles.subtitle}>{petName}와(과) 함께했던 일상으로 천천히 돌아가요.</Text>
+
+        {/* 완료율 바 */}
+        <View style={styles.progressRow}>
+          <View style={styles.progressTrack}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: missions.length ? `${(doneCount / missions.length) * 100}%` : '0%' },
+              ]}
+            />
+          </View>
+          <Text style={styles.progressLabel}>{doneCount}/{missions.length} 완료</Text>
+        </View>
+
+        {/* 미션 카드 목록 */}
+        <View style={styles.missionList}>
+          {missions.map((mission) => (
+            <Card key={mission.id} style={[styles.missionCard, mission.completed && styles.missionCardDone]}>
+              <View style={styles.missionRow}>
+                <Text style={styles.missionEmoji}>{mission.completed ? '✅' : '🌱'}</Text>
+                <View style={styles.missionInfo}>
+                  <Text style={[styles.missionTitle, mission.completed && styles.missionTitleDone]}>
+                    {mission.title}
+                  </Text>
+                  {mission.description ? (
+                    <Text style={styles.missionDesc}>{mission.description}</Text>
+                  ) : null}
+                </View>
+              </View>
+
+              {!mission.completed ? (
+                <Button
+                  variant="primary"
+                  onPress={() => handleComplete(mission.id)}
+                  loading={completing === mission.id}
+                  style={styles.completeBtn}
+                >
+                  완료했어요
+                </Button>
+              ) : null}
+            </Card>
+          ))}
+        </View>
+
+        {doneCount === missions.length && missions.length > 0 ? (
+          <Text style={styles.allDone}>🎉 오늘 미션을 모두 완료했어요!</Text>
+        ) : null}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: COLORS.background },
+  scroll: { paddingHorizontal: 20, paddingVertical: 32 },
+  title: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', marginBottom: 6 },
+  subtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 24 },
+  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 },
+  progressTrack: { flex: 1, height: 6, backgroundColor: '#EDE5DF', borderRadius: 3, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 3 },
+  progressLabel: { fontSize: 13, color: COLORS.textPrimary, fontWeight: '600', minWidth: 52 },
+  missionList: { gap: 14 },
+  missionCard: {},
+  missionCardDone: { opacity: 0.65 },
+  missionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 4 },
+  missionEmoji: { fontSize: 24, marginTop: 1 },
+  missionInfo: { flex: 1 },
+  missionTitle: { fontSize: 15, fontWeight: '600', color: COLORS.textPrimary },
+  missionTitleDone: { textDecorationLine: 'line-through', color: COLORS.textLight },
+  missionDesc: { fontSize: 13, color: COLORS.textSecondary, marginTop: 3 },
+  completeBtn: { marginTop: 12 },
+  allDone: { textAlign: 'center', color: COLORS.primary, fontWeight: '700', fontSize: 15, marginTop: 20 },
+});
