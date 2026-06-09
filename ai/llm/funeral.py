@@ -16,6 +16,7 @@ from typing import Optional, Protocol
 
 from ai.rag.retrieve import retrieve as _rag_retrieve
 from .prompts import funeral as funeral_prompt
+from .provider import LLM_UNAVAILABLE_NOTICE, LLMError
 from .safety import (
     CrisisAction,
     EMPATHY_FOCUS_NOTE,
@@ -122,7 +123,15 @@ def generate_funeral_guidance(
     # L1(우려)·L2(경고) — 절차 정보보다 공감을 먼저 하도록 지침 추가.
     if action in (CrisisAction.GENERATE_WITH_SUPPORT, CrisisAction.HOTLINE):
         prompt += EMPATHY_FOCUS_NOTE
-    note_response = generate(prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE).strip()
+    # LLM 인프라 실패 시: 단계 안내(guidance, 템플릿)는 유지하고 개인화 답변만
+    # 안내문으로 graceful 대체(source=unavailable). 앱이 터지지 않게.
+    try:
+        note_response = generate(
+            prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE
+        ).strip()
+    except LLMError:
+        note_response = LLM_UNAVAILABLE_NOTICE
+        source = "unavailable"
 
     result = {
         "guidance": guidance,
