@@ -62,7 +62,12 @@ async def generate_tts(data: TtsCreate) -> TtsResponse:
     tts_server_url = os.environ.get("TTS_SERVER_URL", "").strip()
 
     if tts_server_url:
-        return await _qwen3_remote(data, tts_server_url)
+        # 터널 끊김·타임아웃·5xx 등 remote 실패 시 500 대신 Google 폴백으로 자동 전환.
+        try:
+            return await _qwen3_remote(data, tts_server_url)
+        except (httpx.HTTPError, OSError) as exc:
+            logger.warning("Qwen3 remote TTS 실패(%s) → Google 폴백 사용", exc)
+            return await _google_tts_fallback(data)
     else:
         return await _google_tts_fallback(data)
 
