@@ -34,9 +34,9 @@ class LLMConfig:
     provider: str  # gemini | ollama | perso ... (기록용)
     base_url: str
     model: str
-    api_key: str
+    api_keys: tuple[str, ...]  # 순환 키 목록 (쉼표 구분, 429 시 다음 키로 전환)
     timeout: float  # 단일 요청 타임아웃(초)
-    max_retries: int  # 일시적 오류 재시도 횟수
+    max_retries: int  # 키당 일시적 오류 재시도 횟수
     max_tokens: int  # 기본 생성 토큰 상한
     temperature: float  # 기본 온도
     reasoning_effort: str  # Gemini thinking 제어("none"=끔). 빈 값이면 미전송
@@ -49,11 +49,13 @@ class LLMConfig:
 
 def get_config() -> LLMConfig:
     """현재 환경변수로부터 설정을 읽어옵니다."""
+    raw_keys = os.getenv("LLM_API_KEY", "")
+    api_keys = tuple(k.strip() for k in raw_keys.split(",") if k.strip())
     return LLMConfig(
         provider=os.getenv("LLM_PROVIDER", "gemini"),
         base_url=os.getenv("LLM_BASE_URL", _DEFAULT_BASE_URL),
         model=os.getenv("LLM_MODEL", _DEFAULT_MODEL),
-        api_key=os.getenv("LLM_API_KEY", ""),
+        api_keys=api_keys,
         timeout=float(os.getenv("LLM_TIMEOUT", "30")),
         max_retries=int(os.getenv("LLM_MAX_RETRIES", "2")),
         max_tokens=int(os.getenv("LLM_MAX_TOKENS", "512")),
