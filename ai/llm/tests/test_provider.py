@@ -179,3 +179,46 @@ def test_key_rotation_on_rate_limit(monkeypatch):
     result = generate("hi")
     assert result == "두번째키 성공"
     assert call_order == ["key1", "key2"]
+
+
+def test_model_fallback_when_all_keys_exhausted(monkeypatch):
+    """모든 키가 기본 모델에서 429 → 폴백 모델로 전환해 성공."""
+    from openai import RateLimitError as _RLE
+
+    def _make_rate_limit():
+        resp = httpx.Response(429, request=httpx.Request("POST", "http://x"))
+        return _RLE(message="quota", response=resp, body=None)
+
+    # 단일 키: 기본 모델 호출 시 429, 폴백 모델 호출 시 성공.
+    client = _FakeClient([_make_rate_limit(), "폴백 모델 성공"])
+    monkeypatch.setattr(
+        provider,
+        "get_config",
+        lambda: _cfg(model="gemini-2.5-flash", fallback_model="gemini-1.5-flash"),
+    )
+    monkeypatch.setattr(provider, "_client", lambda *a, **kw: client)
+    monkeypatch.setattr(provider, "_sleep_backoff", lambda attempt: None)
+
+    result = generate("hi")
+    assert result == "폴백 모델 성공"
+    # 두 번째(성공) 호출은 폴백 모델로 갔는지 확인
+    assert client.chat.completions.last_kwargs["model"] == "gemini-1.5-flash"
+
+
+def test_no_fallback_model_raises_after_keys(monkeypatch):
+    """폴백 모델 미설정 시, 전 키 429면 그냥 LLMError."""
+    from openai import RateLimitError as _RLE
+
+    def _make_rate_limit():
+        resp = httpx.Response(429, request=httpx.Request("POST", "http://x"))
+        return _RLE(message="quota", response=resp, body=None)
+
+    client = _FakeClient([_make_rate_limit(), _make_rate_limit()])
+    monkeypatch.setattr(
+        provider, "get_config", lambda: _cfg(api_keys=("k1", "k2"), fallback_model="")
+    )
+    monkeypatch.setattr(provider, "_client", lambda *a, **kw: client)
+    monkeypatch.setattr(provider, "_sleep_backoff", lambda attempt: None)
+
+    with pytest.raises(LLMError):
+        generate("hi")
