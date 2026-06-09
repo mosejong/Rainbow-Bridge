@@ -18,6 +18,10 @@ class PetCreate(BaseModel):
     )
     memories: Optional[list[MemoryItem]] = Field(None, description="추억 목록")
     photo_url: Optional[str] = Field(None, description="사진 URL")
+    bucket_list: Optional[list[str]] = Field(None, description="버킷리스트 목록")
+    caller_name: Optional[str] = Field(
+        None, description="보호자 호칭 (추모 편지에 사용)"
+    )
 
 
 class PetPhotoResponse(BaseModel):
@@ -33,5 +37,7 @@ class PetResponse(BaseModel):
     period: Optional[str]
     memories: Optional[list[MemoryItem]]
     photo_url: Optional[str]
+    bucket_list: Optional[list[str]]
+    caller_name: Optional[str]
     memorial_mode: bool = Field(False, description="추모 모드 전환 여부")
     created_at: datetime
