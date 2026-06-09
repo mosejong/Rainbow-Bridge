@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL =
+export const API_URL =
   process.env.EXPO_PUBLIC_API_URL ||
   'https://rainbow-bridge.duckdns.org';
 
