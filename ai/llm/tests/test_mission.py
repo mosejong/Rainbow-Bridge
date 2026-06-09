@@ -20,8 +20,10 @@ def test_rule_based_returns_count():
     result = recommend(emotion_score=2, count=3)
     assert len(result) == 3
     for m in result:
-        assert set(m) == {"title", "description", "category"}
+        assert set(m) == {"title", "description", "category", "rationale"}
         assert m["category"] in mission_prompt.CATEGORIES
+        # 근거는 카테고리별 회복 근거와 정확히 일치(코드 부착).
+        assert m["rationale"] == mission_prompt.CATEGORY_RATIONALE[m["category"]]
 
 
 def test_low_score_gives_gentle_missions():
@@ -73,6 +75,15 @@ def test_llm_output_used_when_valid():
     )
     result = recommend(emotion_score=5, generate=fake, count=3)
     assert {m["title"] for m in result} == {"편지 한 줄 쓰기", "창밖 보기", "차 한 잔"}
+
+
+def test_rationale_attached_to_llm_missions():
+    """LLM 이 만든 미션에도 카테고리 기준 근거가 붙는다(환각 아닌 큐레이션 근거)."""
+    fake = _fake_llm(
+        [{"title": "편지 한 줄 쓰기", "description": "짧게 적어보세요.", "category": "record"}]
+    )
+    result = recommend(emotion_score=5, generate=fake, count=1)
+    assert result[0]["rationale"] == mission_prompt.CATEGORY_RATIONALE["record"]
 
 
 def test_llm_broken_output_falls_back_to_rule():

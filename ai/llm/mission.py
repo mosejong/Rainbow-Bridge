@@ -57,6 +57,16 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("좋아하는 간식 하나", "좋아하는 간식을 천천히 먹으며 잠시 쉬어가세요.", "rest"),
         ("이름 한 번 불러보기", "반려동물의 이름을 조용히 한 번 불러보세요.", "remembrance"),
         ("오늘 감정 한 줄", "지금 느끼는 감정을 한 줄로만 적어보세요.", "record"),
+        ("좋아하는 향 맡기", "향초나 커피처럼 좋아하는 향을 잠시 맡아보세요.", "rest"),
+        ("부드러운 것 안고 있기", "쿠션이나 담요처럼 부드러운 것을 잠시 안고 있어보세요.", "rest"),
+        ("아이 사진에 인사", "아이 사진을 보며 마음속으로 짧게 인사를 건네보세요.", "remembrance"),
+        ("좋아했던 물건 바라보기", "아이가 좋아했던 물건 하나를 가만히 바라보세요.", "remembrance"),
+        ("가족에게 짧은 메시지", "가족에게 이모티콘 하나라도 보내보세요.", "connection"),
+        ("오늘 먹은 것 적기", "오늘 무엇을 먹었는지 한 줄로 적어보세요.", "record"),
+        ("따뜻한 물에 손 담그기", "따뜻한 물에 잠시 손을 담그며 온기를 느껴보세요.", "rest"),
+        ("좋아하는 사진 한 장 저장", "마음에 드는 사진 한 장을 골라 저장해보세요.", "record"),
+        ("짧은 글귀 하나 읽기", "마음에 닿는 짧은 글 하나를 천천히 읽어보세요.", "rest"),
+        ("창밖 하늘 보기", "창밖 하늘을 1분만 올려다보세요.", "rest"),
     ),
     "small": (
         ("집 앞 5분 산책", "집 근처를 5분만 천천히 걸어보세요.", "activity"),
@@ -69,6 +79,16 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("오늘 잘한 일 하나", "오늘 스스로 잘했다고 느낀 일 하나를 적어보세요.", "record"),
         ("창밖 풍경 바라보기", "창밖을 5분만 바라보며 지금 이 순간에 머물러보세요.", "rest"),
         ("고마운 것 세 가지", "오늘 고마웠던 것 세 가지를 짧게 적어보세요.", "record"),
+        ("음악 들으며 정리", "음악을 들으며 책상 한쪽을 가볍게 정리해보세요.", "activity"),
+        ("추억 한 장면 적기", "오늘 떠오른 아이와의 한 장면을 짧게 적어보세요.", "record"),
+        ("친구에게 안부 묻기", "잘 지내냐고 친구에게 먼저 안부를 물어보세요.", "connection"),
+        ("좋아하는 간식 차리기", "간단히 만들 수 있는 좋아하는 간식을 차려보세요.", "rest"),
+        ("동네 한 바퀴 걷기", "동네를 천천히 한 바퀴 걸어보세요.", "activity"),
+        ("아이 물건 하나 닦기", "아이의 물건 하나를 천천히 닦아 제자리에 두세요.", "remembrance"),
+        ("오늘 기분 색으로", "지금 기분을 색 하나로 떠올려 적어보세요.", "record"),
+        ("편한 영상 하나 보기", "마음이 편해지는 영상 하나를 짧게 보세요.", "rest"),
+        ("화분에 물 주기", "집에 있는 식물에 물을 한 번 주어보세요.", "activity"),
+        ("가까운 사람에게 사진", "아이 사진 한 장을 가까운 사람에게 보내보세요.", "connection"),
     ),
     "active": (
         ("산책길 다시 걷기", "둘이 함께 걷던 길을 천천히 걸어보세요.", "remembrance"),
@@ -81,6 +101,16 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
         ("맛있는 식사 차리기", "스스로를 위해 좋아하는 음식을 차려보세요.", "activity"),
         ("가족 모임 제안하기", "가족이나 친한 친구와 만남을 잡아보세요.", "connection"),
         ("추억 영상 만들기", "함께한 사진들로 짧은 슬라이드를 만들어보세요.", "record"),
+        ("좋아하는 카페 가기", "가보고 싶던 카페에 들러 잠시 시간을 보내보세요.", "activity"),
+        ("친구와 식사 약속", "편한 친구와 만나 식사 약속을 잡아보세요.", "connection"),
+        ("아이 이야기 들려주기", "가까운 사람에게 아이와의 추억을 이야기해보세요.", "connection"),
+        ("추억 앨범 만들기", "함께한 사진을 모아 작은 앨범을 만들어보세요.", "record"),
+        ("가벼운 취미 시작하기", "전부터 해보고 싶던 가벼운 취미를 하나 시작해보세요.", "activity"),
+        ("동물 나눔 알아보기", "유기동물 봉사처럼 마음이 가는 나눔을 찾아보세요.", "connection"),
+        ("작은 마음 나누기", "작은 금액이라도 마음이 가는 동물 단체에 나눠보세요.", "remembrance"),
+        ("좋아하는 곳에서 사진", "기분이 좋아지는 장소에서 사진을 남겨보세요.", "activity"),
+        ("가볍게 몸 움직이기", "가벼운 운동으로 몸을 다시 천천히 움직여보세요.", "activity"),
+        ("아이에게 쓴 편지 읽기", "아이에게 쓴 편지를 소리 내어 천천히 읽어보세요.", "remembrance"),
     ),
 }
 
@@ -138,7 +168,14 @@ def _rule_missions(difficulty: str, exclude: set[str], count: int) -> list[dict]
     for title, desc, category in _RULE_POOL[difficulty]:
         if title in exclude:
             continue
-        out.append({"title": title, "description": desc, "category": category})
+        out.append(
+            {
+                "title": title,
+                "description": desc,
+                "category": category,
+                "rationale": mission_prompt.CATEGORY_RATIONALE.get(category, ""),
+            }
+        )
         if len(out) >= count:
             break
     return out
@@ -158,13 +195,14 @@ def _parse_llm(raw: str) -> list[dict]:
         if not title:
             continue
         category = it.get("category")
+        cat = category if category in mission_prompt.CATEGORIES else "activity"
         result.append(
             {
                 "title": title,
                 "description": str(it.get("description", "")).strip(),
-                "category": (
-                    category if category in mission_prompt.CATEGORIES else "activity"
-                ),
+                "category": cat,
+                # 근거는 LLM 출력이 아니라 카테고리 기준으로 부착(=일관성·환각 방지).
+                "rationale": mission_prompt.CATEGORY_RATIONALE.get(cat, ""),
             }
         )
     return result
@@ -192,7 +230,8 @@ def recommend(
         count: 추천 개수.
 
     Returns:
-        ``[{title, description, category}, ...]`` (최대 count 개).
+        ``[{title, description, category, rationale}, ...]`` (최대 count 개).
+        ``rationale`` 은 카테고리별 회복 근거 한 줄(prompts.mission.CATEGORY_RATIONALE).
     """
     difficulty = _apply_trend(_difficulty(emotion_score), recovery_trend)
     recent: set[str] = set(history or [])

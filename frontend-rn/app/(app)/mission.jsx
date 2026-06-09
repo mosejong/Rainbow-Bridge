@@ -89,10 +89,15 @@ export default function MissionScreen() {
                 <Text style={styles.missionEmoji}>{mission.completed ? '✅' : '🌱'}</Text>
                 <View style={styles.missionInfo}>
                   <Text style={[styles.missionTitle, mission.completed && styles.missionTitleDone]}>
-                    {mission.title}
+                    {'📋 '}{mission.title}
                   </Text>
                   {mission.description ? (
                     <Text style={styles.missionDesc}>{mission.description}</Text>
+                  ) : null}
+                  {mission.rationale ? (
+                    <Text style={styles.missionRationale}>
+                      {'💡 '}{mission.rationale}{mission.category ? ` — (${mission.category})` : ''}
+                    </Text>
                   ) : null}
                 </View>
               </View>
@@ -139,6 +144,7 @@ const styles = StyleSheet.create({
   missionTitle: { fontSize: 15, fontWeight: '600', color: COLORS.textPrimary },
   missionTitleDone: { textDecorationLine: 'line-through', color: COLORS.textLight },
   missionDesc: { fontSize: 13, color: COLORS.textSecondary, marginTop: 3 },
+  missionRationale: { fontSize: 12, color: '#9B8DB8', marginTop: 6, lineHeight: 17 },
   completeBtn: { marginTop: 12 },
   allDone: { textAlign: 'center', color: COLORS.primary, fontWeight: '700', fontSize: 15, marginTop: 20 },
 });

@@ -20,6 +20,23 @@ CATEGORIES: Final[tuple[str, ...]] = (
     "record",  # 기록·정리
 )
 
+# 분류별 회복 근거 — 미션이 "왜 도움 되는지" 한 줄. 펫로스 회복 이론에 기반하며,
+# 괄호 안 이론명으로 근거를 명시합니다. 모든 미션(규칙 풀·LLM 생성)에 카테고리 기준으로
+# 코드에서 부착되고(=일관성·환각 방지), 아래 프롬프트에도 노출해 LLM 이 분류에 맞는
+# 미션을 고르도록 돕습니다. 강사 피드백 "논문이 기능에 녹지 않았다" 대응.
+CATEGORY_RATIONALE: Final[dict[str, str]] = {
+    "rest": "몸을 쉬게 하면 마음도 회복돼요 (자기돌봄)",
+    "remembrance": "기억을 이어가며 슬픔을 따뜻함으로 바꿔요 (지속적 유대)",
+    "connection": "사람과 함께 있으면 슬픔이 덜어져요 (사회적 지지)",
+    "activity": "작은 활동이 가라앉은 기분을 끌어올려요 (행동활성화)",
+    "record": "감정을 글로 꺼내면 마음이 가벼워져요 (표현적 글쓰기)",
+}
+
+# 위 근거를 프롬프트에 넣는 블록(LLM 이 분류에 맞는 미션을 고르도록 안내).
+_RATIONALE_GUIDE: Final[str] = "[분류별 회복 근거 — 미션 선택 시 참고]\n" + "\n".join(
+    f"- {cat}: {why}" for cat, why in CATEGORY_RATIONALE.items()
+)
+
 # 감정 점수 → 난이도. 힘들수록 더 작은 미션.
 DIFFICULTY_GUIDE: Final[dict[str, str]] = {
     "gentle": "지금 많이 힘든 상태예요. 집 안에서 1~5분이면 끝나는 아주 작은 것만 제안하세요.",
@@ -118,4 +135,4 @@ def build_prompt(
         count=count,
         rag_block=_format_rag(rag_hits),
     )
-    return f"{SYSTEM_PROMPT}\n\n{user}"
+    return f"{SYSTEM_PROMPT}\n{_RATIONALE_GUIDE}\n\n{user}"
