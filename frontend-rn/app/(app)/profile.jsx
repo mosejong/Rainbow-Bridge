@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import Card from '../../components/Card';
-import Button from '../../components/Button';
 import { COLORS } from '../../constants/colors';
 
 const SPECIES = ['강아지', '고양이', '기타'];
@@ -35,119 +35,159 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={styles.logo}>🌈 레인보우 브릿지</Text>
-        <Text style={styles.subtitle}>소중한 가족을 기억해요</Text>
+    <LinearGradient
+      colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']}
+      locations={[0, 0.35, 0.6, 1]}
+      style={styles.gradient}
+    >
+      <SafeAreaView style={styles.safe}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.logo}>🌈 레인보우 브릿지</Text>
+          <Text style={styles.subtitle}>소중한 가족을 기억해요</Text>
 
-        <Card style={styles.card}>
-          <Text style={styles.cardTitle}>반려동물 프로필 입력</Text>
+          <Card style={styles.card}>
+            <Text style={styles.cardTitle}>반려동물 프로필 입력</Text>
 
-          {/* 이름 */}
-          <View style={styles.field}>
-            <Text style={styles.label}>반려동물 이름 <Text style={styles.required}>*</Text></Text>
-            <TextInput
-              style={styles.input}
-              value={form.name}
-              onChangeText={(v) => setForm((p) => ({ ...p, name: v }))}
-              placeholder="예) 콩이"
-              placeholderTextColor={COLORS.textLight}
-            />
-          </View>
-
-          {/* 종 */}
-          <View style={styles.field}>
-            <Text style={styles.label}>종</Text>
-            <View style={styles.radioRow}>
-              {SPECIES.map((s) => (
-                <TouchableOpacity
-                  key={s}
-                  onPress={() => setForm((p) => ({ ...p, species: s }))}
-                  style={[styles.radioBtn, form.species === s && styles.radioBtnSelected]}
-                >
-                  <Text style={[styles.radioText, form.species === s && styles.radioTextSelected]}>
-                    {s}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* 함께한 기간 */}
-          <View style={styles.field}>
-            <Text style={styles.label}>함께한 기간 <Text style={styles.required}>*</Text></Text>
-            <Text style={styles.hint}>YYYY-MM-DD 형식으로 입력해주세요</Text>
-            <View style={styles.dateRow}>
+            {/* 이름 */}
+            <View style={styles.field}>
+              <Text style={styles.label}>반려동물 이름 <Text style={styles.required}>*</Text></Text>
               <TextInput
-                style={[styles.input, styles.dateInput]}
-                value={form.start_date}
-                onChangeText={(v) => setForm((p) => ({ ...p, start_date: v }))}
-                placeholder="2018-01-01"
-                placeholderTextColor={COLORS.textLight}
-                keyboardType="numeric"
-              />
-              <Text style={styles.dateSep}>~</Text>
-              <TextInput
-                style={[styles.input, styles.dateInput]}
-                value={form.end_date}
-                onChangeText={(v) => setForm((p) => ({ ...p, end_date: v }))}
-                placeholder="2026-01-01"
-                placeholderTextColor={COLORS.textLight}
-                keyboardType="numeric"
+                style={styles.input}
+                value={form.name}
+                onChangeText={(v) => setForm((p) => ({ ...p, name: v }))}
+                placeholder="예) 콩이"
+                placeholderTextColor="#A89FBC"
               />
             </View>
-          </View>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+            {/* 종 */}
+            <View style={styles.field}>
+              <Text style={styles.label}>종</Text>
+              <View style={styles.radioRow}>
+                {SPECIES.map((s) => (
+                  <TouchableOpacity
+                    key={s}
+                    onPress={() => setForm((p) => ({ ...p, species: s }))}
+                    style={[styles.radioBtn, form.species === s && styles.radioBtnSelected]}
+                  >
+                    <Text style={[styles.radioText, form.species === s && styles.radioTextSelected]}>
+                      {s}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
-          <Button onPress={handleNext} variant="primary" style={styles.btn}>
-            다음 — 추억 입력
-          </Button>
-        </Card>
-      </ScrollView>
-    </SafeAreaView>
+            {/* 함께한 기간 */}
+            <View style={styles.field}>
+              <Text style={styles.label}>함께한 기간 <Text style={styles.required}>*</Text></Text>
+              <Text style={styles.hint}>YYYY-MM-DD 형식으로 입력해주세요</Text>
+              <View style={styles.dateRow}>
+                <TextInput
+                  style={[styles.input, styles.dateInput]}
+                  value={form.start_date}
+                  onChangeText={(v) => setForm((p) => ({ ...p, start_date: v }))}
+                  placeholder="2018-01-01"
+                  placeholderTextColor="#A89FBC"
+                  keyboardType="numeric"
+                />
+                <Text style={styles.dateSep}>~</Text>
+                <TextInput
+                  style={[styles.input, styles.dateInput]}
+                  value={form.end_date}
+                  onChangeText={(v) => setForm((p) => ({ ...p, end_date: v }))}
+                  placeholder="2026-01-01"
+                  placeholderTextColor="#A89FBC"
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.btnShadow}
+              onPress={handleNext}
+            >
+              <LinearGradient
+                colors={['#DDEDEA', '#DAEAF6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.btn}
+              >
+                <Text style={styles.btnText}>다음 — 추억 입력</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Card>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+  gradient: { flex: 1 },
+  safe: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingVertical: 32 },
-  logo: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', marginBottom: 4 },
-  subtitle: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 24 },
+  logo: { fontSize: 22, fontWeight: '700', color: '#5B4E75', textAlign: 'center', marginBottom: 4 },
+  subtitle: { fontSize: 13, color: '#8A7D9E', textAlign: 'center', marginBottom: 24 },
   card: { marginTop: 4 },
-  cardTitle: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 20 },
+  cardTitle: { fontSize: 17, fontWeight: '700', color: '#5B4E75', marginBottom: 20 },
   field: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 8 },
+  label: { fontSize: 14, fontWeight: '600', color: '#5B4E75', marginBottom: 8 },
   required: { color: COLORS.danger },
-  hint: { fontSize: 12, color: COLORS.textLight, marginBottom: 6 },
+  hint: { fontSize: 12, color: '#A89FBC', marginBottom: 6 },
   input: {
-    backgroundColor: COLORS.inputBg,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 15,
-    color: COLORS.textPrimary,
-    borderWidth: 1.5,
-    borderColor: COLORS.divider,
+    color: '#4A4A4A',
+    shadowColor: '#8A7D9E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 1,
   },
   radioRow: { flexDirection: 'row', gap: 10 },
   radioBtn: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: COLORS.divider,
-    backgroundColor: COLORS.white,
+    borderColor: '#E5DCF0',
+    backgroundColor: '#FFFFFF',
   },
-  radioBtnSelected: { borderColor: COLORS.primary, backgroundColor: '#FBF1F3' },
-  radioText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '500' },
-  radioTextSelected: { color: COLORS.selectedText, fontWeight: '700' },
+  radioBtnSelected: { borderColor: '#C4A8D8', backgroundColor: '#F3E8FF' },
+  radioText: { fontSize: 14, color: '#8A7D9E', fontWeight: '500' },
+  radioTextSelected: { color: '#5B4E75', fontWeight: '700' },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dateInput: { flex: 1 },
-  dateSep: { fontSize: 16, color: COLORS.textSecondary },
+  dateSep: { fontSize: 16, color: '#8A7D9E' },
   error: { color: COLORS.danger, fontSize: 13, textAlign: 'center', marginBottom: 12 },
-  btn: { marginTop: 8 },
+  btnShadow: {
+    marginTop: 8,
+    shadowColor: '#DAEAF6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  btn: {
+    height: 54,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnText: {
+    color: '#5B4E75',
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 0.3,
+  },
 });

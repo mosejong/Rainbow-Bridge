@@ -18,4 +18,5 @@ async def read_latest_message(pet_id: str, user: dict = Depends(get_current_user
 
 @router.post("", response_model=MessageResponse, status_code=201)
 async def generate_message(body: MessageCreate, user: dict = Depends(get_current_user)):
+    body.guardian_nickname = user.get("nickname")
     return await create_message(body)

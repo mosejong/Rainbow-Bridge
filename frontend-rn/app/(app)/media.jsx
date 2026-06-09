@@ -77,7 +77,9 @@ export default function MediaScreen() {
         // 음성 합쳐진 voiced_url 우선, 없으면 무음 video_url. 상대경로 → 서버주소 붙임
         const url = res.voiced_url || res.video_url;
         if (res.status === 'done' && url) {
-          setVideoUrl(`${API_URL}${url}`);
+          const fullUrl = `${API_URL}${url}`;
+          setVideoUrl(fullUrl);
+          await AsyncStorage.setItem('pet_video_url', fullUrl);
           setLoading(false);
         } else if (res.status === 'error') {
           setError('영상 생성 중 문제가 생겼어요. 다른 사진으로 시도해보세요.');

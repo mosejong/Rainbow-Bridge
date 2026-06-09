@@ -49,19 +49,43 @@ npx expo start --clear
 
 ## 폰에서 실제 앱 확인하기 (Expo Go)
 
+### ⚠️ 중요 — Expo Go 버전 주의
+
+> 이 프로젝트는 **Expo SDK 52** 입니다.
+> Play Store 최신 Expo Go(SDK 54)와 **버전이 맞지 않아 앱이 열리지 않습니다.**
+> 반드시 아래 방법으로 **SDK 52 전용 APK** 를 설치하세요.
+
+#### Android — SDK 52 Expo Go APK 설치 방법
+
+1. **기존 Expo Go 삭제** (이미 설치돼 있으면)
+2. 폰 브라우저에서 아래 주소 접속:
+   ```
+   expo.dev/go?sdkVersion=52&platform=android&device=true
+   ```
+3. **Download** 버튼 눌러서 `Expo-Go-2.32.20.apk` 다운로드
+   - "File might be harmful" 경고 → **Download anyway** 선택
+4. 다운로드 완료 후 APK 파일 눌러서 설치
+   - "출처를 알 수 없는 앱" 팝업 → **설정** → 크롬 허용 → 뒤로 가서 설치
+5. 설치된 Expo Go 열기 → **Scan QR** → 터미널 QR 스캔
+
+#### iOS
+
+iOS는 APK 설치가 불가합니다. 현재 iOS에서는 테스트가 어렵습니다.
+
+---
+
 ### 준비물
 - PC와 폰이 **같은 WiFi** 에 연결돼 있어야 해요
 
 ### 순서
 
-**1) 폰 Play Store / App Store 에서 "Expo Go" 설치**
+**1) 위 방법으로 SDK 52 Expo Go APK 설치**
 
 **2) `npx expo start --clear` 실행**
 터미널에 QR 코드가 뜹니다.
 
 **3) QR 스캔**
-- Android: Expo Go 앱 열기 → `Scan QR code` 탭해서 스캔
-- iOS: 기본 카메라 앱으로 스캔
+- Expo Go 앱 열기 → `Scan QR` 탭해서 스캔
 
 앱이 자동으로 폰에 로드됩니다!
 
@@ -118,6 +142,49 @@ frontend-rn/
 | secondary | `#C3E2DD` | 민트 포인트 |
 | cta | `#6ECEDA` | 버튼·CTA |
 | textPrimary | `#4A4458` | 본문 텍스트 |
+
+---
+
+## 팀원 공지 (2026-06-09 기준)
+
+> 아래 내용을 팀 카톡/슬랙에 그대로 복붙해서 공유하세요.
+
+---
+
+**📢 프론트 앱 테스트 방법 안내 (필독)**
+
+프로젝트가 **Expo SDK 52** 라서 Play Store 최신 Expo Go(SDK 54)로는 앱이 열리지 않아요.
+최신 Expo Go(SDK 54)로 버전 맞춰서 프로젝트 버전을 올렸지만 버전 충돌 오류가 몇 시간째 계속 해결이 되지 않아서
+Expo Go(SDK 54)를 Expo Go(SDK 52)버전 낮추었습니다.
+반드시 **구버전 APK**를 따로 설치해야 합니다.
+
+**Android 설치 순서:**
+1. 기존 Expo Go 삭제
+2. 폰 브라우저에서 접속:
+   `expo.dev/go?sdkVersion=52&platform=android&device=true`
+3. Download 버튼 → "Download anyway" 선택
+4. 다운로드된 APK 파일 눌러서 설치
+   (설치 허용 팝업 뜨면 허용)
+5. 설치된 Expo Go 열고 QR 스캔
+
+**역할별 할 일:**
+
+| 대상 | 할 일 |
+|------|-------|
+| **민경이 (프론트 담당)** | 아래 명령어로 서버 켜기 → QR 공유 |
+| **나머지 팀원** | Expo Go APK 설치 후 QR 스캔만 하면 됨 |
+
+**민경이 PC에서 서버 켜는 법:**
+```
+cd frontend-rn
+npx expo start --clear
+```
+QR코드가 뜨면 캡처해서 팀원들에게 공유하세요!
+
+> 처음 클론했거나 `node_modules`가 없으면 먼저 `npm install --legacy-peer-deps` 실행 후 위 명령어 실행하세요.
+
+⚠️ iOS는 현재 테스트 불가합니다.
+궁금한 점은 민경이에게 문의해주세요!
 
 ---
 

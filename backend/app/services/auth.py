@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 from app.schemas.auth import RegisterRequest, TokenResponse, UserResponse
+from app.db.mongodb import mongodb
 
 _pwd_ctx = CryptContext(
     schemes=["bcrypt"],
@@ -70,4 +71,11 @@ async def login(db: AsyncSession, email: str, password: str) -> TokenResponse:
         raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다.")
 
     token = _create_token(user.id, user.email)
+    await mongodb.db["access_logs"].insert_one(
+        {
+            "user_id": user.id,
+            "email": user.email,
+            "accessed_at": datetime.now(timezone.utc),
+        }
+    )
     return TokenResponse(access_token=token)
