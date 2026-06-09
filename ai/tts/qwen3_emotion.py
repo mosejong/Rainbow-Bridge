@@ -225,7 +225,7 @@ def main() -> None:
 
     ap = argparse.ArgumentParser(description="Qwen3 어린아이 목소리 감도 조절 합성")
     ap.add_argument("--batch", choices=["boy", "girl"], help="기존 배치(다이얼 무시)")
-    ap.add_argument("--gender", choices=["boy", "girl"], default="boy")
+    ap.add_argument("--gender", choices=["boy", "girl", "man", "woman"], default="boy")
     ap.add_argument("--warmth", type=int, choices=[0, 1, 2, 3], default=1, help="다정/느끼 강도")
     ap.add_argument("--bright", type=int, choices=[0, 1, 2, 3], default=1, help="밝기(쳐짐 반대)")
     ap.add_argument("--pace", choices=["slow", "normal"], default="normal")
