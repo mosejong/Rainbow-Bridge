@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, ScrollView } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -44,6 +45,7 @@ export default function MessageScreen() {
   const [error, setError] = useState('');
   const [petName, setPetName] = useState('소중한 친구');
   const [petSpecies, setPetSpecies] = useState('');
+  const [petVideoUrl, setPetVideoUrl] = useState(null);
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [lines, setLines] = useState([]);
   const [visibleCount, setVisibleCount] = useState(0);
@@ -58,6 +60,7 @@ export default function MessageScreen() {
   useEffect(() => {
     AsyncStorage.getItem('pet_name').then((v) => v && setPetName(v));
     AsyncStorage.getItem('pet_species').then((v) => v && setPetSpecies(v));
+    AsyncStorage.getItem('pet_video_url').then((v) => v && setPetVideoUrl(v));
     loadMessage();
     return () => cleanup();
   }, []);
@@ -264,6 +267,20 @@ export default function MessageScreen() {
                 <View style={[styles.headerLine, isFirst && styles.headerLineFirst]} />
               </View>
 
+              {/* LivePortrait 영상 — 있을 때만 표시 */}
+              {petVideoUrl && (
+                <View style={[styles.videoWrap, isFirst && styles.videoWrapFirst]}>
+                  <Video
+                    source={{ uri: petVideoUrl }}
+                    style={styles.video}
+                    resizeMode={ResizeMode.COVER}
+                    isLooping
+                    shouldPlay
+                    isMuted
+                  />
+                </View>
+              )}
+
               {/* 편지 본문 */}
               <ScrollView
                 style={styles.bodyScroll}
@@ -381,6 +398,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#C9A84C', // 황금빛 선
     width: 64,
   },
+
+  // LivePortrait 영상
+  videoWrap: {
+    alignSelf: 'center',
+    width: 120,
+    height: 120,
+    borderRadius: 60,        // 원형
+    overflow: 'hidden',
+    marginBottom: 20,
+    borderWidth: 3,
+    borderColor: '#D4C0A0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  videoWrapFirst: {
+    borderColor: '#C9A84C',  // 1인칭 — 황금 테두리
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+  },
+  video: { width: '100%', height: '100%' },
 
   // 본문 스크롤
   bodyScroll: { flexGrow: 0 },
