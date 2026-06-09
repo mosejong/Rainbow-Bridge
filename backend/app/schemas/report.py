@@ -19,3 +19,5 @@ class ReportResponse(BaseModel):
         None, description="미션 완료율 0~1"
     )
     revisit: Optional[int] = Field(None, description="재방문 횟수 (추후 추가)")
+    play_count: Optional[int] = Field(None, description="영상 재생 횟수")
+    session_count: Optional[int] = Field(None, description="로그인 접속 횟수")

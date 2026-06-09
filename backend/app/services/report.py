@@ -4,6 +4,7 @@ from ai.evaluation.report import build_report
 
 from app.db.mongodb import mongodb
 from app.schemas.report import EmotionTrend, ReportResponse
+from bson import ObjectId
 
 
 async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
@@ -27,6 +28,23 @@ async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
 
     # LLM 사용 로그: llm_logs 컬렉션 (messages.count 임시 → 실데이터)
     llm_logs = await mongodb.db["llm_logs"].find({"pet_id": pet_id}).to_list(None)
+    # 영상 재생횟수 집계
+    play_count = 0
+    async for doc in mongodb.db["media_assets"].find(
+        {"pet_id": pet_id}, {"play_count": 1}
+    ):
+        play_count += doc.get("play_count", 0)
+
+    # 로그인 접속 횟수 집계
+    pet_doc = await mongodb.db["pets"].find_one(
+        {"_id": ObjectId(pet_id)}, {"user_id": 1}
+    )
+    user_id = pet_doc.get("user_id") if pet_doc else None
+    session_count = (
+        await mongodb.db["access_logs"].count_documents({"user_id": user_id})
+        if user_id
+        else 0
+    )
 
     report = build_report(
         pet_id,
@@ -34,6 +52,8 @@ async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
         llm_logs=llm_logs,
         emotion_checkins=emotion_checkins,
         missions=missions,
+        play_count=play_count,
+        session_count=session_count,
     )
 
     return ReportResponse(
@@ -46,4 +66,6 @@ async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
         ],
         mission_completion_rate=report["mission_completion_rate"],
         revisit=report["revisit"],
+        play_count=report["play_count"],
+        session_count=report["session_count"],
     )

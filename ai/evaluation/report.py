@@ -32,8 +32,7 @@ def _emotion_trend(checkins: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     지금은 {created_at, mood} 를 그대로 시간순 정렬해 넘깁니다.
     """
     rows = [
-        {"created_at": c.get("created_at"), "mood": c.get("mood")}
-        for c in checkins
+        {"created_at": c.get("created_at"), "mood": c.get("mood")} for c in checkins
     ]
     return sorted(rows, key=lambda r: str(r["created_at"]))
 
@@ -45,6 +44,8 @@ def build_report(
     llm_logs: Iterable[dict[str, Any]] = (),
     emotion_checkins: Iterable[dict[str, Any]] = (),
     missions: Iterable[dict[str, Any]] = (),
+    play_count: int = 0,
+    session_count: int = 0,
 ) -> dict[str, Any]:
     """반려동물별 사용 데이터를 리포트로 집계합니다.
 
@@ -73,4 +74,6 @@ def build_report(
         "mission_completion_rate": _completion_rate(missions),
         # 🚧 재방문(revisit): 세션/접속 로그 스키마 확정 후 추가 (백엔드 합의)
         "revisit": None,
+        "play_count": play_count,
+        "session_count": session_count,
     }
