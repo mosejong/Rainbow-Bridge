@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, KeyboardAvoidingView, Platform,
+  StyleSheet, ScrollView, KeyboardAvoidingView, Platform, StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -73,7 +73,7 @@ export default function BucketlistScreen() {
     >
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
           style={{ flex: 1 }}
         >
           <ScrollView
@@ -82,10 +82,6 @@ export default function BucketlistScreen() {
           >
             <Text style={styles.logo}>🌈 레인보우 브릿지</Text>
             <Text style={styles.subtitle}>소중한 가족을 기억해요</Text>
-
-            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-              <Text style={styles.backText}>← 이전</Text>
-            </TouchableOpacity>
 
             <View style={styles.headerRow}>
               <Text style={styles.title}>📋 {petName}와의 버킷리스트</Text>
@@ -123,33 +119,33 @@ export default function BucketlistScreen() {
               ))}
             </View>
 
-            {/* 새 항목 추가 */}
-            <View style={styles.addRow}>
-              <TextInput
-                style={styles.addInput}
-                value={newText}
-                onChangeText={setNewText}
-                placeholder="새 항목 추가..."
-                placeholderTextColor="#A89FBC"
-                onSubmitEditing={addItem}
-                returnKeyType="done"
-              />
-              <TouchableOpacity style={styles.addBtn} onPress={addItem} activeOpacity={0.8}>
-                <LinearGradient
-                  colors={['#DDEDEA', '#DAEAF6']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.addBtnGrad}
-                >
-                  <Text style={styles.addBtnText}>추가</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-
             {doneCount === items.length && items.length > 0 && (
               <Text style={styles.allDone}>🎉 모든 항목을 완료했어요!</Text>
             )}
           </ScrollView>
+
+          {/* 입력창: ScrollView 밖, 키보드 위에 고정 */}
+          <View style={styles.addRow}>
+            <TextInput
+              style={styles.addInput}
+              value={newText}
+              onChangeText={setNewText}
+              placeholder="새 항목 추가..."
+              placeholderTextColor="#A89FBC"
+              onSubmitEditing={addItem}
+              returnKeyType="done"
+            />
+            <TouchableOpacity style={styles.addBtn} onPress={addItem} activeOpacity={0.8}>
+              <LinearGradient
+                colors={['#DDEDEA', '#DAEAF6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.addBtnGrad}
+              >
+                <Text style={styles.addBtnText}>추가</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
@@ -226,7 +222,17 @@ const styles = StyleSheet.create({
   itemText: { flex: 1, fontSize: 14, color: '#4A4A4A', fontWeight: '500' },
   itemTextDone: { textDecorationLine: 'line-through', color: '#A89FBC' },
 
-  addRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 16 },
+  addRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingBottom: Platform.OS === 'ios' ? 8 : 12,
+    backgroundColor: 'rgba(249,223,230,0.92)',
+    borderTopWidth: 1,
+    borderTopColor: '#E5DCF0',
+  },
   addInput: {
     flex: 1,
     backgroundColor: '#FFFFFF',
