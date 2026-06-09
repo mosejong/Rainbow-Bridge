@@ -116,6 +116,8 @@ def merge_audio(
     # -stream_loop -1: 영상 무한 반복 → -shortest 로 음성이 끝나면 종료.
     # libx264 + yuv420p 재인코딩: loop 이음새가 깔끔하고 브라우저 <video> 호환.
     # -map: 영상은 입력0(0:v), 음성은 입력1(1:a)에서 가져옴.
+    # -movflags +faststart: moov atom을 파일 앞으로 이동 → 모바일/RN에서
+    #   전체 다운로드 전에 재생 시작(점진 스트리밍). 영상 헤비 대비 모바일 최적화.
     cmd = [
         ffmpeg, "-y",
         "-stream_loop", "-1", "-i", str(video_path),
@@ -123,6 +125,7 @@ def merge_audio(
         "-map", "0:v:0", "-map", "1:a:0",
         "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18",
         "-c:a", "aac", "-b:a", "192k",
+        "-movflags", "+faststart",
         "-shortest",
         str(output_path),
     ]
