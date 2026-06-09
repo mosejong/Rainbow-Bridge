@@ -294,7 +294,7 @@ export default function MessageScreen() {
             {/* 다시 생성 버튼 — 편지지 밖 */}
             {done && (
               <Button variant="ghost" onPress={regenerate} style={styles.regenBtn}>
-                🔄 다시 생성
+                🔄 다시 재생
               </Button>
             )}
           </Animated.View>
