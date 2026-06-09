@@ -153,3 +153,29 @@ https://rerun-devious-reaffirm.ngrok-free.dev/tts/*    -> 8003 Qwen3 TTS    (윤
 - **프록시 코드**: `C:\Rainbow_Bridge\gpu_proxy.py` (레포 밖 운영 글루, git 미포함). 루트→8001, `/tts/*`→8003(프리픽스 제거).
 - **자동시작**: `gpu_server_start.ps1`(레포 밖) 이 로그온 시 LivePortrait(8001)·프록시(8080)·TTS(8003)·ngrok(→8080) 일괄 기동.
 - **제약**: 로그온해야 뜸 / PC 절전·종료 시 중단 / TTS·webui(8000) VRAM(8GB) 동시 주의(qwen3 인스턴스 1개) / 영상(LivePortrait)+TTS 동시 추론 시 VRAM 협의.
+
+### 12-1. 실연동 검증 (2026-06-09)
+
+외부 고정 도메인 왕복 **실측 통과**:
+- `GET /tts/health` → 200 `{"voices":["boy","girl"]}`.
+- `POST /tts/synthesize` (한글 UTF-8) → **200, WAV 234KB, 4.9초, RIFF 헤더 정상**. 경로 = 외부 → ngrok → 8080 프록시 → 8003 TTS.
+
+백엔드 호출 계약도 코드 일치 확인 — [../backend/app/services/tts.py](../backend/app/services/tts.py) `_qwen3_remote`:
+
+| 항목 | 백엔드 | GPU 서버 | 일치 |
+|------|--------|----------|------|
+| 호출 URL | `{TTS_SERVER_URL}/synthesize` | `/tts/synthesize` | ✅ |
+| 요청 바디 | `{text, tone}` | `SynthesizeRequest{text, tone}` | ✅ |
+| tone 값 | `_map_tone_to_voice` → 항상 `boy`/`girl` | `AVAILABLE_VOICES=[boy,girl]` | ✅ (400 없음) |
+| 응답 헤더 | `X-Audio-Duration`/`X-Audio-Format` | 동일 송신 | ✅ |
+
+### 12-2. NCP 실서버 인계 체크리스트 (→ 김윤한, 정환주 권한 밖)
+
+GPU측·계약은 검증 완료. 아래만 하면 **NCP → GPU 왕복 실연동 완성**:
+
+1. NCP 실서버 `.env` 에 한 줄 추가 후 백엔드 재시작 (미설정 시 Google TTS 폴백 — 현재 상태):
+   ```
+   TTS_SERVER_URL=https://rerun-devious-reaffirm.ngrok-free.dev/tts
+   ```
+2. `POST /api/v1/tts` `{"pet_id":"<테스트>", "tone":"warm", "text":"무지개 다리 잘 건너가렴"}` 호출 → 응답 `{audio_url, duration, format}`(201), `/uploads/tts/*_girl_*.wav` 생성 확인.
+3. 호출 시각 공유 시 정환주가 GPU 로그에서 왕복 실시간 확인.
