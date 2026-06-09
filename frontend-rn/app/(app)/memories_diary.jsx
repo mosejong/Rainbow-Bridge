@@ -53,10 +53,11 @@ export default function MemoriesDiaryScreen() {
     }
   }
 
-  if (!profile) {
-    router.replace('/(app)/profile');
-    return null;
-  }
+  useEffect(() => {
+    if (!profile) router.replace('/(app)/profile');
+  }, []);
+
+  if (!profile) return null;
 
   return (
     <LinearGradient

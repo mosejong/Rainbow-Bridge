@@ -21,6 +21,7 @@ export default function ProfileScreen() {
     start_date: '',
     end_date: '',
     guardian_title: '',
+    caller_name: '',
   });
   const [error, setError] = useState('');
 
@@ -135,6 +136,19 @@ export default function ProfileScreen() {
                 value={form.guardian_title}
                 onChangeText={(v) => setForm((p) => ({ ...p, guardian_title: v }))}
                 placeholder="예) 엄마, 아빠"
+                placeholderTextColor="#A89FBC"
+              />
+            </View>
+
+            {/* 보호자 이름 (caller_name) */}
+            <View style={styles.field}>
+              <Text style={styles.label}>보호자 이름</Text>
+              <Text style={styles.hint}>아이가 알던 이름이에요. 추모 메시지 개인화에 사용돼요.</Text>
+              <TextInput
+                style={styles.input}
+                value={form.caller_name}
+                onChangeText={(v) => setForm((p) => ({ ...p, caller_name: v }))}
+                placeholder="예) 지은, 민수"
                 placeholderTextColor="#A89FBC"
               />
             </View>
