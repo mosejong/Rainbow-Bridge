@@ -26,7 +26,8 @@ export default function LoginScreen() {
     try {
       const { access_token } = await login({ email: email.trim(), password });
       await AsyncStorage.setItem('access_token', access_token);
-      router.replace('/(app)/profile');
+      const petId = await AsyncStorage.getItem('pet_id');
+      router.replace(petId ? '/(app)/home' : '/(app)/profile');
     } catch (err) {
       setError(err.response?.data?.detail || '이메일 또는 비밀번호를 확인해주세요.');
     } finally {

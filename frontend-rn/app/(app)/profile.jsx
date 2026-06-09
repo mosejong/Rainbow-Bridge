@@ -10,12 +10,14 @@ import Card from '../../components/Card';
 import { COLORS } from '../../constants/colors';
 
 const SPECIES = ['강아지', '고양이', '기타'];
+const GENDER = ['남아', '여아'];
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [form, setForm] = useState({
     name: '',
     species: '강아지',
+    gender: '남아',
     start_date: '',
     end_date: '',
     guardian_title: '',
@@ -76,6 +78,24 @@ export default function ProfileScreen() {
                   >
                     <Text style={[styles.radioText, form.species === s && styles.radioTextSelected]}>
                       {s}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* 성별 */}
+            <View style={styles.field}>
+              <Text style={styles.label}>성별</Text>
+              <View style={styles.radioRow}>
+                {GENDER.map((g) => (
+                  <TouchableOpacity
+                    key={g}
+                    onPress={() => setForm((p) => ({ ...p, gender: g }))}
+                    style={[styles.radioBtn, form.gender === g && styles.radioBtnSelected]}
+                  >
+                    <Text style={[styles.radioText, form.gender === g && styles.radioTextSelected]}>
+                      {g}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -157,6 +177,8 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5DCF0',
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
