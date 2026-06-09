@@ -23,6 +23,12 @@ const LINE_DURATION = 900;     // 한 줄 슬라이드업 duration (ms)
 const BGM_FADE_DURATION = 500; // BGM 페이드인 (ms)
 const TTS_START_OFFSET = LINE_DURATION / 2; // 첫 줄 절반 올라올 때 TTS 시작
 
+function speciesIcon(species) {
+  if (species === '강아지') return '🐾';
+  if (species === '고양이') return '🐱';
+  return '🌸';
+}
+
 function splitLines(content) {
   if (!content) return [];
   return content
@@ -37,6 +43,7 @@ export default function MessageScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [petName, setPetName] = useState('소중한 친구');
+  const [petSpecies, setPetSpecies] = useState('');
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [lines, setLines] = useState([]);
   const [visibleCount, setVisibleCount] = useState(0);
@@ -50,6 +57,7 @@ export default function MessageScreen() {
 
   useEffect(() => {
     AsyncStorage.getItem('pet_name').then((v) => v && setPetName(v));
+    AsyncStorage.getItem('pet_species').then((v) => v && setPetSpecies(v));
     loadMessage();
     return () => cleanup();
   }, []);
@@ -207,6 +215,7 @@ export default function MessageScreen() {
   }
 
   const isFirst = message?.first_person;
+  const icon = speciesIcon(petSpecies);
 
   return (
     <LinearGradient colors={['#12101A', '#1E1528', '#12101A']} style={styles.safe}>
@@ -246,6 +255,9 @@ export default function MessageScreen() {
 
               {/* 편지지 상단 — 이름 + 장식선 */}
               <View style={styles.paperHeader}>
+                {isFirst && (
+                  <Text style={styles.speciesIcon}>{icon}</Text>
+                )}
                 <Text style={[styles.petLabel, isFirst && styles.petLabelFirst]}>
                   · {petName} ·
                 </Text>
@@ -335,7 +347,9 @@ const styles = StyleSheet.create({
     maxHeight: '82%',
   },
   paperFirst: {
-    backgroundColor: '#FFF4EC', // 1인칭 — 살짝 따뜻한 황금빛 크림
+    backgroundColor: '#FDF3DC', // 1인칭 — 황금빛 크림
+    borderWidth: 1,
+    borderColor: '#E8C97A',
   },
 
   // 편지지 상단
@@ -350,8 +364,13 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     fontWeight: '500',
   },
+  speciesIcon: {
+    fontSize: 28,
+    marginBottom: 4,
+  },
   petLabelFirst: {
-    color: '#B06840', // 1인칭 — 따뜻한 갈색
+    color: '#9A6B20', // 1인칭 — 황금빛 갈색
+    letterSpacing: 4,
   },
   headerLine: {
     width: 48,
@@ -359,7 +378,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#D4C0A0',
   },
   headerLineFirst: {
-    backgroundColor: '#D4A080',
+    backgroundColor: '#C9A84C', // 황금빛 선
+    width: 64,
   },
 
   // 본문 스크롤
@@ -375,9 +395,9 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   lineFirst: {
-    color: '#4A2010',
+    color: '#4A2E0A',
     fontStyle: 'italic',
-    fontWeight: '300',
+    fontWeight: '400',
   },
 
   // 편지지 하단

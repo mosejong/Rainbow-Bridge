@@ -47,6 +47,7 @@ export default function MemoriesScreen() {
       const pet = await createPet(payload);
       await AsyncStorage.setItem('pet_id', pet.id || pet._id);
       await AsyncStorage.setItem('pet_name', pet.name);
+      await AsyncStorage.setItem('pet_species', profile.species || '');
       router.replace('/(app)/emotion');
     } catch {
       setError('저장 중 오류가 발생했어요. 다시 시도해주세요.');
