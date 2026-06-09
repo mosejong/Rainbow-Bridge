@@ -133,6 +133,26 @@ def test_guardian_nickname_greets_in_third_person():
     assert "하늘님," in captured["prompt"]
 
 
+def test_guardian_nickname_used_throughout_third_person():
+    """별명이 있으면 본문 묘사도 보호자 호칭(엄마) 대신 별명('○○님')으로 통일한다."""
+    captured = {}
+
+    def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        captured["prompt"] = prompt
+        return "하늘님, 봄이는 알고 있었습니다."
+
+    pet = {"name": "봄이", "species": "강아지", "period": "12년", "caller_name": "엄마"}
+    generate_message(
+        pet, {"emotion_score": 5}, generate=fake_generate, guardian_nickname="하늘"
+    )
+    prompt = captured["prompt"]
+    # 본문 묘사 지시("…이(가) 해준 일을")가 별명으로 채워지고, 엄마(caller)로 묘사하지 않는다.
+    assert "하늘님이(가) 해준 일을" in prompt
+    assert "엄마이(가) 해준 일을" not in prompt
+    # 끝까지 같은 별명으로 부르라는 지시가 들어간다.
+    assert "다른 호칭으로 바꾸지 마세요" in prompt
+
+
 def test_guardian_nickname_ignored_in_first_person():
     """1인칭 모드에선 별명 호명을 넣지 않는다(caller_name 으로 부름)."""
     captured = {}

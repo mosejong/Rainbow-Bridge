@@ -51,9 +51,11 @@ SYSTEM_PROMPT: Final[str] = """\
 담담한 3인칭 내레이션이 오히려 보호자의 마음을 더 깊게 어루만집니다.
 
 [톤과 구조 — 반드시]
-- 3인칭 내레이터 시점으로 씁니다. 보호자 별명(닉네임)이 주어지면 글 첫머리에서 그 별명에
-  "님"을 붙여 한 번만 부른 뒤("○○님,"), 반려동물 이름을 주어로 한 담담한 내레이션으로
-  이어가세요. 별명이 없으면 부르지 말고 "△△는 알고 있었습니다"처럼 바로 내레이션으로 시작하세요.
+- 3인칭 내레이터 시점으로 씁니다. 보호자 별명(닉네임)이 주어지면, 글 첫머리에서 그 별명에
+  "님"을 붙여 부른 뒤("○○님,") 담담한 내레이션을 이어가되, 글 중간·끝에서 보호자를 다시
+  부를 때도 **반드시 같은 별명("○○님")으로** 부르세요. 도중에 "엄마"·"아빠" 같은 다른
+  보호자 호칭으로 바꿔 부르지 마세요. 별명이 없으면 부르지 말고 "△△는 알고 있었습니다"처럼
+  바로 내레이션으로 시작하세요.
 - 보호자가 해준 일들(밥 챙기기, 밤새 곁에 있기 등)을 반려동물의 시선에서
   "○○는 알고 있었습니다"처럼 묘사하세요.
 - 보호자가 적은 버킷리스트나 일기 속 구체적인 장면을 한 가지 반드시 그대로 인용하세요.
@@ -116,7 +118,7 @@ _USER_TEMPLATE: Final[str] = """\
 [요청]
 위 기억으로, {name}의 시선에서 본 추모 내레이션을 3인칭으로 {tone_guide}
 써 주세요.
-{greeting_block}- "{name}는 알고 있었습니다" 같은 담담한 어조로, {caller}가 해준 일을 {name}의 시선에서 묘사하세요.
+{greeting_block}- "{name}는 알고 있었습니다" 같은 담담한 어조로, {guardian_ref}이(가) 해준 일을 {name}의 시선에서 묘사하세요.
 - 버킷리스트나 일기 속 구체적인 장면을 한두 가지 이상 반드시 인용하세요.
 - 중간에 "말할 순 없었지만, 기억으로 남겼습니다" 같은 한 줄을 넣으세요.
 - 마지막 두 줄은 짧게 끊어 여운을 남기세요.
@@ -229,7 +231,8 @@ def build_user_prompt(
             장면을 인용하도록 별도 블록으로 넣습니다. 없으면 생략.
         caller_name: 보호자 호칭(엄마·아빠·언니 등). 비면 "보호자"로 대체.
         guardian_nickname: 보호자 회원가입 별명(닉네임, user 필드). **3인칭 모드에서만**
-            글 첫머리 "○○님," 호명에 사용. 1인칭 모드에선 무시. 비면 호명 생략.
+            글 첫머리뿐 아니라 본문 전체에서 보호자를 "○○님"으로 일관되게 호명하는 데 사용.
+            1인칭 모드에선 무시. 비면 호명 생략하고 보호자 호칭(caller_name)으로 대체.
         tone: 메시지 톤. TONE_GUIDE 의 키(warm·calm·hopeful).
         rag_hits: RAG 검색 결과(retrieve() 반환값). 없으면 few-shot 생략.
         recovery_trend: 최근 회복 추이(백엔드 trend: "회복 중"·"유지 중"·"주의 필요").
@@ -242,18 +245,25 @@ def build_user_prompt(
     """
     tone_guide = TONE_GUIDE.get(tone, TONE_GUIDE[DEFAULT_TONE])
     template = _USER_TEMPLATE_FIRST_PERSON if first_person else _USER_TEMPLATE
+    caller = caller_name.strip() or "보호자"
     # 별명 호명은 3인칭에서만. 1인칭은 caller_name(엄마·아빠)으로 부르므로 생략.
     nickname = guardian_nickname.strip()
+    use_nickname = bool(nickname and not first_person)
+    # 본문에서 보호자를 지칭할 때 쓸 호칭. 별명이 있으면 글 전체를 별명("○○님")으로
+    # 통일하고, 없으면 기존처럼 보호자 호칭(엄마·아빠 등)을 쓴다.
+    guardian_ref = f"{nickname}님" if use_nickname else caller
     greeting_block = (
-        f'- 글 첫머리에 "{nickname}님,"으로 보호자를 한 번만 부른 뒤, 줄을 이어 담담한 내레이션을 시작하세요.\n'
-        if (nickname and not first_person)
+        f'- 글 첫머리에 "{nickname}님,"으로 보호자를 부르고, 글 중간·끝에서 보호자를 다시 부를 때도 '
+        f'반드시 같은 별명 "{nickname}님"으로만 부르세요. "엄마"·"아빠" 같은 다른 호칭으로 바꾸지 마세요.\n'
+        if use_nickname
         else ""
     )
     return template.format(
         name=name,
         species=species,
         period=period,
-        caller=caller_name.strip() or "보호자",
+        caller=caller,
+        guardian_ref=guardian_ref,
         score=score,
         note=note.strip() or "(없음)",
         bucketlist_block=_format_bucket_list(bucket_list),
