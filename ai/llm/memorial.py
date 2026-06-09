@@ -51,7 +51,8 @@ class GenerateFn(Protocol):
 
 
 # 생성 파라미터 기본값 (config 확정 전 잠정값).
-_MAX_TOKENS: int = 400
+# 추모 글 목표 길이 600자 안팎(2026-06-09 2배 상향)에 맞춰 토큰 한도도 상향.
+_MAX_TOKENS: int = 800
 _TEMPERATURE: float = 0.7
 
 class GuardrailViolation(Exception):
@@ -131,6 +132,7 @@ def generate_message(
     max_retries: int = 1,
     first_person: bool = False,
     recovery_trend: Optional[str] = None,
+    guardian_nickname: str = "",
 ) -> dict:
     """추모 메시지를 생성합니다.
 
@@ -150,6 +152,9 @@ def generate_message(
             ·"주의 필요"·"데이터 없음"). 톤을 덮어쓰지 않고 같은 톤 안에서 결을 맞추도록
             프롬프트에 신호로만 넣습니다. 없으면 생략(graceful).
             🚨 위기 선체크(아래)를 통과한 뒤에만 쓰여 위기 안내(1393) 우선순위를 깨지 않습니다.
+        guardian_nickname: 보호자 회원가입 별명(user.nickname, 백엔드가 전달). **3인칭에서만**
+            글 첫머리 "○○님," 호명에 사용. 1인칭 모드에선 무시. 없으면 호명 생략(graceful).
+            pet 딕셔너리에 ``guardian_nickname`` 으로 담아 넘겨도 됩니다.
 
     Returns:
         ``{content, tone, source}``. 위기 시에는 ``crisis_message`` 와 ``risk_level`` 포함.
@@ -207,7 +212,8 @@ def generate_message(
         name=pet.get("name", ""),
         species=pet.get("species", ""),
         period=pet.get("period", ""),
-        caller_name=str(pet.get("caller_name", "") or pet.get("guardian_name", "")),
+        caller_name=str(pet.get("caller_name") or ""),
+        guardian_nickname=str(guardian_nickname or pet.get("guardian_nickname", "")),
         score=int(emotion.get("emotion_score", 5)),
         note=note,
         memories=pet.get("memories"),

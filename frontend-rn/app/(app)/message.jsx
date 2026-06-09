@@ -13,11 +13,8 @@ import { generateMessage, getLatestMessage } from '../../api/messages';
 import { generateTts } from '../../api/tts';
 import { COLORS } from '../../constants/colors';
 
-// BGM 파일 — 민수님 작업 완료 후 주석 해제
-// const BGM_3RD = require('../../assets/audio/bgm_3rd.mp3');
-// const BGM_1ST = require('../../assets/audio/bgm_1st.mp3');
-const BGM_3RD = null;
-const BGM_1ST = null;
+const BGM_3RD = require('../../assets/audio/bgm_3rd.mp3');
+const BGM_1ST = require('../../assets/audio/bgm_1st.mp3');
 
 const LINE_DELAY = 1500;
 const LINE_DURATION = 900;
@@ -38,6 +35,19 @@ function splitLines(content) {
     .filter(Boolean);
 }
 
+function ResourceCard({ resource }) {
+  return (
+    <View style={styles.resourceCard}>
+      <View style={styles.rcHeader}>
+        <Text style={styles.rcName}>{resource.name}</Text>
+        {resource.category && <Text style={styles.rcCat}>{resource.category}</Text>}
+      </View>
+      {resource.contact && <Text style={styles.rcContact}>{resource.contact}</Text>}
+      {resource.description && <Text style={styles.rcDesc}>{resource.description}</Text>}
+    </View>
+  );
+}
+
 export default function MessageScreen() {
   const router = useRouter();
   const [phase, setPhase] = useState('loading'); // loading | envelope | letter
@@ -50,6 +60,7 @@ export default function MessageScreen() {
   const [lines, setLines] = useState([]);
   const [visibleCount, setVisibleCount] = useState(0);
   const [done, setDone] = useState(false);
+  const [welfareExpanded, setWelfareExpanded] = useState(false);
 
   const anims = useRef([]);
   // 봉투 애니메이션
@@ -117,8 +128,6 @@ export default function MessageScreen() {
 
   // 봉투 열기 버튼
   function openEnvelope() {
-    // 1. 봉투 flap 위로 (translateY -100, opacity 0)
-    // 2. 봉투 body 사라짐 + 편지지 올라옴 동시에
     Animated.sequence([
       Animated.parallel([
         Animated.timing(flapAnim, {
@@ -147,6 +156,7 @@ export default function MessageScreen() {
     setDone(false);
     setVisibleCount(0);
     setLines([]);
+    setWelfareExpanded(false);
     setMessage(null);
     setError('');
     flapAnim.setValue(0);
@@ -166,7 +176,6 @@ export default function MessageScreen() {
   async function startSequence(parsed, isFirstPerson, msgData) {
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
 
-    // BGM 페이드인
     const bgmFile = isFirstPerson ? BGM_1ST : BGM_3RD;
     if (bgmFile) {
       try {
@@ -182,7 +191,6 @@ export default function MessageScreen() {
       } catch {}
     }
 
-    // TTS 미리 로드
     let ttsSound = null;
     try {
       const petId = await AsyncStorage.getItem('pet_id');
@@ -194,7 +202,6 @@ export default function MessageScreen() {
       }
     } catch {}
 
-    // 줄별 슬라이드업
     parsed.forEach((_, i) => {
       const t = timersRef.current;
       const delay = BGM_FADE_DURATION + i * LINE_DELAY;
@@ -218,6 +225,8 @@ export default function MessageScreen() {
 
   const isFirst = message?.first_person;
   const icon = speciesIcon(petSpecies);
+  const featuredResources = message?.welfare_resources?.filter(r => r.featured) ?? [];
+  const extraResources = message?.welfare_resources?.filter(r => !r.featured) ?? [];
 
   // 봉투 flap: translateY 0→-120, opacity 1→0
   const flapTranslate = flapAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -120] });
@@ -252,18 +261,17 @@ export default function MessageScreen() {
         )}
 
         {/* ── 봉투 단계 ── */}
-        {(phase === 'envelope') && (
+        {phase === 'envelope' && (
           <View style={styles.center}>
-            {/* 봉투 컨테이너 */}
-            <Animated.View style={[styles.envelope, isFirst && styles.envelopeFirst, { opacity: envelopeAnim, transform: [{ scaleY: envelopeAnim }] }]}>
-
-              {/* Flap (위로 열림) */}
+            <Animated.View style={[
+              styles.envelope, isFirst && styles.envelopeFirst,
+              { opacity: envelopeAnim, transform: [{ scaleY: envelopeAnim }] },
+            ]}>
+              {/* Flap */}
               <Animated.View style={[
-                styles.envelopeFlap,
-                isFirst && styles.envelopeFlapFirst,
+                styles.envelopeFlap, isFirst && styles.envelopeFlapFirst,
                 { transform: [{ translateY: flapTranslate }], opacity: flapOpacity },
               ]}>
-                {/* 봉투 접힘선 — 두 대각선이 V를 이룸 */}
                 <View style={[styles.foldLineLeft, isFirst && styles.foldLineFirst]} />
                 <View style={[styles.foldLineRight, isFirst && styles.foldLineFirst]} />
               </Animated.View>
@@ -280,9 +288,12 @@ export default function MessageScreen() {
               </View>
             </Animated.View>
 
-            {/* 듣기 버튼 — 봉투 밖 */}
+            {/* 열기 버튼 */}
             <Animated.View style={{ opacity: envelopeAnim, marginTop: 28 }}>
-              <TouchableOpacity style={[styles.openBtn, isFirst && styles.openBtnFirst]} onPress={openEnvelope}>
+              <TouchableOpacity
+                style={[styles.openBtn, isFirst && styles.openBtnFirst]}
+                onPress={openEnvelope}
+              >
                 <Text style={styles.openBtnText}>✉️  열어볼까요?</Text>
               </TouchableOpacity>
             </Animated.View>
@@ -296,57 +307,94 @@ export default function MessageScreen() {
             { opacity: paperOpacity, transform: [{ translateY: paperTranslate }] },
             phase === 'envelope' && styles.paperHidden,
           ]}>
-            <View style={[styles.paper, isFirst && styles.paperFirst]}>
+            <ScrollView
+              style={styles.paperScroll}
+              contentContainerStyle={styles.paperScrollContent}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={phase === 'letter'}
+            >
+              <View style={[styles.paper, isFirst && styles.paperFirst]}>
+                {/* 편지지 상단 */}
+                <View style={styles.paperHeader}>
+                  {isFirst && <Text style={styles.speciesIcon}>{icon}</Text>}
+                  <Text style={[styles.petLabel, isFirst && styles.petLabelFirst]}>· {petName} ·</Text>
+                  <View style={[styles.headerLine, isFirst && styles.headerLineFirst]} />
+                </View>
 
-              {/* 편지지 상단 */}
-              <View style={styles.paperHeader}>
-                {isFirst && <Text style={styles.speciesIcon}>{icon}</Text>}
-                <Text style={[styles.petLabel, isFirst && styles.petLabelFirst]}>· {petName} ·</Text>
-                <View style={[styles.headerLine, isFirst && styles.headerLineFirst]} />
+                {/* LivePortrait 영상 */}
+                {petVideoUrl && (
+                  <View style={[styles.videoWrap, isFirst && styles.videoWrapFirst]}>
+                    <Video source={{ uri: petVideoUrl }} style={styles.video}
+                      resizeMode={ResizeMode.COVER} isLooping shouldPlay isMuted />
+                  </View>
+                )}
+
+                {/* 편지 본문 */}
+                <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.bodyContent}
+                  scrollEnabled={done} showsVerticalScrollIndicator={false}>
+                  {lines.map((line, i) =>
+                    i < visibleCount ? (
+                      <Animated.Text key={i} style={[
+                        styles.line, isFirst && styles.lineFirst,
+                        { opacity: anims.current[i]?.opacity ?? 1, transform: [{ translateY: anims.current[i]?.translateY ?? 0 }] },
+                      ]}>
+                        {line}
+                      </Animated.Text>
+                    ) : null
+                  )}
+                </ScrollView>
+
+                {/* 편지지 하단 — 윤리 고지 문구 */}
+                {done && (
+                  <View style={styles.paperFooter}>
+                    <View style={[styles.footerLine, isFirst && styles.headerLineFirst]} />
+                    <Text style={styles.disclaimer}>
+                      {isFirst
+                        ? 'AI가 보호자가 전해준 추억을 바탕으로 재해석한 꿈 속 작별 인사입니다.'
+                        : 'AI가 생성한 추모 글입니다. 반려동물이 직접 한 말이 아닙니다.'}
+                    </Text>
+                  </View>
+                )}
               </View>
 
-              {/* LivePortrait 영상 */}
-              {petVideoUrl && (
-                <View style={[styles.videoWrap, isFirst && styles.videoWrapFirst]}>
-                  <Video source={{ uri: petVideoUrl }} style={styles.video}
-                    resizeMode={ResizeMode.COVER} isLooping shouldPlay isMuted />
-                </View>
-              )}
-
-              {/* 편지 본문 */}
-              <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.bodyContent}
-                scrollEnabled={done} showsVerticalScrollIndicator={false}>
-                {lines.map((line, i) =>
-                  i < visibleCount ? (
-                    <Animated.Text key={i} style={[
-                      styles.line,
-                      isFirst && styles.lineFirst,
-                      { opacity: anims.current[i]?.opacity ?? 1, transform: [{ translateY: anims.current[i]?.translateY ?? 0 }] },
-                    ]}>
-                      {line}
-                    </Animated.Text>
-                  ) : null
-                )}
-              </ScrollView>
-
-              {/* 편지지 하단 */}
               {done && (
-                <View style={styles.paperFooter}>
-                  <View style={[styles.footerLine, isFirst && styles.headerLineFirst]} />
-                  <Text style={styles.disclaimer}>
-                    {isFirst
-                      ? 'AI가 보호자가 전해준 추억을 바탕으로 재해석한 꿈 속 작별 인사입니다.'
-                      : 'AI가 생성한 추모 글입니다. 반려동물이 직접 한 말이 아닙니다.'}
-                  </Text>
+                <Button variant="ghost" onPress={regenerate} style={styles.regenBtn}>
+                  🔄 다시 재생
+                </Button>
+              )}
+
+              {/* 상담 자원 섹션 — risk_level 1/2 이상이고 welfare_resources 있을 때 */}
+              {done && (featuredResources.length > 0 || extraResources.length > 0) && (
+                <View style={styles.welfareSection}>
+                  {message.support_message && (
+                    <View style={styles.supportBanner}>
+                      <Text style={styles.supportText}>{message.support_message}</Text>
+                    </View>
+                  )}
+                  {message.crisis_message && (
+                    <View style={styles.crisisBanner}>
+                      <Text style={styles.crisisText}>{message.crisis_message}</Text>
+                    </View>
+                  )}
+                  <Text style={styles.welfareSectionTitle}>상담 자원 안내</Text>
+                  {featuredResources.map((r, i) => <ResourceCard key={`f-${i}`} resource={r} />)}
+                  {extraResources.length > 0 && (
+                    <>
+                      <TouchableOpacity
+                        style={styles.expandToggle}
+                        onPress={() => setWelfareExpanded(e => !e)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.expandToggleText}>
+                          {welfareExpanded ? '접기 ▲' : `더 보기 (${extraResources.length}곳) ▼`}
+                        </Text>
+                      </TouchableOpacity>
+                      {welfareExpanded && extraResources.map((r, i) => <ResourceCard key={`nf-${i}`} resource={r} />)}
+                    </>
+                  )}
                 </View>
               )}
-            </View>
-
-            {done && (
-              <Button variant="ghost" onPress={regenerate} style={styles.regenBtn}>
-                🔄 다시 재생
-              </Button>
-            )}
+            </ScrollView>
           </Animated.View>
         )}
       </SafeAreaView>
@@ -374,12 +422,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 14,
   },
-  envelopeFirst: {
-    backgroundColor: '#FDF3DC',
-    borderWidth: 1,
-    borderColor: '#E8C97A',
-  },
-
+  envelopeFirst: { backgroundColor: '#FDF3DC', borderWidth: 1, borderColor: '#E8C97A' },
   envelopeFlap: {
     height: FLAP_H,
     backgroundColor: '#F5EDDE',
@@ -388,63 +431,44 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   envelopeFlapFirst: { backgroundColor: '#F5E6B8' },
-
-  // 봉투 접힘선 (대각선 V)
   foldLineLeft: {
-    position: 'absolute',
-    top: 0, left: 0,
-    width: 120, height: 1,
+    position: 'absolute', top: 0, left: 0, width: 120, height: 1,
     backgroundColor: '#D4C0A0',
     transform: [{ rotate: '35deg' }, { translateX: -10 }, { translateY: 28 }],
   },
   foldLineRight: {
-    position: 'absolute',
-    top: 0, right: 0,
-    width: 120, height: 1,
+    position: 'absolute', top: 0, right: 0, width: 120, height: 1,
     backgroundColor: '#D4C0A0',
     transform: [{ rotate: '-35deg' }, { translateX: 10 }, { translateY: 28 }],
   },
   foldLineFirst: { backgroundColor: '#C9A84C' },
-
   envelopeBody: {
-    paddingVertical: 28,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    gap: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#E8DCC8',
+    paddingVertical: 28, paddingHorizontal: 24,
+    alignItems: 'center', gap: 8,
+    borderTopWidth: 1, borderTopColor: '#E8DCC8',
   },
   envelopeSeal: { fontSize: 40, marginBottom: 4 },
   envelopeName: { fontSize: 14, color: '#A08060', letterSpacing: 3, fontWeight: '500' },
   envelopeNameFirst: { color: '#9A6B20', letterSpacing: 4 },
   envelopeSubtitle: { fontSize: 13, color: '#B8A080' },
   envelopeSubtitleFirst: { color: '#C09040' },
-
-  // 듣기 버튼
   openBtn: {
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 28,
+    paddingVertical: 14, paddingHorizontal: 32, borderRadius: 28,
     backgroundColor: 'rgba(255,248,238,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,248,238,0.4)',
+    borderWidth: 1, borderColor: 'rgba(255,248,238,0.4)',
   },
-  openBtnFirst: {
-    borderColor: 'rgba(232,201,122,0.5)',
-    backgroundColor: 'rgba(253,243,220,0.15)',
-  },
+  openBtnFirst: { borderColor: 'rgba(232,201,122,0.5)', backgroundColor: 'rgba(253,243,220,0.15)' },
   openBtnText: { fontSize: 16, color: '#EDE8F5', letterSpacing: 1 },
 
   // ── 편지지 ──
   paperHidden: { position: 'absolute', pointerEvents: 'none' },
   paperWrap: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 32,
-    gap: 20,
   },
+  paperScroll: { flex: 1 },
+  paperScrollContent: { flexGrow: 1, justifyContent: 'center', gap: 20, paddingBottom: 24 },
   paper: {
     width: '100%',
     backgroundColor: '#FFF8EE',
@@ -459,18 +483,13 @@ const styles = StyleSheet.create({
     elevation: 12,
     maxHeight: '82%',
   },
-  paperFirst: {
-    backgroundColor: '#FDF3DC',
-    borderWidth: 1,
-    borderColor: '#E8C97A',
-  },
+  paperFirst: { backgroundColor: '#FDF3DC', borderWidth: 1, borderColor: '#E8C97A' },
   paperHeader: { alignItems: 'center', marginBottom: 20, gap: 10 },
   speciesIcon: { fontSize: 28, marginBottom: 4 },
   petLabel: { fontSize: 13, color: '#A08060', letterSpacing: 3, fontWeight: '500' },
   petLabelFirst: { color: '#9A6B20', letterSpacing: 4 },
   headerLine: { width: 48, height: 1, backgroundColor: '#D4C0A0' },
   headerLineFirst: { backgroundColor: '#C9A84C', width: 64 },
-
   videoWrap: {
     alignSelf: 'center', width: 120, height: 120, borderRadius: 60,
     overflow: 'hidden', marginBottom: 20, borderWidth: 3, borderColor: '#D4C0A0',
@@ -479,16 +498,53 @@ const styles = StyleSheet.create({
   },
   videoWrapFirst: { borderColor: '#C9A84C', width: 140, height: 140, borderRadius: 70 },
   video: { width: '100%', height: '100%' },
-
   bodyScroll: { flexGrow: 0 },
   bodyContent: { gap: 16, paddingBottom: 4 },
   line: { fontSize: 16, color: '#3A2A1A', lineHeight: 27, textAlign: 'center', fontWeight: '400' },
   lineFirst: { color: '#4A2E0A', fontStyle: 'italic', fontWeight: '400' },
-
   paperFooter: { marginTop: 20, alignItems: 'center', gap: 10 },
   footerLine: { width: 48, height: 1, backgroundColor: '#D4C0A0' },
   disclaimer: { fontSize: 11, color: '#A09070', textAlign: 'center', lineHeight: 17 },
   regenBtn: { alignSelf: 'center' },
+
+  // ── 상담 자원 ──
+  welfareSection: { gap: 10 },
+  welfareSectionTitle: {
+    fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.4)',
+    textAlign: 'center', letterSpacing: 1.5, marginBottom: 2,
+  },
+  supportBanner: {
+    backgroundColor: 'rgba(180,150,220,0.15)',
+    borderWidth: 1, borderColor: 'rgba(196,168,216,0.35)',
+    borderRadius: 12, padding: 14,
+  },
+  supportText: { fontSize: 13, color: '#C4A8D8', lineHeight: 20, textAlign: 'center' },
+  crisisBanner: {
+    backgroundColor: 'rgba(240,140,60,0.15)',
+    borderWidth: 1, borderColor: 'rgba(232,140,60,0.4)',
+    borderRadius: 12, padding: 14,
+  },
+  crisisText: { fontSize: 13, color: '#E8A060', lineHeight: 20, textAlign: 'center', fontWeight: '600' },
+  resourceCard: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)',
+    borderRadius: 12, padding: 14, gap: 5,
+  },
+  rcHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  rcName: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.85)', flex: 1 },
+  rcCat: {
+    fontSize: 11, color: 'rgba(255,255,255,0.38)',
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+  },
+  rcContact: { fontSize: 14, color: '#C4A8D8', fontWeight: '600' },
+  rcDesc: { fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 18 },
+  expandToggle: {
+    alignSelf: 'center', paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)',
+  },
+  expandToggleText: { fontSize: 13, color: 'rgba(255,255,255,0.45)' },
 
   error: { color: COLORS.danger, fontSize: 14, textAlign: 'center', marginBottom: 16 },
   unavailable: { fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 20, lineHeight: 24 },

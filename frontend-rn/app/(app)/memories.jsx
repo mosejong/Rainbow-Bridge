@@ -6,49 +6,56 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import Card from '../../components/Card';
-import Button from '../../components/Button';
 import { createPet } from '../../api/pets';
 import { COLORS } from '../../constants/colors';
 
-const EMPTY = { keyword: '', detail: '' };
+const INITIAL_ENTRIES = [
+  { keyword: '', detail: '' },
+  { keyword: '', detail: '' },
+  { keyword: '', detail: '' },
+];
 
 export default function MemoriesScreen() {
   const router = useRouter();
   const { profile: profileStr } = useLocalSearchParams();
   const profile = profileStr ? JSON.parse(profileStr) : null;
 
-  const [slots, setSlots] = useState([{ ...EMPTY }, { ...EMPTY }, { ...EMPTY }]);
+  const [entries, setEntries] = useState(INITIAL_ENTRIES);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  function updateSlot(idx, field, value) {
-    setSlots((prev) => prev.map((s, i) => (i === idx ? { ...s, [field]: value } : s)));
+  function updateEntry(index, field, value) {
+    setEntries(prev => prev.map((e, i) => i === index ? { ...e, [field]: value } : e));
   }
 
   async function handleSubmit() {
-    const memories = slots
-      .filter((s) => s.keyword.trim())
-      .map((s) => ({ keyword: s.keyword.trim(), detail: s.detail.trim() }));
-
-    if (memories.length === 0) {
-      setError('추억 키워드를 최소 1개 입력해주세요.');
+    const filled = entries.filter(e => e.keyword.trim() || e.detail.trim());
+    if (filled.length === 0) {
+      setError('추억 키워드를 하나 이상 입력해주세요.');
       return;
     }
     setError('');
     setLoading(true);
     try {
+      const memories = filled.map(e => ({
+        keyword: e.keyword.trim(),
+        detail: e.detail.trim(),
+      }));
       const payload = {
         name: profile.name.trim(),
         species: profile.species,
         period: `${profile.start_date} ~ ${profile.end_date}`,
+        caller_name: profile.guardian_title?.trim() || '보호자',
+        bucket_list: [],
         memories,
       };
       const pet = await createPet(payload);
       await AsyncStorage.setItem('pet_id', pet.id || pet._id);
       await AsyncStorage.setItem('pet_name', pet.name);
       await AsyncStorage.setItem('pet_species', profile.species || '');
-      router.replace('/(app)/emotion');
+      router.replace('/(app)/home');
     } catch {
       setError('저장 중 오류가 발생했어요. 다시 시도해주세요.');
     } finally {
@@ -56,98 +63,139 @@ export default function MemoriesScreen() {
     }
   }
 
-  if (!profile) {
-    router.replace('/(app)/profile');
-    return null;
-  }
+  useEffect(() => {
+    if (!profile) router.replace('/(app)/profile');
+  }, []);
+
+  if (!profile) return null;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={styles.logo}>🌈 레인보우 브릿지</Text>
-        <Text style={styles.subtitle}>소중한 가족을 기억해요</Text>
+    <LinearGradient
+      colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']}
+      locations={[0, 0.35, 0.6, 1]}
+      style={styles.gradient}
+    >
+      <SafeAreaView style={styles.safe}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.logo}>🌈 레인보우 브릿지</Text>
+          <Text style={styles.subtitle}>소중한 가족을 기억해요</Text>
 
-        <Card style={styles.card}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backBtn}
-          >
-            <Text style={styles.backText}>← 이전</Text>
-          </TouchableOpacity>
+          <Card style={styles.card}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+              <Text style={styles.backText}>← 이전</Text>
+            </TouchableOpacity>
 
-          <Text style={styles.cardTitle}>추억 키워드 입력</Text>
-          <Text style={styles.cardDesc}>
-            {profile.name}와(과) 나눈 소중한 기억을 알려주세요.{' '}
-            <Text style={styles.cardDescMuted}>(최대 3개)</Text>
-          </Text>
+            <Text style={styles.cardTitle}>추억 키워드 입력</Text>
+            <Text style={styles.cardDesc}>
+              {profile.name}와(과) 나눈 소중한 기억을 알려주세요. (최대 3개)
+            </Text>
 
-          {slots.map((slot, idx) => (
-            <View key={idx} style={styles.slotGroup}>
-              <TextInput
-                style={styles.input}
-                value={slot.keyword}
-                onChangeText={(v) => updateSlot(idx, 'keyword', v)}
-                placeholder={`추억 키워드 ${idx + 1} (예: 공원 산책)`}
-                placeholderTextColor={COLORS.textLight}
-              />
-              <TextInput
-                style={[styles.input, styles.detailInput, !slot.keyword.trim() && styles.inputDisabled]}
-                value={slot.detail}
-                onChangeText={(v) => updateSlot(idx, 'detail', v)}
-                placeholder="상세 내용 (예: 저녁마다 한강공원 같이 걸었어요)"
-                placeholderTextColor={COLORS.textLight}
-                editable={!!slot.keyword.trim()}
-              />
-            </View>
-          ))}
+            {entries.map((entry, i) => (
+              <View key={i} style={styles.entryGroup}>
+                <TextInput
+                  style={styles.input}
+                  value={entry.keyword}
+                  onChangeText={v => updateEntry(i, 'keyword', v)}
+                  placeholder={`추억 키워드 ${i + 1} (예: 공원 산책)`}
+                  placeholderTextColor="#A89FBC"
+                />
+                <TextInput
+                  style={[styles.input, styles.detailInput]}
+                  value={entry.detail}
+                  onChangeText={v => updateEntry(i, 'detail', v)}
+                  placeholder="상세 내용 (예: 저녁마다 한강공원 같이 걸었어요)"
+                  placeholderTextColor="#A89FBC"
+                  multiline
+                  numberOfLines={2}
+                  textAlignVertical="top"
+                />
+              </View>
+            ))}
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+            {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          {loading ? (
-            <View style={styles.loadingRow}>
-              <ActivityIndicator color={COLORS.cta} />
-              <Text style={styles.loadingText}>저장 중이에요...</Text>
-            </View>
-          ) : (
-            <Button onPress={handleSubmit} variant="primary" style={styles.btn}>
-              다음 — 감정 체크인
-            </Button>
-          )}
-        </Card>
-      </ScrollView>
-    </SafeAreaView>
+            {loading ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color={COLORS.cta} />
+                <Text style={styles.loadingText}>저장 중이에요...</Text>
+              </View>
+            ) : (
+              <TouchableOpacity activeOpacity={0.8} style={styles.btnShadow} onPress={handleSubmit}>
+                <LinearGradient
+                  colors={['#DDEDEA', '#DAEAF6']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.btn}
+                >
+                  <Text style={styles.btnText}>다음 — 감정 체크인</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+          </Card>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+  gradient: { flex: 1 },
+  safe: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingVertical: 32 },
-  logo: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', marginBottom: 4 },
-  subtitle: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 24 },
+  logo: { fontSize: 22, fontWeight: '700', color: '#5B4E75', textAlign: 'center', marginBottom: 4 },
+  subtitle: { fontSize: 13, color: '#8A7D9E', textAlign: 'center', marginBottom: 24 },
   card: { marginTop: 4 },
   backBtn: { marginBottom: 16 },
-  backText: { fontSize: 14, color: COLORS.textSecondary },
-  cardTitle: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 6 },
-  cardDesc: { fontSize: 13, color: COLORS.textSecondary, marginBottom: 20, lineHeight: 20 },
-  cardDescMuted: { color: COLORS.textLight },
-  slotGroup: { marginBottom: 16, gap: 6 },
-  input: {
-    backgroundColor: COLORS.inputBg,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    fontSize: 14,
-    color: COLORS.textPrimary,
-    borderWidth: 1.5,
-    borderColor: COLORS.divider,
+  backText: { fontSize: 14, color: '#8A7D9E' },
+  cardTitle: { fontSize: 17, fontWeight: '700', color: '#5B4E75', marginBottom: 6 },
+  cardDesc: { fontSize: 13, color: '#8A7D9E', marginBottom: 20, lineHeight: 20 },
+  entryGroup: {
+    marginBottom: 16,
+    gap: 8,
   },
-  detailInput: { borderColor: '#F0EAE7' },
-  inputDisabled: { backgroundColor: '#F5F0EC', borderColor: '#EDE8E5', opacity: 0.6 },
+  input: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5DCF0',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 14,
+    color: '#4A4A4A',
+    shadowColor: '#8A7D9E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  detailInput: {
+    minHeight: 64,
+    paddingTop: 12,
+  },
   error: { color: COLORS.danger, fontSize: 13, textAlign: 'center', marginBottom: 12 },
   loadingRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, paddingVertical: 12 },
-  loadingText: { fontSize: 14, color: COLORS.textSecondary },
-  btn: { marginTop: 4 },
+  loadingText: { fontSize: 14, color: '#8A7D9E' },
+  btnShadow: {
+    marginTop: 8,
+    shadowColor: '#DAEAF6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  btn: {
+    height: 54,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnText: {
+    color: '#5B4E75',
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 0.3,
+  },
 });

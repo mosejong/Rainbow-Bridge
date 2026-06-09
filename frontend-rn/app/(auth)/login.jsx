@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   StyleSheet, Text, View, TextInput, TouchableOpacity,
-  Image, KeyboardAvoidingView, Platform, ActivityIndicator,
+  Image, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,18 +27,24 @@ export default function LoginScreen() {
     try {
       const { access_token } = await login({ email: email.trim(), password });
       await AsyncStorage.setItem('access_token', access_token);
+
+      // 이전 유저 데이터 완전 삭제
+      await AsyncStorage.multiRemove(['pet_id', 'pet_name', 'pet_species', 'bucketlist_items', 'diary_entries']);
+
+      // 이 계정의 펫이 이미 있는지 API로 확인
+      let hasPet = false;
       try {
         const pets = await getMyPets();
-        if (pets && pets.length > 0) {
-          await AsyncStorage.setItem('pet_id', pets[0].id || pets[0]._id);
-          await AsyncStorage.setItem('pet_name', pets[0].name);
-          router.replace('/(app)/emotion');
-        } else {
-          router.replace('/(app)/profile');
+        if (pets?.length > 0) {
+          const pet = pets[0];
+          await AsyncStorage.setItem('pet_id', pet.id || pet._id || '');
+          await AsyncStorage.setItem('pet_name', pet.name || '');
+          await AsyncStorage.setItem('pet_species', pet.species || '');
+          hasPet = true;
         }
-      } catch {
-        router.replace('/(app)/profile');
-      }
+      } catch { /* 펫 없음 → 프로필 등록으로 */ }
+
+      router.replace(hasPet ? '/(app)/home' : '/(app)/profile');
     } catch (err) {
       setError(err.response?.data?.detail || '이메일 또는 비밀번호를 확인해주세요.');
     } finally {
@@ -57,6 +63,11 @@ export default function LoginScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.innerContainer}
         >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
           {/* 상단 이미지 영역 */}
           <View style={styles.imageWrapper}>
             <Image
@@ -121,6 +132,7 @@ export default function LoginScreen() {
               </Link>
             </View>
           </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
@@ -131,12 +143,13 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
   innerContainer: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
 
   imageWrapper: {
-    flex: 0.55,
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 40,
+    paddingBottom: 20,
   },
   mainImage: {
     width: 260,
@@ -151,8 +164,8 @@ const styles = StyleSheet.create({
   },
 
   bottomFormWrapper: {
-    flex: 0.45,
     paddingHorizontal: 28,
+    paddingBottom: 40,
     alignItems: 'center',
   },
   textContainer: {
