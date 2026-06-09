@@ -13,7 +13,13 @@ from fastapi import (
 from fastapi.responses import FileResponse
 from app.core.deps import get_current_user
 from app.schemas.media import MediaStatusResponse, MediaUploadResponse
-from app.services.media import create_asset, get_asset, run_liveportrait, run_perso
+from app.services.media import (
+    create_asset,
+    get_asset,
+    run_liveportrait,
+    run_perso,
+    increment_play_count,
+)
 from app.services.pet import get_pet
 
 router = APIRouter()
@@ -119,3 +125,13 @@ async def download_media(
         media_type="video/mp4",
         filename=f"{asset_id}_{type}.mp4",
     )
+
+
+@router.post("/{asset_id}/play", status_code=200)
+async def record_play(asset_id: str, user: dict = Depends(get_current_user)):
+    """영상 재생 시 호출 — play_count +1 기록."""
+    asset = await get_asset(asset_id, user_id=user["user_id"])
+    if not asset:
+        raise HTTPException(status_code=404, detail="asset을 찾을 수 없습니다.")
+    await increment_play_count(asset_id)
+    return {"asset_id": asset_id, "message": "재생 기록 완료"}
