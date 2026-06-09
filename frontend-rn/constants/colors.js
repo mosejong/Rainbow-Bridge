@@ -1,25 +1,25 @@
-// PastelTone.jpg 기반 색상 팔레트 — 세련되고 따뜻하고 온화한 톤
+// PastelTone.jpg + 앱 아이콘 기반 — 라벤더/보라 파스텔 톤
 export const COLORS = {
   // 배경
-  background: '#F2EEE5',   // 크림/베이지
+  background: '#F0EBF8',   // 소프트 라벤더
 
   // 포인트
-  primary: '#E5C1C5',      // 파스텔 핑크
-  secondary: '#C3E2DD',    // 파스텔 민트
+  primary: '#D4B5DC',      // 더스티 퍼플-핑크
+  secondary: '#B8D0E8',    // 소프트 스카이 블루
 
   // CTA 버튼
-  cta: '#6ECEDA',          // 스틸 블루
+  cta: '#9B8DC8',          // 소프트 미디엄 퍼플
 
   // 텍스트
-  textPrimary: '#4A4458',
-  textSecondary: '#9B8EA0',
-  textLight: '#C0B8C4',
+  textPrimary: '#4A3F6B',
+  textSecondary: '#8B80A8',
+  textLight: '#C0B5D0',
 
   // 카드/서피스
   white: '#FFFFFF',
   card: '#FFFFFF',
-  divider: '#EDE5DF',
-  inputBg: '#FAF7F4',
+  divider: '#E5DCF0',
+  inputBg: '#F7F3FC',
 
   // 상태
   danger: '#E57373',
@@ -27,7 +27,7 @@ export const COLORS = {
   warning: '#F4C97A',
 
   // 감정 체크인 선택 상태
-  selected: '#E5C1C5',
-  selectedBorder: '#D4A8AD',
-  selectedText: '#5E3A3F',
+  selected: '#D4B5DC',
+  selectedBorder: '#B89BC8',
+  selectedText: '#4A3F6B',
 };

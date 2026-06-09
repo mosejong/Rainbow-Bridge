@@ -211,6 +211,12 @@
 
 **팀 전체:** **수의사↔보호자 쌍방향 플랫폼 방향 확정** (병원=웹·보호자=앱). 1단계(건강관리/증상 기록) → 2단계(장례 안내) → 3단계(펫로스 케어) 플로우 + AI RAG few-shot·1인칭 편지 모드 검증 완료. 프론트 1·2단계 신규 화면(SymptomsPage·HealthRecordsPage·FuneralPage) + Android Capacitor 전략 확정. 멀티모달 사진→영상+음성 파이프라인 완성. Docker+HTTPS 인프라 완성.
 
+## 2026-06-08 (Day 8)
+
+| 이름 | 한 일 (요약) | 상세 |
+|------|------------|------|
+| 정환주 | **⑧ LLM 라이트 로깅 실연결**(`alog_llm_call` async 헬퍼+message·mission 호출부, `total_calls=0` 껍데기 해소) + **④ TTS 어린아이+감정 음색 탐색** — TTS 라이선스×감정튜닝 통합 조사문서(상업무료 후보 4종), **파인튜닝 보류**(GPU 8GB·아동음성 법윤리벽) → instruct로 우선, Qwen3 낭독 레지스터(`qwen3_emotion.py`, 느끼·속삭임 차단·다이얼)·고역 EQ 후처리(`tone_down.py`)·VoxCPM 차분 어린이 6종 | [→](members/정환주.md#2026-06-08-day-8) |
+
 ## 2026-06-07 (Day 7)
 
 | 이름 | 한 일 (요약) | 상세 |
