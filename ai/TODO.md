@@ -145,12 +145,13 @@
 
 - [x] 🎯 평가 지표 정의 (사용 횟수·감정 추이·미션 완료율·재방문)
 - [x] 🔧 `llm_logs` 스키마(`LLMLog`) + 저장 헬퍼(`save_log`) — **원문 PII 미저장**, 비식별 지표만
-- [x] 🔧 `build_report(pet_id, period, *, llm_logs, emotion_checkins, missions)` 골격 — 순수 함수(DB 주입)
+- [x] 🔧 `build_report(pet_id, period, *, llm_logs, emotion_checkins, missions, access_counts)` — 순수 함수(DB 주입)
+- [x] 🔧 일상복귀 신호(`recovery_signal`) 통합 — build_report 출력에 포함 + `GET /report/{pet_id}` 노출(2026-06-09). 접속빈도 근거(`access_counts`)=pet 소유자 `access_logs` 버킷팅. emotion 키 `mood`→`score` 백엔드 정합
 - [ ] 🔌 LLM 호출부에 `save_log` 훅 연결 (반소람 provider 호출 지점과 협의)
 - [ ] 🔌 백엔드 `GET /api/v1/admin/usage`·`/report/{pet_id}` 가 `llm_logs` 읽도록 (**김윤한**과 컬렉션 합의)
 - [ ] 🎯 리포트 출력 스키마 프론트 차트와 확정 (**민경이**)
 - [ ] 🔧 재방문 지표 — 세션/접속 로그 스키마 확정 후 추가
-- [ ] 🧪 샘플 데이터로 집계 정확성 검증
+- [x] 🧪 샘플 데이터로 집계 정확성 검증 — `test_report`·`test_recovery_signal`·`test_report_aggregation`·`test_report_service`(get_report 끝단)
 - [ ] 📄 지표 정의·스키마 문서화
 
 ---
