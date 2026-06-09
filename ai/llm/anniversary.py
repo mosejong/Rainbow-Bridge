@@ -18,6 +18,7 @@ from datetime import date
 from typing import Optional, Protocol
 
 from .prompts import anniversary as anniversary_prompt
+from .provider import LLM_UNAVAILABLE_NOTICE, LLMError
 from .safety import (
     CrisisAction,
     EMPATHY_FOCUS_NOTE,
@@ -127,7 +128,14 @@ def generate_anniversary_care(
     # L1(우려)·L2(경고) — 케어 메시지에서 공감을 먼저 하도록 지침 추가.
     if action in (CrisisAction.GENERATE_WITH_SUPPORT, CrisisAction.HOTLINE):
         prompt += EMPATHY_FOCUS_NOTE
-    message = generate(prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE).strip()
+    # LLM 인프라 실패 시: 안내문으로 graceful 대체(source=unavailable). 앱 안 터지게.
+    try:
+        message = generate(
+            prompt, max_tokens=_MAX_TOKENS, temperature=_TEMPERATURE
+        ).strip()
+    except LLMError:
+        message = LLM_UNAVAILABLE_NOTICE
+        source = "unavailable"
 
     result = {
         "message": message,

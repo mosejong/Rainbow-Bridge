@@ -40,6 +40,7 @@ class LLMConfig:
     max_tokens: int  # 기본 생성 토큰 상한
     temperature: float  # 기본 온도
     reasoning_effort: str  # Gemini thinking 제어("none"=끔). 빈 값이면 미전송
+    fallback_model: str = ""  # 전 키 소진 시 폴백 모델(예: gemini-1.5-flash). 빈 값이면 폴백 없음
 
 
 # Gemini 2.5-flash 는 thinking(내부 추론)이 기본 ON 이라 추론이 토큰을 먹어
@@ -61,4 +62,5 @@ def get_config() -> LLMConfig:
         max_tokens=int(os.getenv("LLM_MAX_TOKENS", "512")),
         temperature=float(os.getenv("LLM_TEMPERATURE", "0.7")),
         reasoning_effort=os.getenv("LLM_REASONING_EFFORT", "none"),
+        fallback_model=os.getenv("LLM_FALLBACK_MODEL", ""),
     )
