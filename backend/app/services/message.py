@@ -108,6 +108,7 @@ async def create_message(data: MessageCreate) -> MessageResponse:
                         source="local",
                         first_person=bool(data.consent),
                         recovery_trend=recovery_trend,
+                        guardian_nickname=data.guardian_nickname,
                     )
                 except GuardrailViolation:
                     log_ok = False
