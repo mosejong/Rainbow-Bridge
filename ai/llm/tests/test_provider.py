@@ -59,7 +59,7 @@ def _cfg(**override) -> LLMConfig:
         provider="test",
         base_url="http://x",
         model="m",
-        api_key="key",
+        api_keys=("key",),
         timeout=5.0,
         max_retries=2,
         max_tokens=64,
@@ -77,7 +77,7 @@ def patched(monkeypatch):
     def _setup(script, **cfg_over):
         client = _FakeClient(script)
         monkeypatch.setattr(provider, "get_config", lambda: _cfg(**cfg_over))
-        monkeypatch.setattr(provider, "_client", lambda: client)
+        monkeypatch.setattr(provider, "_client", lambda *a, **kw: client)
         monkeypatch.setattr(provider, "_sleep_backoff", lambda attempt: None)
         return client
 
@@ -150,8 +150,32 @@ def test_gives_up_after_retries(patched):
 
 
 def test_missing_api_key_raises(monkeypatch):
-    monkeypatch.setattr(provider, "get_config", lambda: _cfg(api_key=""))
-    provider._client.cache_clear()
+    monkeypatch.setattr(provider, "get_config", lambda: _cfg(api_keys=()))
     with pytest.raises(LLMError):
-        provider._client()
-    provider._client.cache_clear()  # 다른 테스트 오염 방지
+        generate("hi")
+
+
+def test_key_rotation_on_rate_limit(monkeypatch):
+    """첫 번째 키 429 → 두 번째 키로 전환해 성공."""
+    from openai import RateLimitError as _RLE
+
+    def _make_rate_limit():
+        resp = httpx.Response(429, request=httpx.Request("POST", "http://x"))
+        return _RLE(message="quota", response=resp, body=None)
+
+    client_a = _FakeClient([_make_rate_limit()])
+    client_b = _FakeClient(["두번째키 성공"])
+
+    call_order: list[str] = []
+
+    def _fake_client(api_key, base_url, timeout):
+        call_order.append(api_key)
+        return client_a if api_key == "key1" else client_b
+
+    monkeypatch.setattr(provider, "get_config", lambda: _cfg(api_keys=("key1", "key2")))
+    monkeypatch.setattr(provider, "_client", _fake_client)
+    monkeypatch.setattr(provider, "_sleep_backoff", lambda attempt: None)
+
+    result = generate("hi")
+    assert result == "두번째키 성공"
+    assert call_order == ["key1", "key2"]
