@@ -59,8 +59,8 @@
 ### ④ 음성 톤 선택 + TTS 낭독
 | 파트 | 담당 | 상태 | 비고 |
 |------|------|------|------|
-| TTS 엔진 | 정환주 | 🟡 | **Qwen3 로컬 확정(2026-06-09)** — 추모 톤 진중함 최우수 + VoiceDesign instruct 튜닝 가능. 로컬 작업 중 |
-| API 연동 | 모세종·정환주 | ✅ | POST /tts, mp3 저장·URL 반환 |
+| TTS 엔진 | 정환주 | 🟡 | **Qwen3 확정(2026-06-09)** — 추모 톤 진중함 최우수 + VoiceDesign instruct 튜닝. **NCP→GPU remote 실연동 성공**(wav 8.5초, ngrok 왕복 확인). 어린아이·감정 톤 튜닝 진행 중 |
+| API 연동 | 모세종·정환주 | ✅ | POST /tts → Qwen3 remote wav (+ TTS_SERVER_URL 미설정 시 Google 폴백) |
 | 화면 | 민경이 | ✅ | TtsPage 완성 |
 
 ### ⑤ 일상 복귀 미션 추천
