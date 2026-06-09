@@ -4,7 +4,9 @@
 순수 EQ라 원본은 안 건드리고 새 파일로만 뽑음(가역). RBJ biquad high-shelf.
 
 실행:
-  # 강도별 프리셋 한번에(청취 비교용)
+  # 0) 대상 파일 먼저 생성 (girl 배치 — qwen3em_girl_read_v9.wav 등 산출)
+  conda run --no-capture-output -n qwen3-tts python ai/tts/qwen3_emotion.py --batch girl
+  # 1) 강도별 프리셋 한번에(청취 비교용)
   conda run --no-capture-output -n qwen3-tts python ai/tts/tone_down.py
   # 수동 수치 조절: 컷오프Hz 감쇠dB [Q]   (dB는 음수=감쇠)
   conda run --no-capture-output -n qwen3-tts python ai/tts/tone_down.py 4000 -5
@@ -29,7 +31,7 @@ except (AttributeError, ValueError):
 
 _SRC = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
-    "_output", "qwen3_emotion", "qwen3em_girl_grief.wav",
+    "_output", "qwen3_emotion", "qwen3em_girl_read_v9.wav",
 )
 
 # 인자 없을 때 한번에 뽑는 강도별 프리셋: (cutoff Hz, gain dB, Q)
@@ -86,8 +88,18 @@ def high_shelf(x: np.ndarray, sr: int, fc: float, gain_db: float, Q: float = 0.7
     return lfilter(b, a, x)
 
 
+def _read(src: str):
+    """입력 wav 읽기 — 없으면 생성 명령 안내 후 종료(no-arg 기본 파일 누락 방지)."""
+    if not os.path.exists(src):
+        sys.exit(
+            f"❌ 입력 없음: {os.path.basename(src)}\n"
+            "   먼저 생성: conda run -n qwen3-tts python ai/tts/qwen3_emotion.py --batch girl"
+        )
+    return sf.read(src)
+
+
 def process(src: str, fc: float, gain_db: float, Q: float) -> None:
-    x, sr = sf.read(src)
+    x, sr = _read(src)
     y = high_shelf(x, sr, fc, gain_db, Q)
     peak = float(np.max(np.abs(y)))
     if peak > 0.999:  # 필터로 약간 솟은 피크만 살짝 정규화(음색 영향 없음)
@@ -101,7 +113,7 @@ def process(src: str, fc: float, gain_db: float, Q: float) -> None:
 
 
 def process_notch(src: str, fc: float, gain_db: float, Q: float) -> None:
-    x, sr = sf.read(src)
+    x, sr = _read(src)
     y = peaking(x, sr, fc, gain_db, Q)
     peak = float(np.max(np.abs(y)))
     if peak > 0.999:
