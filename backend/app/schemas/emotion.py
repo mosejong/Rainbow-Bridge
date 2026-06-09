@@ -36,3 +36,7 @@ class RecoveryResponse(BaseModel):
     records: list[Any] = Field(
         default_factory=list, description="최근 체크인 기록 목록"
     )
+    content_unlocked: bool = Field(
+        False,
+        description="추모 컨텐츠 공개 여부 — 회복 게이트 통과 시 True",
+    )
