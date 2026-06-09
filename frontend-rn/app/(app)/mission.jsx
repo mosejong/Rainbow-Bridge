@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -52,13 +53,16 @@ export default function MissionScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <LoadingSpinner message="미션을 불러오고 있어요..." />
-      </SafeAreaView>
+      <LinearGradient colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={styles.gradient}>
+        <SafeAreaView style={styles.safe}>
+          <LoadingSpinner message="미션을 불러오고 있어요..." />
+        </SafeAreaView>
+      </LinearGradient>
     );
   }
 
   return (
+    <LinearGradient colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={styles.gradient}>
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>오늘의 미션</Text>
@@ -112,11 +116,13 @@ export default function MissionScreen() {
         ) : null}
       </ScrollView>
     </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+  gradient: { flex: 1 },
+  safe: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingVertical: 32 },
   title: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', marginBottom: 6 },
   subtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 24 },

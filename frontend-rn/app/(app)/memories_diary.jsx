@@ -11,45 +11,35 @@ import Card from '../../components/Card';
 import { createPet } from '../../api/pets';
 import { COLORS } from '../../constants/colors';
 
-const INITIAL_ENTRIES = [
-  { keyword: '', detail: '' },
-  { keyword: '', detail: '' },
-  { keyword: '', detail: '' },
-];
-
-export default function MemoriesScreen() {
+export default function MemoriesDiaryScreen() {
   const router = useRouter();
   const { profile: profileStr } = useLocalSearchParams();
   const profile = profileStr ? JSON.parse(profileStr) : null;
 
-  const [entries, setEntries] = useState(INITIAL_ENTRIES);
+  const [bucketlist, setBucketlist] = useState('');
+  const [diaryMemo, setDiaryMemo] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  function updateEntry(index, field, value) {
-    setEntries(prev => prev.map((e, i) => i === index ? { ...e, [field]: value } : e));
-  }
-
   async function handleSubmit() {
-    const filled = entries.filter(e => e.keyword.trim() || e.detail.trim());
-    if (filled.length === 0) {
-      setError('추억 키워드를 하나 이상 입력해주세요.');
+    if (!bucketlist.trim() && !diaryMemo.trim()) {
+      setError('버킷리스트 또는 추억 메모를 하나 이상 입력해주세요.');
       return;
     }
     setError('');
     setLoading(true);
     try {
-      const memories = filled.map(e => ({
-        keyword: e.keyword.trim(),
-        detail: e.detail.trim(),
-      }));
       const payload = {
         name: profile.name.trim(),
         species: profile.species,
         period: `${profile.start_date} ~ ${profile.end_date}`,
         caller_name: profile.guardian_title?.trim() || '보호자',
-        bucket_list: [],
-        memories,
+        bucket_list: bucketlist.trim()
+          ? bucketlist.trim().split(/[,\/\n]+/).map(s => s.trim()).filter(Boolean)
+          : [],
+        memories: diaryMemo.trim()
+          ? [{ keyword: '추억 메모', detail: diaryMemo.trim() }]
+          : [],
       };
       const pet = await createPet(payload);
       await AsyncStorage.setItem('pet_id', pet.id || pet._id);
@@ -87,32 +77,40 @@ export default function MemoriesScreen() {
               <Text style={styles.backText}>← 이전</Text>
             </TouchableOpacity>
 
-            <Text style={styles.cardTitle}>추억 키워드 입력</Text>
+            <Text style={styles.cardTitle}>추억 기록</Text>
             <Text style={styles.cardDesc}>
-              {profile.name}와(과) 나눈 소중한 기억을 알려주세요. (최대 3개)
+              {profile.name}와(과) 나눈 소중한 기억을 알려주세요.
             </Text>
 
-            {entries.map((entry, i) => (
-              <View key={i} style={styles.entryGroup}>
-                <TextInput
-                  style={styles.input}
-                  value={entry.keyword}
-                  onChangeText={v => updateEntry(i, 'keyword', v)}
-                  placeholder={`추억 키워드 ${i + 1} (예: 공원 산책)`}
-                  placeholderTextColor="#A89FBC"
-                />
-                <TextInput
-                  style={[styles.input, styles.detailInput]}
-                  value={entry.detail}
-                  onChangeText={v => updateEntry(i, 'detail', v)}
-                  placeholder="상세 내용 (예: 저녁마다 한강공원 같이 걸었어요)"
-                  placeholderTextColor="#A89FBC"
-                  multiline
-                  numberOfLines={2}
-                  textAlignVertical="top"
-                />
-              </View>
-            ))}
+            <View style={styles.field}>
+              <Text style={styles.label}>버킷리스트</Text>
+              <Text style={styles.hint}>함께 하고 싶었거나 해주고 싶은 것들을 적어주세요</Text>
+              <TextInput
+                style={[styles.input, styles.multiline]}
+                value={bucketlist}
+                onChangeText={setBucketlist}
+                placeholder={'예) 같이 해 뜨는 거 보기 / 바다 보여주기'}
+                placeholderTextColor="#A89FBC"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>일기·추억 메모</Text>
+              <Text style={styles.hint}>함께했던 소중한 순간을 자유롭게 적어주세요</Text>
+              <TextInput
+                style={[styles.input, styles.multiline]}
+                value={diaryMemo}
+                onChangeText={setDiaryMemo}
+                placeholder={'예) 엄마가 새벽에 물 갈아주던 것 / 퇴근하면 현관에서 기다림'}
+                placeholderTextColor="#A89FBC"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -151,10 +149,9 @@ const styles = StyleSheet.create({
   backText: { fontSize: 14, color: '#8A7D9E' },
   cardTitle: { fontSize: 17, fontWeight: '700', color: '#5B4E75', marginBottom: 6 },
   cardDesc: { fontSize: 13, color: '#8A7D9E', marginBottom: 20, lineHeight: 20 },
-  entryGroup: {
-    marginBottom: 16,
-    gap: 8,
-  },
+  field: { marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: '600', color: '#5B4E75', marginBottom: 4 },
+  hint: { fontSize: 12, color: '#A89FBC', marginBottom: 8 },
   input: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
@@ -170,10 +167,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 1,
   },
-  detailInput: {
-    minHeight: 64,
-    paddingTop: 12,
-  },
+  multiline: { minHeight: 100, paddingTop: 14 },
   error: { color: COLORS.danger, fontSize: 13, textAlign: 'center', marginBottom: 12 },
   loadingRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, paddingVertical: 12 },
   loadingText: { fontSize: 14, color: '#8A7D9E' },
