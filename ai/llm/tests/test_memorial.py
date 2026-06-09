@@ -118,17 +118,38 @@ def test_generate_message_injects_bucket_list_and_caller():
     assert "엄마" in prompt
 
 
-def test_generate_message_caller_falls_back_to_guardian_name():
-    """caller_name 이 없으면 guardian_name 으로 대체된다."""
+def test_guardian_nickname_greets_in_third_person():
+    """별명이 있으면 3인칭 글 첫머리 '○○님,' 호명 지시가 프롬프트에 들어간다."""
     captured = {}
 
     def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
         captured["prompt"] = prompt
-        return "봄이의 따뜻함이 오래 머물기를 바랍니다."
+        return "하늘님, 봄이는 알고 있었습니다. 봄이는 충분히 사랑받았습니다."
 
-    pet = {"name": "봄이", "species": "강아지", "period": "12년", "guardian_name": "아빠"}
-    generate_message(pet, {"emotion_score": 5}, generate=fake_generate)
-    assert "아빠" in captured["prompt"]
+    pet = {"name": "봄이", "species": "강아지", "period": "12년", "caller_name": "엄마"}
+    generate_message(
+        pet, {"emotion_score": 5}, generate=fake_generate, guardian_nickname="하늘"
+    )
+    assert "하늘님," in captured["prompt"]
+
+
+def test_guardian_nickname_ignored_in_first_person():
+    """1인칭 모드에선 별명 호명을 넣지 않는다(caller_name 으로 부름)."""
+    captured = {}
+
+    def fake_generate(prompt, *, max_tokens=400, temperature=0.7, json_mode=False):
+        captured["prompt"] = prompt
+        return "엄마, 나 봄이야. 강아지별로 이사 가. 조금만 울고 밥 먹어."
+
+    pet = {"name": "봄이", "species": "강아지", "period": "12년", "caller_name": "엄마"}
+    generate_message(
+        pet,
+        {"emotion_score": 8},
+        generate=fake_generate,
+        guardian_nickname="하늘",
+        first_person=True,
+    )
+    assert "하늘님" not in captured["prompt"]
 
 
 def test_generate_message_works_without_bucket_list():

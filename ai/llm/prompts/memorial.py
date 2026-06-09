@@ -51,7 +51,9 @@ SYSTEM_PROMPT: Final[str] = """\
 담담한 3인칭 내레이션이 오히려 보호자의 마음을 더 깊게 어루만집니다.
 
 [톤과 구조 — 반드시]
-- 3인칭 내레이터 시점으로 씁니다. "○○는 알고 있었습니다" 같은 담담한 어조로 시작하세요.
+- 3인칭 내레이터 시점으로 씁니다. 보호자 별명(닉네임)이 주어지면 글 첫머리에서 그 별명에
+  "님"을 붙여 한 번만 부른 뒤("○○님,"), 반려동물 이름을 주어로 한 담담한 내레이션으로
+  이어가세요. 별명이 없으면 부르지 말고 "△△는 알고 있었습니다"처럼 바로 내레이션으로 시작하세요.
 - 보호자가 해준 일들(밥 챙기기, 밤새 곁에 있기 등)을 반려동물의 시선에서
   "○○는 알고 있었습니다"처럼 묘사하세요.
 - 보호자가 적은 버킷리스트나 일기 속 구체적인 장면을 한 가지 반드시 그대로 인용하세요.
@@ -59,7 +61,7 @@ SYSTEM_PROMPT: Final[str] = """\
 - 중간에 "말할 순 없었지만, 기억으로 남겼습니다" 같은 한 줄로,
   반려동물이 다 느끼고 있었음을 담으세요.
 - 마지막 두 줄은 짧게 끊어 여운을 남기세요. (예: "잘 가요, ○○." / "충분히 사랑받았습니다.")
-- 전체 300자 안팎으로, 너무 짧지 않게(4~6문장). 구체적인 장면을 충분히 담되 늘어지지는 않게.
+- 전체 600자 안팎으로, 너무 짧지 않게(8~12문장). 구체적인 장면을 여러 개 충분히 담되 늘어지지는 않게.
 
 [절대 금지]
 - 반려동물을 다시 살아나게 하거나, 돌아온다고 말하지 마세요.
@@ -87,7 +89,7 @@ SYSTEM_PROMPT_FIRST_PERSON: Final[str] = """\
 - 보호자가 적은 버킷리스트나 일기 속 구체적인 장면을 한 가지 반드시 인용하세요.
 - 떠남은 "강아지별(○○별)로 이사 간다"는 식으로 부드럽게 표현하세요.
 - 마지막은 보호자를 걱정하는 한 마디로 끝맺으세요. (예: "조금만 울고, 밥 먹어. 알겠지?")
-- 전체 300자 안팎으로, 너무 짧지 않게(4~6문장). 구체적인 장면과 추억을 충분히 담으세요.
+- 전체 600자 안팎으로, 너무 짧지 않게(8~12문장). 구체적인 장면과 추억을 여러 개 충분히 담으세요.
 
 [절대 금지]
 - "살아 돌아왔어요", "다시 만날 수 있어요" 등 부활·환생을 단정하지 마세요.
@@ -112,13 +114,13 @@ _USER_TEMPLATE: Final[str] = """\
 - 메모: {note}
 {recovery_block}{rag_block}
 [요청]
-위 기억으로, {name}의 시선에서 본 짧은 추모 내레이션을 3인칭으로 {tone_guide}
+위 기억으로, {name}의 시선에서 본 추모 내레이션을 3인칭으로 {tone_guide}
 써 주세요.
-- "{name}는 알고 있었습니다" 같은 담담한 어조로, {caller}가 해준 일을 {name}의 시선에서 묘사하세요.
-- 버킷리스트나 일기 속 구체적인 장면 한 가지를 반드시 인용하세요.
+{greeting_block}- "{name}는 알고 있었습니다" 같은 담담한 어조로, {caller}가 해준 일을 {name}의 시선에서 묘사하세요.
+- 버킷리스트나 일기 속 구체적인 장면을 한두 가지 이상 반드시 인용하세요.
 - 중간에 "말할 순 없었지만, 기억으로 남겼습니다" 같은 한 줄을 넣으세요.
 - 마지막 두 줄은 짧게 끊어 여운을 남기세요.
-- 전체 300자 안팎(4~6문장). {name}는 반드시 3인칭({name}는/{name}가)으로만 쓰고, 절대 1인칭("나는", "저는")으로 말하게 하지 마세요.
+- 전체 600자 안팎(8~12문장). {name}는 반드시 3인칭({name}는/{name}가)으로만 쓰고, 절대 1인칭("나는", "저는")으로 말하게 하지 마세요.
 """
 
 # 1인칭 편지 모드 — SYSTEM_PROMPT_FIRST_PERSON 과 함께 사용.
@@ -140,7 +142,7 @@ _USER_TEMPLATE_FIRST_PERSON: Final[str] = """\
 - 버킷리스트나 일기 속 구체적인 장면 한 가지를 반드시 인용하세요.
 - 떠남은 "{name}별로 이사 간다"는 식으로 부드럽게 표현하세요.
 - 마지막은 {caller}를 걱정하는 한 마디("조금만 울고, 밥 먹어. 알겠지?" 같은)로 끝맺으세요.
-- 전체 300자 안팎(4~6문장). 추억과 장면을 충분히 담되, 부활·환생을 단정하는 표현("살아 돌아왔어요" 등)은 쓰지 마세요.
+- 전체 600자 안팎(8~12문장). 추억과 장면을 여러 개 충분히 담되, 부활·환생을 단정하는 표현("살아 돌아왔어요" 등)은 쓰지 마세요.
 """
 
 
@@ -208,6 +210,7 @@ def build_user_prompt(
     memories: Optional[list[str]] = None,
     bucket_list: Optional[list] = None,
     caller_name: str = "",
+    guardian_nickname: str = "",
     tone: str = DEFAULT_TONE,
     rag_hits: Optional[List[dict]] = None,
     recovery_trend: Optional[str] = None,
@@ -225,6 +228,8 @@ def build_user_prompt(
         bucket_list: 버킷리스트(함께 하고 싶었던 일) 목록(선택). 추모 글이 구체적
             장면을 인용하도록 별도 블록으로 넣습니다. 없으면 생략.
         caller_name: 보호자 호칭(엄마·아빠·언니 등). 비면 "보호자"로 대체.
+        guardian_nickname: 보호자 회원가입 별명(닉네임, user 필드). **3인칭 모드에서만**
+            글 첫머리 "○○님," 호명에 사용. 1인칭 모드에선 무시. 비면 호명 생략.
         tone: 메시지 톤. TONE_GUIDE 의 키(warm·calm·hopeful).
         rag_hits: RAG 검색 결과(retrieve() 반환값). 없으면 few-shot 생략.
         recovery_trend: 최근 회복 추이(백엔드 trend: "회복 중"·"유지 중"·"주의 필요").
@@ -237,6 +242,13 @@ def build_user_prompt(
     """
     tone_guide = TONE_GUIDE.get(tone, TONE_GUIDE[DEFAULT_TONE])
     template = _USER_TEMPLATE_FIRST_PERSON if first_person else _USER_TEMPLATE
+    # 별명 호명은 3인칭에서만. 1인칭은 caller_name(엄마·아빠)으로 부르므로 생략.
+    nickname = guardian_nickname.strip()
+    greeting_block = (
+        f'- 글 첫머리에 "{nickname}님,"으로 보호자를 한 번만 부른 뒤, 줄을 이어 담담한 내레이션을 시작하세요.\n'
+        if (nickname and not first_person)
+        else ""
+    )
     return template.format(
         name=name,
         species=species,
@@ -249,6 +261,7 @@ def build_user_prompt(
         recovery_block=_format_recovery(recovery_trend),
         rag_block=_format_rag(rag_hits),
         tone_guide=tone_guide,
+        greeting_block=greeting_block,
     )
 
 
