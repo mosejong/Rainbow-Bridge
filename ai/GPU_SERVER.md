@@ -151,7 +151,7 @@ https://rerun-devious-reaffirm.ngrok-free.dev/tts/*    -> 8003 Qwen3 TTS    (윤
   - ⚠️ 한글은 **UTF-8 JSON** 으로 전송(httpx/requests 는 자동). 깨지면 400 `error parsing the body` — 서버 버그 아님.
 - **서버 코드**: [tts/server.py](tts/server.py) (`synthesize()` FastAPI 래핑, 포트 8003).
 - **프록시 코드**: `C:\Rainbow_Bridge\gpu_proxy.py` (레포 밖 운영 글루, git 미포함). 루트→8001, `/tts/*`→8003(프리픽스 제거).
-- **자동시작**: `gpu_server_start.ps1`(레포 밖) 이 로그온 시 LivePortrait(8001)·프록시(8080)·TTS(8003)·ngrok(→8080) 일괄 기동.
+- **자동시작**: `gpu_server_start.ps1`(레포 밖) 이 로그온 시 프록시(8080)·TTS(8003)·ngrok(→8080) 일괄 기동. (2026-06-09 LP가 소람 PC로 이전돼 이 스크립트에서 LivePortrait(8001) 기동 블록 제거 — §13)
 - **제약**: 로그온해야 뜸 / PC 절전·종료 시 중단 / TTS·webui(8000) VRAM(8GB) 동시 주의(qwen3 인스턴스 1개) / 영상(LivePortrait)+TTS 동시 추론 시 VRAM 협의.
 
 ### 12-1. 실연동 검증 (2026-06-09)
@@ -179,3 +179,54 @@ GPU측·계약은 검증 완료. 아래만 하면 **NCP → GPU 왕복 실연동
    ```
 2. `POST /api/v1/tts` `{"pet_id":"<테스트>", "tone":"warm", "text":"무지개 다리 잘 건너가렴"}` 호출 → 응답 `{audio_url, duration, format}`(201), `/uploads/tts/*_girl_*.wav` 생성 확인.
 3. 호출 시각 공유 시 정환주가 GPU 로그에서 왕복 실시간 확인.
+
+---
+
+## 13. LP 소람 PC 이전 후 — 2터널(TTS + LP) 동시 운용 (2026-06-09 검증)
+
+§11/§12 의 "단일 ngrok 도메인 + 프록시 경로 공유"(`/`=LP, `/tts/*`=TTS)는 **LP·TTS 가 같은 GPU(정환주 PC)에 있다는 전제**였다. Day9 에 **LivePortrait 엔진이 정환주 GPU 에 미설치**임이 확인돼 발표 LP 호스트가 **반소람 PC**로 이전([liveportrait/SETUP_LivePortrait.md](liveportrait/SETUP_LivePortrait.md) §10) → 이 전제가 깨졌다. LP 와 TTS 가 **물리적으로 다른 PC** 이므로 한 머신의 프록시(8080)가 두 서비스를 경로로 쪼갤 수 없다.
+
+### 13-1. 구조 — 2계정 2터널 (동시 1세션 제약 회피)
+
+ngrok 무료는 **계정당 동시 1 에이전트 세션** 이라, 정환주·소람이 같은 토큰을 쓰면 동시 2터널이 불가하다. 그래서 **각자 다른 ngrok 계정**으로 분리 운용한다 — 계정이 다르면 세션 충돌이 원천적으로 없다.
+
+```
+TTS  : https://rerun-devious-reaffirm.ngrok-free.dev/tts/*  -> 정환주 GPU :8003 (고정 도메인, 상시)
+LP   : https://<소람 무료 임의주소>.ngrok-free.dev/*         -> 소람 PC   :8001 (발표 직전 점등)
+```
+
+- 백엔드(NCP) `.env` 는 **두 변수**를 각각 가리킨다:
+  ```
+  TTS_SERVER_URL=https://rerun-devious-reaffirm.ngrok-free.dev/tts   # 정환주 (§12)
+  LIVEPORTRAIT_REMOTE_URL=https://<소람 무료 임의주소>.ngrok-free.dev  # 소람 (발표 직전 공유 → 모세종이 반영)
+  ```
+- 소람 터널은 고정 도메인이 아니라 **무료 임의 주소**(현 ngrok 무료 신규 발급 도메인은 `.ngrok-free.dev`) → 켤 때마다 주소가 바뀌므로 **발표 직전 점등 후 모세종에게 공유**(SETUP §10·§11). 정환주 TTS 고정 도메인은 그대로 유지.
+- **정환주 GPU 자동기동 정리(2026-06-09)**: LP 가 소람 PC 로 이전했으므로 `gpu_server_start.ps1`(레포 밖)에서 **LivePortrait(8001) 기동 블록 제거** → 다음 로그온부터 프록시(8080)·TTS(8003)·ngrok 만 기동. (정환주 GPU 엔 LP 미설치라 VRAM 점유는 원래 없었고, 헛도는 8001 기동만 정리.) 프록시 루트(`/`)→8001 경로는 죽지만 백엔드는 `/tts` 만 호출하므로 무해.
+
+### 13-2. 검증 현황 — 터널 레벨 2터널 동시 운용 ✅ 실증 (2026-06-09)
+
+소람 PC LP 호스트 셋업 완료(RTX 3060, LivePortrait animals 풀 설치 + `server.py`:8001 + ngrok) 후 **양쪽 터널을 동시에 health 호출 → 둘 다 200** 으로 실증됨. 정환주 측에서도 재실측 확인.
+
+| 항목 | 결과 | 비고 |
+|------|------|------|
+| 구조: 별도 계정 → 동시 1세션 제약 회피 | ✅ 확정·실증 | 소람 ngrok 계정이 정환주와 달라, 동시 점등해도 무료 1세션 제한 안 걸림 |
+| TTS 터널 라이브 | ✅ `GET /tts/health` → 200 `{"service":"qwen3-tts","voices":["boy","girl"]}` | 정환주 GPU, 상시 가동 |
+| LP 터널 라이브 | ✅ `GET /health` → 200 `{"service":"liveportrait","mode":"local","driving_multiplier":0.5}` | 소람 PC, 발표 직전 점등(실측 시 가동) |
+| 2터널 **동시** health | ✅ 둘 다 200 동시 응답 | 서로 막지 않음 — 동시 운용 성립 확인 |
+
+> 검증 당시 소람 LP 주소: `https://enlarging-cane-vagrantly.ngrok-free.dev` (무료 랜덤 → 재점등 시 변동, §13-1·5 참고). **터널/GPU 레벨의 2터널 동시 운용은 통과.** 남은 것은 NCP 백엔드 `.env` 반영뿐(§13-3 step 3~4, 모세종).
+
+### 13-3. 발표 직전 동시 운용 검증 체크리스트
+
+소람 PC LP 터널이 뜬 시점에 아래를 순서대로:
+
+1. **소람 PC**: `nvidia-smi` VRAM 확인 → `uvicorn server:app --port 8001` → `ngrok http 8001` (소람 본인 authtoken). 발급 주소 공유.
+2. **양쪽 health 동시 호출** (둘 다 200이어야 동시 가동 확인):
+   ```bash
+   curl.exe https://rerun-devious-reaffirm.ngrok-free.dev/tts/health   # TTS 200
+   curl.exe https://<소람주소>.ngrok-free.app/health                    # LP  200 (driving_multiplier 표시)
+   ```
+3. **백엔드 `.env`** 에 `LIVEPORTRAIT_REMOTE_URL` 반영(모세종) → 백엔드 재시작.
+4. **백엔드 경유 양쪽 왕복**: `POST /api/v1/tts`(wav 생성) + LP 생성 경로 호출 → 각각 정상 응답.
+   - 두 호출이 **서로 막지 않고** 각자 200/201 이면 = **2터널 동시 운용 검증 완료.**
+5. **백업**: 터널이 죽어도 보여줄 사전 녹화본(장민수 보유, SETUP §11) 준비.
