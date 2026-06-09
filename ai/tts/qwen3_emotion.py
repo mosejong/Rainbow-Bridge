@@ -141,9 +141,13 @@ def _generate(model, text: str, instruct: str, gen_kwargs: dict | None = None):
 # 사용자가 직접 노브를 돌려 합성. 아이 앵커는 항상 강하게 고정(아저씨 목소리 방지).
 # 단계 숫자가 클수록 강함. instruct 문구만 바뀌고 temperature/seed 는 별도 인자.
 _CHILD_ANCHOR = (
-    "A young Korean {g}, a small child about seven years old, "
-    "with a clearly childlike high and light voice"
+    "A young Korean {g}, a small child {age}, with a clearly childlike high and light voice"
 )
+_AGE = {  # 어릴수록 톤 높고 가벼움
+    "younger": "about five years old",
+    "child": "about seven years old",
+    "older": "about ten years old",
+}
 _WARMTH = {  # 느끼(다정) 강도
     0: ", plain and matter-of-fact",
     1: ", calm and sincere",
@@ -156,15 +160,47 @@ _BRIGHT = {  # 밝기(쳐짐 반대)
     2: ", clear and bright",
     3: ", bright and lively",
 }
-_PACE = {"slow": ", speaking slowly", "normal": ", speaking at a natural pace"}
+_PITCH = {"low": ", with a lower pitch", "normal": "", "high": ", with a higher pitch"}
+_EMOTION = {  # 감정 결 (없음=중립)
+    "none": "",
+    "calm": ", calm and composed",
+    "sad": ", with quiet gentle sadness",
+    "comfort": ", comforting and reassuring",
+}
+_CLARITY = {  # 또렷함(속삭임 반대)
+    0: "",
+    1: ", articulate",
+    2: ", articulate with crisp clear pronunciation",
+}
+_PACE = {
+    "slow": ", speaking slowly",
+    "normal": ", speaking at a natural pace",
+    "fast": ", speaking a bit faster",
+}
 # 항상 붙는 꼬리 — 속삭임/숨소리/성인 톤 차단
 _TAIL = ", speaking out loud at a normal distance, not whispering, not breathy, clearly a child and not an adult"
 
 
-def build_instruct(gender: str, warmth: int, bright: int, pace: str) -> str:
+def build_instruct(
+    gender: str,
+    warmth: int,
+    bright: int,
+    pace: str,
+    age: str = "child",
+    pitch: str = "normal",
+    emotion: str = "none",
+    clarity: int = 0,
+) -> str:
     g = "boy" if gender == "boy" else "girl"
     return (
-        _CHILD_ANCHOR.format(g=g) + _WARMTH[warmth] + _BRIGHT[bright] + _PACE[pace] + _TAIL
+        _CHILD_ANCHOR.format(g=g, age=_AGE[age])
+        + _WARMTH[warmth]
+        + _BRIGHT[bright]
+        + _PITCH[pitch]
+        + _EMOTION[emotion]
+        + _CLARITY[clarity]
+        + _PACE[pace]
+        + _TAIL
     )
 
 
