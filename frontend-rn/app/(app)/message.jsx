@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 import SafetyModal from '../../components/SafetyModal';
@@ -42,6 +43,7 @@ export default function MessageScreen() {
   const [done, setDone] = useState(false);
 
   const anims = useRef([]);
+  const paperAnim = useRef(new Animated.Value(0)).current; // 편지지 페이드인
   const bgmRef = useRef(null);
   const ttsRef = useRef(null);
   const timersRef = useRef([]);
@@ -121,6 +123,13 @@ export default function MessageScreen() {
   async function startSequence(parsed, isFirstPerson, msgData) {
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
 
+    // 편지지 페이드인
+    Animated.timing(paperAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+
     // BGM 페이드인
     const bgmFile = isFirstPerson ? BGM_1ST : BGM_3RD;
     if (bgmFile) {
@@ -197,100 +206,202 @@ export default function MessageScreen() {
     timersRef.current.push(setTimeout(() => setDone(true), total));
   }
 
+  const isFirst = message?.first_person;
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <SafetyModal isOpen={safetyOpen} onClose={() => setSafetyOpen(false)} />
+    <LinearGradient colors={['#12101A', '#1E1528', '#12101A']} style={styles.safe}>
+      <SafeAreaView style={styles.safeInner}>
+        <SafetyModal isOpen={safetyOpen} onClose={() => setSafetyOpen(false)} />
 
-      {loading && (
-        <View style={styles.center}>
-          <LoadingSpinner message={`${petName}의 추억을 떠올리고 있어요...`} />
-        </View>
-      )}
+        {/* 로딩 */}
+        {loading && (
+          <View style={styles.center}>
+            <LoadingSpinner message={`${petName}의 추억을 떠올리고 있어요...`} />
+          </View>
+        )}
 
-      {!loading && error && (
-        <View style={styles.center}>
-          <Text style={styles.error}>{error}</Text>
-          <Button variant="primary" onPress={regenerate}>다시 시도</Button>
-        </View>
-      )}
+        {/* 에러 */}
+        {!loading && error && (
+          <View style={styles.center}>
+            <Text style={styles.error}>{error}</Text>
+            <Button variant="primary" onPress={regenerate}>다시 시도</Button>
+          </View>
+        )}
 
-      {/* unavailable — 연출 없이 안내 */}
-      {!loading && message?.source === 'unavailable' && (
-        <View style={styles.center}>
-          <Text style={styles.unavailable}>{message.content}</Text>
-          <Button variant="ghost" onPress={regenerate} style={styles.retryBtn}>
-            다시 시도
-          </Button>
-        </View>
-      )}
+        {/* unavailable — 편지지 없이 안내 */}
+        {!loading && message?.source === 'unavailable' && (
+          <View style={styles.center}>
+            <Text style={styles.unavailable}>{message.content}</Text>
+            <Button variant="ghost" onPress={regenerate} style={{ marginTop: 16 }}>
+              다시 시도
+            </Button>
+          </View>
+        )}
 
-      {/* 편지 연출 */}
-      {!loading && message && message.source !== 'unavailable' && (
-        <View style={styles.letterWrap}>
-          {lines.map((line, i) =>
-            i < visibleCount ? (
-              <Animated.Text
-                key={i}
-                style={[
-                  styles.line,
-                  message.first_person && styles.lineFirst,
-                  {
-                    opacity: anims.current[i]?.opacity ?? 1,
-                    transform: [{ translateY: anims.current[i]?.translateY ?? 0 }],
-                  },
-                ]}
+        {/* 편지지 연출 */}
+        {!loading && message && message.source !== 'unavailable' && (
+          <Animated.View style={[styles.paperWrap, { opacity: paperAnim }]}>
+            {/* 편지지 카드 */}
+            <View style={[styles.paper, isFirst && styles.paperFirst]}>
+
+              {/* 편지지 상단 — 이름 + 장식선 */}
+              <View style={styles.paperHeader}>
+                <Text style={[styles.petLabel, isFirst && styles.petLabelFirst]}>
+                  · {petName} ·
+                </Text>
+                <View style={[styles.headerLine, isFirst && styles.headerLineFirst]} />
+              </View>
+
+              {/* 편지 본문 */}
+              <ScrollView
+                style={styles.bodyScroll}
+                contentContainerStyle={styles.bodyContent}
+                scrollEnabled={done}
+                showsVerticalScrollIndicator={false}
               >
-                {line}
-              </Animated.Text>
-            ) : null
-          )}
+                {lines.map((line, i) =>
+                  i < visibleCount ? (
+                    <Animated.Text
+                      key={i}
+                      style={[
+                        styles.line,
+                        isFirst && styles.lineFirst,
+                        {
+                          opacity: anims.current[i]?.opacity ?? 1,
+                          transform: [{ translateY: anims.current[i]?.translateY ?? 0 }],
+                        },
+                      ]}
+                    >
+                      {line}
+                    </Animated.Text>
+                  ) : null
+                )}
+              </ScrollView>
 
-          {done && (
-            <View style={styles.actions}>
-              <Text style={styles.disclaimer}>
-                {message.first_person
-                  ? 'AI가 보호자가 전해준 추억을 바탕으로 재해석한 꿈 속 작별 인사입니다.'
-                  : 'AI가 생성한 추모 글입니다. 반려동물이 직접 한 말이 아닙니다.'}
-              </Text>
-              <Button variant="ghost" onPress={regenerate}>
+              {/* 편지지 하단 — 구분선 + disclaimer */}
+              {done && (
+                <View style={styles.paperFooter}>
+                  <View style={[styles.footerLine, isFirst && styles.headerLineFirst]} />
+                  <Text style={styles.disclaimer}>
+                    {isFirst
+                      ? 'AI가 보호자가 전해준 추억을 바탕으로 재해석한 꿈 속 작별 인사입니다.'
+                      : 'AI가 생성한 추모 글입니다. 반려동물이 직접 한 말이 아닙니다.'}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* 다시 생성 버튼 — 편지지 밖 */}
+            {done && (
+              <Button variant="ghost" onPress={regenerate} style={styles.regenBtn}>
                 🔄 다시 생성
               </Button>
-            </View>
-          )}
-        </View>
-      )}
-    </SafeAreaView>
+            )}
+          </Animated.View>
+        )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#1A1520' }, // 어두운 배경 — 편지 감성
+  safe: { flex: 1 },
+  safeInner: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  letterWrap: {
+
+  // 편지지 전체 래퍼 (페이드인 대상)
+  paperWrap: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 48,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 32,
     gap: 20,
   },
+
+  // 편지지 카드
+  paper: {
+    width: '100%',
+    backgroundColor: '#FFF8EE',   // 크림/아이보리 — 3인칭 기본
+    borderRadius: 16,
+    paddingHorizontal: 28,
+    paddingTop: 28,
+    paddingBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 12,
+    maxHeight: '82%',
+  },
+  paperFirst: {
+    backgroundColor: '#FFF4EC', // 1인칭 — 살짝 따뜻한 황금빛 크림
+  },
+
+  // 편지지 상단
+  paperHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 10,
+  },
+  petLabel: {
+    fontSize: 13,
+    color: '#A08060',
+    letterSpacing: 3,
+    fontWeight: '500',
+  },
+  petLabelFirst: {
+    color: '#B06840', // 1인칭 — 따뜻한 갈색
+  },
+  headerLine: {
+    width: 48,
+    height: 1,
+    backgroundColor: '#D4C0A0',
+  },
+  headerLineFirst: {
+    backgroundColor: '#D4A080',
+  },
+
+  // 본문 스크롤
+  bodyScroll: { flexGrow: 0 },
+  bodyContent: { gap: 16, paddingBottom: 4 },
+
+  // 편지 줄
   line: {
-    fontSize: 17,
-    color: '#EDE8F5',
-    lineHeight: 28,
+    fontSize: 16,
+    color: '#3A2A1A',
+    lineHeight: 27,
     textAlign: 'center',
-    fontWeight: '300',
+    fontWeight: '400',
   },
   lineFirst: {
-    color: '#F5E6FF', // 1인칭 — 살짝 더 따뜻한 색
+    color: '#4A2010',
     fontStyle: 'italic',
+    fontWeight: '300',
+  },
+
+  // 편지지 하단
+  paperFooter: {
+    marginTop: 20,
+    alignItems: 'center',
+    gap: 10,
+  },
+  footerLine: {
+    width: 48,
+    height: 1,
+    backgroundColor: '#D4C0A0',
   },
   disclaimer: {
     fontSize: 11,
-    color: '#7A6E8A',
+    color: '#A09070',
     textAlign: 'center',
     lineHeight: 17,
-    marginBottom: 12,
   },
+
+  // 다시 생성 버튼
+  regenBtn: { alignSelf: 'center' },
+
+  // 에러/unavailable
   error: { color: COLORS.danger, fontSize: 14, textAlign: 'center', marginBottom: 16 },
   unavailable: {
     fontSize: 15,
@@ -299,6 +410,4 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     lineHeight: 24,
   },
-  retryBtn: { marginTop: 8 },
-  actions: { marginTop: 32, gap: 8 },
 });
