@@ -238,3 +238,15 @@ async def run_perso(asset_id: str):
         logger.exception(
             "PERSO 더빙 실패 asset_id=%s", asset_id
         )  # 메인 서비스에 영향 없음
+
+
+async def increment_play_count(asset_id: str) -> None:
+    """영상 재생 시 play_count +1."""
+    oid = _to_object_id(asset_id)
+    if oid is None:
+        return
+    await _collection().update_one(
+        {"_id": oid},
+        {"$inc": {"play_count": 1}},
+        upsert=False,
+    )

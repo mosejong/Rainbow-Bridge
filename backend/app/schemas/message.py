@@ -10,6 +10,9 @@ class MessageCreate(BaseModel):
     emotion_score: Optional[int] = Field(None, ge=1, le=10, description="감정 점수")
     note: Optional[str] = Field(None, description="보호자 메모")
     consent: bool = Field(False, description="1인칭 편지 동의 여부")
+    guardian_nickname: Optional[str] = Field(
+        None, description="로그인 유저 닉네임 (3인칭 글 머리에 표시)"
+    )
 
 
 class MessageResponse(BaseModel):

@@ -26,9 +26,9 @@ export const mockMessage = {
 };
 
 export const mockMissions = [
-  { id: 'mis_001', pet_id: 'pet_001', title: '오늘 5분 산책하기', description: '잠깐이라도 밖에 나가 바람을 맞아보세요.', completed: false, created_at: '2026-06-04T00:00:00Z', completed_at: null },
-  { id: 'mis_002', pet_id: 'pet_001', title: '콩이 사진 1장 꺼내보기', description: '소중한 추억을 떠올려보세요.', completed: false, created_at: '2026-06-04T00:00:00Z', completed_at: null },
-  { id: 'mis_003', pet_id: 'pet_001', title: '좋아하는 음악 듣기', description: '마음을 달래는 음악 한 곡을 골라보세요.', completed: true, created_at: '2026-06-04T00:00:00Z', completed_at: '2026-06-04T09:00:00Z' },
+  { id: 'mis_001', pet_id: 'pet_001', title: '집 앞 5분 산책', description: '집 근처를 5분만 천천히 걸어보세요.', category: '행동활성화', rationale: '작은 활동이 가라앉은 기분을 끌어올려요', completed: false, created_at: '2026-06-04T00:00:00Z', completed_at: null },
+  { id: 'mis_002', pet_id: 'pet_001', title: '콩이 사진 한 장 바라보기', description: '함께한 사진 한 장을 천천히 바라보세요.', category: '지속적 유대', rationale: '기억을 이어가며 슬픔을 따뜻하게 바꿔요', completed: false, created_at: '2026-06-04T00:00:00Z', completed_at: null },
+  { id: 'mis_003', pet_id: 'pet_001', title: '오늘 감정 한 줄', description: '지금 느끼는 감정을 한 줄로만 적어보세요.', category: '표현적 글쓰기', rationale: '감정을 글로 꺼내면 마음이 가벼워져요', completed: true, created_at: '2026-06-04T00:00:00Z', completed_at: '2026-06-04T09:00:00Z' },
 ];
 
 export const mockTimeline = [

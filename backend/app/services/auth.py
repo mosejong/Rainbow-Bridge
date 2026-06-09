@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 from app.schemas.auth import RegisterRequest, TokenResponse, UserResponse
+from app.db.mongodb import mongodb
 
 _pwd_ctx = CryptContext(
     schemes=["bcrypt"],
@@ -33,10 +34,10 @@ def _verify_password(plain: str, hashed: str) -> bool:
     )
 
 
-def _create_token(user_id: int, email: str) -> str:
+def _create_token(user_id: int, email: str, nickname: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(hours=_EXPIRE_HOURS)
     return jwt.encode(
-        {"sub": str(user_id), "email": email, "exp": expire},
+        {"sub": str(user_id), "email": email, "nickname": nickname, "exp": expire},
         _SECRET_KEY,
         algorithm=_ALGORITHM,
     )
@@ -69,5 +70,12 @@ async def login(db: AsyncSession, email: str, password: str) -> TokenResponse:
     if not verified:
         raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다.")
 
-    token = _create_token(user.id, user.email)
+    token = _create_token(user.id, user.email, user.nickname)
+    await mongodb.db["access_logs"].insert_one(
+        {
+            "user_id": user.id,
+            "email": user.email,
+            "accessed_at": datetime.now(timezone.utc),
+        }
+    )
     return TokenResponse(access_token=token)
