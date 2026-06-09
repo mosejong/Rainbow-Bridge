@@ -15,9 +15,16 @@ const LIVING_SECTION = {
     {
       id: 'bucketlist',
       emoji: '📋',
-      title: '버킷리스트 & 다이어리',
-      desc: '함께 하고 싶은 것들과 소중한 추억을 기록해요',
-      route: '/(app)/memories_diary',
+      title: '버킷리스트',
+      desc: '함께 하고 싶은 것들을 체크해요',
+      route: '/(app)/bucketlist',
+    },
+    {
+      id: 'diary',
+      emoji: '📔',
+      title: '일기 & 추억 메모',
+      desc: '함께한 소중한 하루하루를 기록해요',
+      route: '/(app)/diary',
     },
   ],
 };
