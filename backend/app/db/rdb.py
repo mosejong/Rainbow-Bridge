@@ -13,7 +13,7 @@ import os
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./rainbow_bridge.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./data/rainbow_bridge.db")
 
 _connect_args = (
     {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
@@ -32,6 +32,11 @@ async def get_db():
 
 
 async def init_db():
+    if DATABASE_URL.startswith("sqlite"):
+        import pathlib
+        db_path = DATABASE_URL.split("///")[-1]
+        pathlib.Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+
     # 모델을 임포트해야 Base.metadata에 테이블이 등록됨
     import app.models.user  # noqa: F401
     import app.models.vet  # noqa: F401
