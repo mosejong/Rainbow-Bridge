@@ -25,3 +25,5 @@ gtts>=2.5
 bcrypt==4.0.1
 redis[asyncio]==5.2.1      # 감정 체크인 최근 기록 캐시
 chromadb>=0.5
+opencv-python-headless>=4.9  # 사진 적합도 채점 (선명도·밝기) — headless: GUI 불필요
+mediapipe>=0.10              # 사진 얼굴 감지 보너스 채점 — 미설치 시 보너스 0으로 graceful 처리

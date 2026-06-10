@@ -19,6 +19,7 @@ from app.services.media import (
     run_liveportrait,
     run_perso,
     increment_play_count,
+    select_best_pet_photo,
 )
 from app.services.pet import get_pet
 
@@ -125,6 +126,37 @@ async def download_media(
         media_type="video/mp4",
         filename=f"{asset_id}_{type}.mp4",
     )
+
+
+@router.post("/generate/{pet_id}", status_code=202)
+async def generate_memorial_video(
+    pet_id: str,
+    background_tasks: BackgroundTasks,
+    user: dict = Depends(get_current_user),
+):
+    """저장된 사진 중 LivePortrait 적합도 최고 사진을 자동 선택해 추모 영상 생성.
+
+    업로드된 모든 사진을 선명도·밝기·해상도·종횡비로 채점 후 최적 사진으로 영상 생성.
+    생성은 비동기(백그라운드)로 진행되며, asset_id로 진행 상태 조회 가능.
+    """
+    if not await get_pet(pet_id, user_id=user["user_id"]):
+        raise HTTPException(status_code=404, detail="반려동물 정보를 찾을 수 없습니다.")
+
+    best_photo = await select_best_pet_photo(pet_id)
+    if best_photo is None:
+        raise HTTPException(
+            status_code=404,
+            detail="사용 가능한 사진이 없습니다. 먼저 사진을 업로드해주세요.",
+        )
+
+    asset_id = await create_asset(pet_id, str(best_photo), user_id=user["user_id"])
+    background_tasks.add_task(run_liveportrait, asset_id, str(best_photo), pet_id)
+
+    return {
+        "asset_id": asset_id,
+        "message": "추모 영상 생성이 시작됐습니다.",
+        "selected_photo": best_photo.name,
+    }
 
 
 @router.post("/{asset_id}/play", status_code=200)
