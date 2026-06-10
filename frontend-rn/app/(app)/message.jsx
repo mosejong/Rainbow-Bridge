@@ -224,8 +224,11 @@ export default function MessageScreen() {
   async function saveMessage(data) {
     setMessage(data);
     await AsyncStorage.setItem('message_id', data.id || data._id || '');
-    await AsyncStorage.setItem('message_content', data.content || '');
-    await AsyncStorage.setItem('message_tone', data.tone || 'warm');
+    // unavailable 상태(LLM 실패 안내문)는 TTS에 저장하지 않음
+    if (data.source !== 'unavailable') {
+      await AsyncStorage.setItem('message_content', data.content || '');
+      await AsyncStorage.setItem('message_tone', data.tone || 'warm');
+    }
     if (data.risk_level >= 2 || data.source === 'safety') setSafetyOpen(true);
   }
 
