@@ -18,6 +18,7 @@ from app.api.v1.endpoints import (
     messages,
     missions,
     pets,
+    play_logs,
     report,
     timeline,
     tts,
@@ -32,6 +33,7 @@ api_router.include_router(emotions.router, prefix="/emotions", tags=["emotions"]
 api_router.include_router(missions.router, prefix="/missions", tags=["missions"])
 api_router.include_router(messages.router, prefix="/messages", tags=["messages"])
 api_router.include_router(tts.router, prefix="/tts", tags=["tts"])
+api_router.include_router(play_logs.router, prefix="/play-logs", tags=["play_logs"])
 api_router.include_router(report.router, prefix="/report", tags=["report"])
 api_router.include_router(timeline.router, prefix="/timeline", tags=["timeline"])
 api_router.include_router(llm_logs.router, prefix="/llm-logs", tags=["llm_logs"])
