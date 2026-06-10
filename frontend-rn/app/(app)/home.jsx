@@ -160,6 +160,9 @@ function MemorialHome({ gateStatus }) {
 export default function HomeScreen() {
   const [petName, setPetName] = useState('');
   const [petSpecies, setPetSpecies] = useState('');
+  const [petGender, setPetGender] = useState('');
+  const [petStartDate, setPetStartDate] = useState('');
+  const [guardianTitle, setGuardianTitle] = useState('');
   const [callerName, setCallerName] = useState('보호자');
   const [memorialMode, setMemorialMode] = useState(false);
   const [gateStatus, setGateStatus] = useState('locked');
@@ -172,9 +175,12 @@ export default function HomeScreen() {
   }, []);
 
   async function loadData() {
-    const [name, species, caller, mode, fd, petId] = await Promise.all([
+    const [name, species, gender, startDate, guardTitle, caller, mode, fd, petId] = await Promise.all([
       AsyncStorage.getItem('pet_name'),
       AsyncStorage.getItem('pet_species'),
+      AsyncStorage.getItem('pet_gender'),
+      AsyncStorage.getItem('pet_start_date'),
+      AsyncStorage.getItem('pet_guardian_title'),
       AsyncStorage.getItem('caller_name'),
       AsyncStorage.getItem('memorial_mode'),
       AsyncStorage.getItem('pet_farewell_date'),
@@ -182,6 +188,9 @@ export default function HomeScreen() {
     ]);
     if (name) setPetName(name);
     if (species) setPetSpecies(species);
+    if (gender) setPetGender(gender);
+    if (startDate) setPetStartDate(startDate);
+    if (guardTitle) setGuardianTitle(guardTitle);
     if (caller) setCallerName(caller);
     if (mode === 'true') setMemorialMode(true);
     if (fd) setFarewellDate(fd);
@@ -230,10 +239,18 @@ export default function HomeScreen() {
             <Text style={styles.petEmoji}>{speciesEmoji}</Text>
             <View style={styles.petInfo}>
               <Text style={styles.petName}>{petDisplay}</Text>
+              {(petGender || petSpecies) ? (
+                <Text style={styles.petMeta}>
+                  {[petGender, petSpecies].filter(Boolean).join(' · ')}
+                </Text>
+              ) : null}
+              {petStartDate && farewellDate ? (
+                <Text style={styles.petPeriod}>{petStartDate} ~ {farewellDate}</Text>
+              ) : null}
               <Text style={styles.petSub}>
                 {memorialMode && daysAfter !== null
                   ? `이별 후 D+${daysAfter}`
-                  : `${callerName}님과 함께하는 공간이에요`}
+                  : `${guardianTitle || callerName || '보호자'}님과 함께하는 공간이에요`}
               </Text>
             </View>
           </View>
@@ -311,7 +328,9 @@ const styles = StyleSheet.create({
   petEmoji: { fontSize: 36 },
   petInfo: { flex: 1 },
   petName: { fontSize: 18, fontWeight: '800', color: '#5B4E75' },
-  petSub: { fontSize: 13, color: '#8A7D9E', marginTop: 2 },
+  petMeta: { fontSize: 12, color: '#A89FBC', marginTop: 3 },
+  petPeriod: { fontSize: 11, color: '#B8B0CC', marginTop: 2 },
+  petSub: { fontSize: 13, color: '#8A7D9E', marginTop: 4 },
 
   sectionTitle: {
     fontSize: 13, fontWeight: '700', color: '#A89FBC',

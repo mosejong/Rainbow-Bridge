@@ -9,6 +9,7 @@ export async function doLogout() {
       'access_token', 'pet_id', 'pet_name', 'pet_species',
       'bucketlist_items', 'diary_entries', 'caller_name',
       'pet_photos', 'recovery_cache', 'pet_farewell_date', 'memorial_mode',
+      'pet_guardian_title', 'pet_gender', 'pet_start_date',
     ]);
   } catch {}
   router.replace('/');

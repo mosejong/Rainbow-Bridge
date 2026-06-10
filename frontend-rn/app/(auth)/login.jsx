@@ -46,8 +46,14 @@ export default function LoginScreen() {
           if (pet.caller_name) {
             await AsyncStorage.setItem('caller_name', pet.caller_name);
           }
+          if (pet.gender) {
+            await AsyncStorage.setItem('pet_gender', pet.gender);
+          }
           if (pet.period) {
-            const endPart = pet.period.split('~')[1]?.trim();
+            const parts = pet.period.split('~');
+            const startPart = parts[0]?.trim();
+            const endPart = parts[1]?.trim();
+            if (startPart) await AsyncStorage.setItem('pet_start_date', startPart);
             if (endPart) await AsyncStorage.setItem('pet_farewell_date', endPart);
           }
           hasPet = true;
