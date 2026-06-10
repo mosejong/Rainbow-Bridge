@@ -94,6 +94,14 @@ async def get_recovery(pet_id: str) -> RecoveryResponse:
     # 1인칭 편지는 창 내 위기 기록이 전혀 없을 때만 허용
     allow_first_person = content_unlocked and max_risk == 0
 
+    # 3단계 게이트: locked(0~49) / teaser(50~79) / open(80+)
+    if not content_unlocked:
+        gate_status = "locked"
+    elif recovery_pct >= 80:
+        gate_status = "open"
+    else:
+        gate_status = "teaser"
+
     return RecoveryResponse(
         pet_id=pet_id,
         total_checkins=len(records),
@@ -104,4 +112,5 @@ async def get_recovery(pet_id: str) -> RecoveryResponse:
         records=records,
         content_unlocked=content_unlocked,
         allow_first_person=allow_first_person,
+        gate_status=gate_status,
     )
