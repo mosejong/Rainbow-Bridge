@@ -21,6 +21,20 @@ const LINE_DURATION = 900;
 const BGM_FADE_DURATION = 500;
 const TTS_START_OFFSET = LINE_DURATION / 2;
 
+function makeFallbackMessage(petName) {
+  const name = petName || '소중한 친구';
+  return {
+    id: 'local',
+    content: `${name}와 함께했던 모든 순간들이 얼마나 소중했는지 기억해요.\n그 따뜻한 기억들은 언제나 마음속에 살아있을 거예요.\n지금 많이 힘드시겠지만, 조금씩 천천히 나아가도 괜찮아요.\n${name}는 보호자와 함께한 시간을 언제나 행복하게 기억할 거예요.`,
+    tone: 'warm',
+    first_person: false,
+    source: 'local',
+    risk_level: 0,
+    content_unlocked: true,
+    allow_first_person: false,
+  };
+}
+
 function speciesIcon(species) {
   if (species === '강아지') return '🐾';
   if (species === '고양이') return '🐱';
@@ -98,17 +112,18 @@ export default function MessageScreen() {
   }
 
   async function loadMessage() {
+    const petId = await AsyncStorage.getItem('pet_id');
+    const petNameLocal = await AsyncStorage.getItem('pet_name') || '소중한 친구';
     try {
-      const petId = await AsyncStorage.getItem('pet_id');
+      const existing = await getLatestMessage(petId);
+      await saveMessage(existing);
+    } catch {
       try {
-        const existing = await getLatestMessage(petId);
-        await saveMessage(existing);
-      } catch {
         const data = await generateMessage({ pet_id: petId });
         await saveMessage(data);
+      } catch {
+        await saveMessage(makeFallbackMessage(petNameLocal));
       }
-    } catch {
-      setError('메시지 생성에 실패했어요. 다시 시도해주세요.');
     }
   }
 
@@ -166,10 +181,37 @@ export default function MessageScreen() {
     setPhase('loading');
     try {
       const petId = await AsyncStorage.getItem('pet_id');
-      const data = await generateMessage({ pet_id: petId });
-      await saveMessage(data);
+      const petNameLocal = await AsyncStorage.getItem('pet_name') || '소중한 친구';
+      try {
+        const data = await generateMessage({ pet_id: petId });
+        await saveMessage(data);
+      } catch {
+        await saveMessage(makeFallbackMessage(petNameLocal));
+      }
     } catch {
       setError('메시지 생성에 실패했어요. 다시 시도해주세요.');
+    }
+  }
+
+  async function requestFirstPerson() {
+    cleanup();
+    setDone(false);
+    setVisibleCount(0);
+    setLines([]);
+    setWelfareExpanded(false);
+    setMessage(null);
+    setError('');
+    flapAnim.setValue(0);
+    envelopeAnim.setValue(1);
+    paperOpacity.setValue(0);
+    paperTranslate.setValue(40);
+    setPhase('loading');
+    try {
+      const petId = await AsyncStorage.getItem('pet_id');
+      const data = await generateMessage({ pet_id: petId, request_first_person: true });
+      await saveMessage(data);
+    } catch {
+      setError('편지 생성에 실패했어요. 다시 시도해주세요.');
     }
   }
 
@@ -363,6 +405,53 @@ export default function MessageScreen() {
                 </Button>
               )}
 
+              {/* 회복 게이트 — content_unlocked / allow_first_person */}
+              {done && (
+                <View style={styles.gateSection}>
+                  {message?.content_unlocked !== false && (
+                    <TouchableOpacity
+                      style={styles.gateBtnWrap}
+                      onPress={() => router.push('/(app)/mission')}
+                      activeOpacity={0.8}
+                    >
+                      <LinearGradient
+                        colors={['rgba(123,200,164,0.22)', 'rgba(184,208,232,0.18)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.gateBtn}
+                      >
+                        <Text style={styles.gateBtnEmoji}>🌱</Text>
+                        <View style={styles.gateBtnBody}>
+                          <Text style={styles.gateBtnText}>오늘의 회복 미션 보기</Text>
+                          <Text style={styles.gateBtnSub}>일상 복귀를 위한 작은 활동들이에요</Text>
+                        </View>
+                        <Text style={styles.gateBtnArrow}>›</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  )}
+                  {message?.allow_first_person && !isFirst && (
+                    <TouchableOpacity
+                      style={styles.firstPersonBtnWrap}
+                      onPress={requestFirstPerson}
+                      activeOpacity={0.8}
+                    >
+                      <LinearGradient
+                        colors={['rgba(253,243,220,0.22)', 'rgba(232,201,122,0.14)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.gateBtn}
+                      >
+                        <Text style={styles.gateBtnEmoji}>✉️</Text>
+                        <View style={styles.gateBtnBody}>
+                          <Text style={[styles.gateBtnText, { color: '#E8C97A' }]}>아이가 직접 쓴 편지 받기</Text>
+                          <Text style={styles.gateBtnSub}>AI가 추억을 바탕으로 재해석한 편지예요</Text>
+                        </View>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+
               {/* 상담 자원 섹션 — risk_level 1/2 이상이고 welfare_resources 있을 때 */}
               {done && (featuredResources.length > 0 || extraResources.length > 0) && (
                 <View style={styles.welfareSection}>
@@ -545,6 +634,33 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)',
   },
   expandToggleText: { fontSize: 13, color: 'rgba(255,255,255,0.45)' },
+
+  // ── 회복 게이트 ──
+  gateSection: { gap: 10, marginTop: 4 },
+  gateBtnWrap: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(123,200,164,0.30)',
+  },
+  firstPersonBtnWrap: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(232,201,122,0.35)',
+  },
+  gateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  gateBtnEmoji: { fontSize: 22 },
+  gateBtnBody: { flex: 1 },
+  gateBtnText: { fontSize: 13, fontWeight: '700', color: '#7BC8A4' },
+  gateBtnSub: { fontSize: 11, color: 'rgba(255,255,255,0.40)', marginTop: 2 },
+  gateBtnArrow: { fontSize: 18, color: 'rgba(255,255,255,0.35)' },
 
   error: { color: COLORS.danger, fontSize: 14, textAlign: 'center', marginBottom: 16 },
   unavailable: { fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 20, lineHeight: 24 },
