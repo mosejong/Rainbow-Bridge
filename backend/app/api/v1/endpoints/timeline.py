@@ -1,28 +1,14 @@
 """타임라인 엔드포인트 — 반려동물별 추모 기록 조회."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from app.core.deps import get_current_user
-from app.db.mongodb import mongodb
+from app.services.timeline import get_timeline
 
 router = APIRouter()
 
 
 @router.get("/{pet_id}", tags=["timeline"])
-async def get_timeline(pet_id: str, user: dict = Depends(get_current_user)):
-    """특정 반려동물의 타임라인 기록을 최신순으로 반환합니다."""
-    cursor = mongodb.db["timeline"].find(
-        {"pet_id": pet_id},
-        sort=[("_id", -1)],
-    )
-    records = []
-    async for doc in cursor:
-        doc["_id"] = str(doc["_id"])
-        records.append(doc)
-
-    if not records:
-        raise HTTPException(
-            status_code=404, detail="해당 반려동물의 타임라인 기록이 없습니다."
-        )
-
-    return records
+async def read_timeline(pet_id: str, user: dict = Depends(get_current_user)):
+    """반려동물의 추모 기록(메시지·감정·미션·영상)을 최신순으로 합쳐 반환. 없으면 빈 배열."""
+    return await get_timeline(pet_id)

@@ -34,12 +34,22 @@ export default function LoginScreen() {
       // 이 계정의 펫이 이미 있는지 API로 확인
       let hasPet = false;
       try {
-        const pets = await getMyPets();
-        if (pets?.length > 0) {
-          const pet = pets[0];
-          await AsyncStorage.setItem('pet_id', pet.id || pet._id || '');
+        const raw = await getMyPets();
+        // 배열 직접 or { pets: [...] } or { data: [...] } 형식 모두 처리
+        const petList = Array.isArray(raw) ? raw : (raw?.pets ?? raw?.data ?? []);
+        if (petList.length > 0) {
+          const pet = petList[0];
+          await AsyncStorage.setItem('pet_id', String(pet.id || pet._id || ''));
           await AsyncStorage.setItem('pet_name', pet.name || '');
           await AsyncStorage.setItem('pet_species', pet.species || '');
+          // 호칭·이별날짜도 복원 — 재방문자가 다시 프로필 입력 안 해도 되게
+          if (pet.caller_name) {
+            await AsyncStorage.setItem('caller_name', pet.caller_name);
+          }
+          if (pet.period) {
+            const endPart = pet.period.split('~')[1]?.trim();
+            if (endPart) await AsyncStorage.setItem('pet_farewell_date', endPart);
+          }
           hasPet = true;
         }
       } catch { /* 펫 없음 → 프로필 등록으로 */ }

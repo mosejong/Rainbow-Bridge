@@ -4,7 +4,7 @@
 모델을 호출합니다(provider 추상화 — ../CLAUDE.md §4). Gemini·Ollama·PERSO 모두
 OpenAI 호환 엔드포인트라 `config` 의 base_url/model/api_keys 만 바꾸면 동일하게 동작.
 
-복원력(강사님 6/9 지적 대응):
+복원력(강사님 6/9 피드백 대응):
   1) 429(할당량 소진) → 즉시 다음 키로 전환(LLM_API_KEY=key1,key2 형식).
   2) 모든 키가 소진되면 폴백 모델(LLM_FALLBACK_MODEL, 예: gemini-3.5-flash)로 한 번 더
      전체 키를 재시도 — 무료 할당량은 모델별로 따로라 폴백 모델엔 남아 있을 수 있음.
