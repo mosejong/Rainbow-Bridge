@@ -44,3 +44,7 @@ class RecoveryResponse(BaseModel):
         False,
         description="1인칭 편지 허용 여부 — content_unlocked + 창 내 위기 기록 없음(max_risk=0)",
     )
+    gate_status: str = Field(
+        "locked",
+        description="회복 게이트 단계: locked(0~49) / teaser(50~79) / open(80+)",
+    )
