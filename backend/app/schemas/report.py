@@ -23,3 +23,5 @@ class ReportResponse(BaseModel):
         description="일상복귀 신호(정량) — signal/recovery_index/emotion/access_trend/evidence 등",
     )
     revisit: Optional[int] = Field(None, description="재방문 횟수 (추후 추가)")
+    play_count: Optional[int] = Field(None, description="영상 재생 횟수")
+    session_count: Optional[int] = Field(None, description="로그인 접속 횟수")

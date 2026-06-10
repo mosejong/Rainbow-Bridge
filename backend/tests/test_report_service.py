@@ -52,6 +52,9 @@ class _FakeCollection:
     async def find_one(self, *args, **kwargs):
         return self._find_one_result
 
+    async def count_documents(self, *args, **kwargs) -> int:
+        return len(self._docs)
+
 
 class _FakeDB:
     def __init__(self, collections: dict[str, _FakeCollection]):
@@ -100,6 +103,7 @@ async def test_get_report_full_with_recovery_signal():
         "llm_logs": _FakeCollection(llm_logs),
         "pets": _FakeCollection(find_one_result={"user_id": 42}),
         "access_logs": _FakeCollection(access_logs),
+        "media_assets": _FakeCollection([{"play_count": 5}, {"play_count": 3}]),
     }
 
     with patch("app.services.report.mongodb", new=_fake_mongo(collections)):
@@ -131,6 +135,7 @@ async def test_get_report_graceful_when_owner_missing():
         "llm_logs": _FakeCollection([]),
         "pets": _FakeCollection(find_one_result=None),  # 소유자 없음
         "access_logs": _FakeCollection([]),
+        "media_assets": _FakeCollection([]),
     }
 
     with patch("app.services.report.mongodb", new=_fake_mongo(collections)):
