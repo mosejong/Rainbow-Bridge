@@ -45,47 +45,53 @@ export default function PhotosScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
+      allowsMultipleSelection: true,
       quality: 0.85,
     });
     if (result.canceled) return;
 
-    const asset = result.assets[0];
     setUploading(true);
 
-    const newPhoto = {
-      id: Date.now().toString(),
+    const petId = await AsyncStorage.getItem('pet_id');
+    const newPhotos = result.assets.map((asset) => ({
+      id: `${Date.now()}_${asset.uri.slice(-8)}`,
       uri: asset.uri,
       uploadedAt: new Date().toISOString(),
       uploaded: false,
-    };
+    }));
 
-    const updated = [newPhoto, ...photos];
+    const updated = [...newPhotos, ...photos];
     await persist(updated);
 
-    // 백엔드 업로드 시도 (LivePortrait 파이프라인용)
-    try {
-      const petId = await AsyncStorage.getItem('pet_id');
-      const formData = new FormData();
-      formData.append('file', {
-        uri: asset.uri,
-        name: `pet_${Date.now()}.jpg`,
-        type: 'image/jpeg',
-      });
-      if (petId) formData.append('pet_id', petId);
-      formData.append('usage', 'liveportrait');
+    // 각 사진 백엔드 업로드 (LivePortrait 파이프라인용)
+    const uploadResults = await Promise.allSettled(
+      newPhotos.map(async (photo) => {
+        const formData = new FormData();
+        formData.append('file', {
+          uri: photo.uri,
+          name: `pet_${Date.now()}.jpg`,
+          type: 'image/jpeg',
+        });
+        if (petId) formData.append('pet_id', petId);
+        formData.append('usage', 'liveportrait');
+        const res = await uploadMedia(formData);
+        return { id: photo.id, asset_id: res.asset_id };
+      })
+    );
 
-      const res = await uploadMedia(formData);
-      const final = updated.map(p =>
-        p.id === newPhoto.id ? { ...p, asset_id: res.asset_id, uploaded: true } : p
-      );
-      await persist(final);
-    } catch {
-      // 업로드 실패해도 로컬 저장은 유지
-    } finally {
-      setUploading(false);
-    }
+    const succeededIds = new Map(
+      uploadResults
+        .filter((r) => r.status === 'fulfilled')
+        .map((r) => [r.value.id, r.value.asset_id])
+    );
+
+    const final = updated.map((p) =>
+      succeededIds.has(p.id)
+        ? { ...p, asset_id: succeededIds.get(p.id), uploaded: true }
+        : p
+    );
+    await persist(final);
+    setUploading(false);
   }
 
   function confirmDelete(id) {

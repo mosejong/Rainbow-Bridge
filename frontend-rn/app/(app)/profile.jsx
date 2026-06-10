@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, ActivityIndicator,
+  StyleSheet, ScrollView, ActivityIndicator, Platform, Modal,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Card from '../../components/Card';
 import { COLORS } from '../../constants/colors';
 
@@ -25,6 +26,22 @@ export default function ProfileScreen() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pickerField, setPickerField] = useState(null); // 'start_date' | 'end_date' | null
+
+  function getDateObj(field) {
+    const v = form[field];
+    if (!v) return new Date();
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? new Date() : d;
+  }
+
+  function onDateChange(event, selectedDate) {
+    if (Platform.OS === 'android') setPickerField(null);
+    if (selectedDate && pickerField) {
+      const formatted = selectedDate.toISOString().split('T')[0];
+      setForm((p) => ({ ...p, [pickerField]: formatted }));
+    }
+  }
 
   async function handleNext() {
     if (!form.name.trim()) {
@@ -127,27 +144,63 @@ export default function ProfileScreen() {
             {/* 함께한 기간 */}
             <View style={styles.field}>
               <Text style={styles.label}>함께한 기간 <Text style={styles.required}>*</Text></Text>
-              <Text style={styles.hint}>YYYY-MM-DD 형식으로 입력해주세요</Text>
               <View style={styles.dateRow}>
-                <TextInput
-                  style={[styles.input, styles.dateInput]}
-                  value={form.start_date}
-                  onChangeText={(v) => setForm((p) => ({ ...p, start_date: v }))}
-                  placeholder="2018-01-01"
-                  placeholderTextColor="#A89FBC"
-                  keyboardType="numeric"
-                />
+                <TouchableOpacity
+                  style={[styles.input, styles.dateInput, styles.datePicker]}
+                  onPress={() => setPickerField('start_date')}
+                  activeOpacity={0.75}
+                >
+                  <Text style={form.start_date ? styles.dateText : styles.datePlaceholder}>
+                    {form.start_date || '시작일 선택 📅'}
+                  </Text>
+                </TouchableOpacity>
                 <Text style={styles.dateSep}>~</Text>
-                <TextInput
-                  style={[styles.input, styles.dateInput]}
-                  value={form.end_date}
-                  onChangeText={(v) => setForm((p) => ({ ...p, end_date: v }))}
-                  placeholder="2026-01-01"
-                  placeholderTextColor="#A89FBC"
-                  keyboardType="numeric"
-                />
+                <TouchableOpacity
+                  style={[styles.input, styles.dateInput, styles.datePicker]}
+                  onPress={() => setPickerField('end_date')}
+                  activeOpacity={0.75}
+                >
+                  <Text style={form.end_date ? styles.dateText : styles.datePlaceholder}>
+                    {form.end_date || '종료일 선택 📅'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
+
+            {/* iOS: 달력 모달 */}
+            {Platform.OS === 'ios' && pickerField && (
+              <Modal transparent animationType="slide">
+                <View style={styles.iosModalBack}>
+                  <View style={styles.iosModalSheet}>
+                    <TouchableOpacity
+                      style={styles.iosModalDone}
+                      onPress={() => setPickerField(null)}
+                    >
+                      <Text style={styles.iosModalDoneText}>확인</Text>
+                    </TouchableOpacity>
+                    <DateTimePicker
+                      value={getDateObj(pickerField)}
+                      mode="date"
+                      display="inline"
+                      onChange={onDateChange}
+                      maximumDate={new Date()}
+                      locale="ko-KR"
+                    />
+                  </View>
+                </View>
+              </Modal>
+            )}
+
+            {/* Android: 네이티브 다이얼로그 */}
+            {Platform.OS === 'android' && pickerField && (
+              <DateTimePicker
+                value={getDateObj(pickerField)}
+                mode="date"
+                display="calendar"
+                onChange={onDateChange}
+                maximumDate={new Date()}
+              />
+            )}
 
             {/* 보호자 호칭 */}
             <View style={styles.field}>
@@ -242,7 +295,28 @@ const styles = StyleSheet.create({
   radioTextSelected: { color: '#5B4E75', fontWeight: '700' },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dateInput: { flex: 1 },
+  datePicker: { justifyContent: 'center' },
+  dateText: { fontSize: 15, color: '#4A4A4A' },
+  datePlaceholder: { fontSize: 14, color: '#A89FBC' },
   dateSep: { fontSize: 16, color: '#8A7D9E' },
+  iosModalBack: {
+    flex: 1, justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  iosModalSheet: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 32,
+  },
+  iosModalDone: {
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5DCF0',
+  },
+  iosModalDoneText: { fontSize: 16, fontWeight: '700', color: '#C4A8D8' },
   error: { color: COLORS.danger, fontSize: 13, textAlign: 'center', marginBottom: 12 },
   btnShadow: {
     marginTop: 8,

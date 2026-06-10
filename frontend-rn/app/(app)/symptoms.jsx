@@ -19,7 +19,8 @@ export default function SymptomsScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getHospitals()
+    // x=경도, y=위도 필수 파라미터 (기본값: 서울 시청 기준)
+    getHospitals({ x: 126.9784, y: 37.5665 })
       .then(setHospitals)
       .catch(() => setHospitals([]))
       .finally(() => setLoading(false));
