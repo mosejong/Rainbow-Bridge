@@ -2,9 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.deps import get_current_user
 from app.schemas.message import MessageCreate, MessageResponse
+from app.schemas.tts import TtsCreate, TtsResponse
 from app.services.message import create_message, get_latest_message
+from app.services.tts import generate_tts
 
 router = APIRouter()
+
+
+@router.post("/tts", response_model=TtsResponse, status_code=201)
+async def synthesize_message_tts(
+    body: TtsCreate, user: dict = Depends(get_current_user)
+):
+    """추모 메시지 낭독 TTS (프론트가 호출하는 경로). 합성 로직은 services/tts 공통."""
+    return await generate_tts(body)
 
 
 @router.get("/{pet_id}/latest", response_model=MessageResponse)
