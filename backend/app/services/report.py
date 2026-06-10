@@ -94,7 +94,11 @@ async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
     for doc in play_docs:
         played_at = doc.get("played_at")
         if played_at:
-            key = played_at.date().isoformat() if hasattr(played_at, "date") else str(played_at)[:10]
+            key = (
+                played_at.date().isoformat()
+                if hasattr(played_at, "date")
+                else str(played_at)[:10]
+            )
             play_day_counts[key] += 1
     play_trend_data = [
         PlayTrend(date=k, count=v) for k, v in sorted(play_day_counts.items())
