@@ -137,6 +137,11 @@
 - "네" 선택 시: `PATCH /pets/{pet_id}` → `memorial_mode: true`
 - 이별 후 모드 홈으로 전환
 
+> **farewell_date 구현 방식 (확정 2026-06-10)**
+> - 프론트: `profile.jsx`의 `end_date`를 `pet_farewell_date`로 AsyncStorage에 저장 — 백엔드 없이도 폴백 작동
+> - 회복 게이트 폴백 순서: 백엔드 API → 1시간 캐시 → `pet_farewell_date` 시간 기반 계산 (`utils/recovery.js`)
+> - 추후 `set_memorial_mode()` 전환 플로우 붙을 때 `pet_farewell_date`를 그 시각으로 덮어쓰는 식으로 A안과 합류 예정
+
 ---
 
 ## 4. 🌈 이별 후 모드 (memorial_mode: true)
