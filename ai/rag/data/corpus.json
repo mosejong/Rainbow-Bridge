@@ -465,42 +465,152 @@
   },
   {
     "id": "mission-01",
-    "text": "짧은 바깥 나들이가 도움이 될 수 있습니다. 산책이 아니어도 괜찮습니다. 가까운 편의점, 카페, 공원 벤치라도 잠깐 바깥 공기를 마시는 것만으로 기분이 조금 달라질 수 있습니다. 멀리 가지 않아도 됩니다.",
+    "text": "지금 많이 힘드시다면, 천천히 물 한 잔을 마셔보세요. 한 모금씩 삼키며 숨을 고르는 것만으로도 가라앉은 몸과 마음이 조금 풀릴 수 있습니다. 거창한 것을 하지 않아도 됩니다. 지금은 나를 돌보는 작은 한 가지면 충분합니다.",
     "metadata": {
       "topic": "미션",
-      "category": "mission"
+      "category": "mission",
+      "difficulty": "gentle",
+      "mission_category": "rest"
     }
   },
   {
     "id": "mission-02",
-    "text": "아이와의 추억을 담은 사진을 골라 앨범이나 폴더로 모아 두는 것이 도움이 되는 분들이 있습니다. 한꺼번에 다 하지 않아도 됩니다. 오늘 사진 하나를 꺼내 보는 것부터 시작해도 됩니다. 추억을 정리하는 과정이 슬프면서도 위로가 될 수 있습니다.",
+    "text": "함께한 사진 한 장을 가만히 바라보는 것만으로도 괜찮습니다. 잘 들여다보려 애쓰지 않아도 됩니다. 그 한 장에 담긴 표정과 순간을 잠시 떠올리는 것만으로, 그리움이 조금은 따뜻함으로 바뀔 수 있습니다.",
     "metadata": {
       "topic": "미션",
-      "category": "mission"
+      "category": "mission",
+      "difficulty": "gentle",
+      "mission_category": "remembrance"
     }
   },
   {
     "id": "mission-03",
-    "text": "감정 일기를 써보는 것도 방법입니다. 오늘 어떤 순간에 아이가 생각났는지, 어떤 감정이었는지 짧게 기록하는 것입니다. 잘 쓰려 하지 않아도 됩니다. 감정을 밖으로 꺼내는 것 자체가 조금씩 가벼워지는 데 도움이 됩니다.",
+    "text": "가까운 사람에게 안부 한 줄을 보내보는 것은 어떨까요. 긴 이야기를 하지 않아도 됩니다. \"잘 지내?\" 한 마디면 충분합니다. 누군가와 가늘게라도 이어져 있다는 감각이, 지금의 무거움을 조금 덜어줄 수 있습니다.",
     "metadata": {
       "topic": "미션",
-      "category": "mission"
+      "category": "mission",
+      "difficulty": "gentle",
+      "mission_category": "connection"
     }
   },
   {
     "id": "mission-04",
-    "text": "아이를 기억하는 작은 공간을 만들어 두는 분들도 있습니다. 사진 한 장, 좋아하던 장난감, 발도장이나 이름을 적은 카드처럼 부담 없는 것으로 시작해도 됩니다. 그 공간이 슬픔의 자리가 아니라 추억을 꺼내보는 자리가 되길 바랍니다.",
+    "text": "잠깐 창문을 열고 바깥 공기를 들여보세요. 멀리 나가지 않아도 됩니다. 바람이 얼굴에 닿는 1분, 들려오는 바깥 소리만으로도 갇혀 있던 기분이 조금 환기될 수 있습니다.",
     "metadata": {
       "topic": "미션",
-      "category": "mission"
+      "category": "mission",
+      "difficulty": "gentle",
+      "mission_category": "activity"
     }
   },
   {
     "id": "mission-05",
-    "text": "평소 좋아하던 것을 조금씩 다시 시작해 보는 것도 회복의 한 방법입니다. 좋아하는 음식을 먹거나, 보고 싶었던 영화를 보거나, 오랫동안 연락하지 못한 사람에게 메시지를 보내는 것도 됩니다. 아이가 당신의 일상이 다시 채워지길 바랐을 겁니다.",
+    "text": "지금 느끼는 감정을 한 줄로만 적어보세요. 잘 쓰려 하지 않아도 됩니다. \"오늘은 많이 보고 싶었다\" 처럼 떠오르는 그대로면 됩니다. 감정을 글자로 꺼내는 것 자체가 마음을 조금 가볍게 해줍니다.",
     "metadata": {
       "topic": "미션",
-      "category": "mission"
+      "category": "mission",
+      "difficulty": "gentle",
+      "mission_category": "record"
+    }
+  },
+  {
+    "id": "mission-06",
+    "text": "따뜻한 차나 좋아하는 음료를 한 잔 내려, 마음이 편해지는 음악을 한 곡 들어보세요. 10분이면 충분합니다. 잠시 나를 위한 자리를 만들어 주는 것만으로도 지친 마음이 한 박자 쉬어갈 수 있습니다.",
+    "metadata": {
+      "topic": "미션",
+      "category": "mission",
+      "difficulty": "small",
+      "mission_category": "rest"
+    }
+  },
+  {
+    "id": "mission-07",
+    "text": "아이와의 추억이 담긴 사진을 몇 장 골라 앨범이나 폴더로 모아 두는 것이 도움이 되는 분들이 있습니다. 한꺼번에 다 하지 않아도 됩니다. 오늘 사진 몇 장을 골라 보는 것부터 시작해도 됩니다. 추억을 정리하는 과정이 슬프면서도 위로가 될 수 있습니다.",
+    "metadata": {
+      "topic": "미션",
+      "category": "mission",
+      "difficulty": "small",
+      "mission_category": "remembrance"
+    }
+  },
+  {
+    "id": "mission-08",
+    "text": "마음이 가는 친구나 가족과 짧게 통화를 해보는 것은 어떨까요. 슬픔을 꼭 이야기하지 않아도 됩니다. 익숙한 목소리를 듣고 평범한 안부를 나누는 것만으로, 혼자가 아니라는 감각이 조금 돌아올 수 있습니다.",
+    "metadata": {
+      "topic": "미션",
+      "category": "mission",
+      "difficulty": "small",
+      "mission_category": "connection"
+    }
+  },
+  {
+    "id": "mission-09",
+    "text": "집 앞에 잠깐 나가 바깥 공기를 마셔보세요. 산책이 아니어도 괜찮습니다. 가까운 편의점, 카페, 공원 벤치까지라도 10분 다녀오는 것만으로 기분이 조금 달라질 수 있습니다. 멀리 가지 않아도 됩니다.",
+    "metadata": {
+      "topic": "미션",
+      "category": "mission",
+      "difficulty": "small",
+      "mission_category": "activity"
+    }
+  },
+  {
+    "id": "mission-10",
+    "text": "감정 일기를 짧게 써보는 것도 방법입니다. 오늘 어떤 순간에 아이가 생각났는지, 그때 마음이 어땠는지 몇 줄로 기록하는 것입니다. 잘 쓰려 하지 않아도 됩니다. 감정을 밖으로 꺼내는 것 자체가 조금씩 가벼워지는 데 도움이 됩니다.",
+    "metadata": {
+      "topic": "미션",
+      "category": "mission",
+      "difficulty": "small",
+      "mission_category": "record"
+    }
+  },
+  {
+    "id": "mission-11",
+    "text": "한동안 멀리했던, 평소 좋아하던 것을 다시 조금씩 시작해 보는 것도 회복의 한 방법입니다. 좋아하는 요리를 해보거나, 보고 싶었던 영화를 보거나, 미뤄둔 취미를 꺼내 보세요. 일상의 즐거움을 되찾는 것은 떠난 아이를 잊는 일이 아닙니다.",
+    "metadata": {
+      "topic": "미션",
+      "category": "mission",
+      "difficulty": "active",
+      "mission_category": "rest"
+    }
+  },
+  {
+    "id": "mission-12",
+    "text": "아이를 기억하는 작은 공간을 만들어 두는 분들도 있습니다. 사진 한 장, 좋아하던 장난감, 발도장이나 이름을 적은 카드처럼 부담 없는 것으로 시작해도 됩니다. 그 공간이 슬픔의 자리가 아니라, 언제든 추억을 꺼내 보는 따뜻한 자리가 되길 바랍니다.",
+    "metadata": {
+      "topic": "미션",
+      "category": "mission",
+      "difficulty": "active",
+      "mission_category": "remembrance"
+    }
+  },
+  {
+    "id": "mission-13",
+    "text": "오랫동안 만나지 못한 사람에게 먼저 연락해 함께 식사를 해보는 것은 어떨까요. 마주 앉아 밥을 나누고 평범한 이야기를 주고받는 시간이, 가라앉아 있던 일상을 다시 데워줄 수 있습니다. 사람과 함께 있는 시간이 슬픔을 조금 나눠 가져갑니다.",
+    "metadata": {
+      "topic": "미션",
+      "category": "mission",
+      "difficulty": "active",
+      "mission_category": "connection"
+    }
+  },
+  {
+    "id": "mission-14",
+    "text": "날을 잡아 공원이나 가보고 싶던 곳으로 짧은 나들이를 다녀오세요. 함께 걷던 길이 아니어도 괜찮습니다. 햇빛 아래를 걷고 바깥 풍경을 눈에 담는 것만으로, 멈춰 있던 몸과 마음이 조금씩 다시 움직이기 시작합니다.",
+    "metadata": {
+      "topic": "미션",
+      "category": "mission",
+      "difficulty": "active",
+      "mission_category": "activity"
+    }
+  },
+  {
+    "id": "mission-15",
+    "text": "아이와의 추억을 한 편의 글이나 앨범으로 정리해 보는 것도 좋습니다. 처음 만난 날, 가장 행복했던 순간, 마지막으로 나눈 인사를 천천히 적어 내려가 보세요. 기억을 차분히 매듭짓는 과정이 마음을 정리하고 한 걸음 나아가는 데 도움이 됩니다.",
+    "metadata": {
+      "topic": "미션",
+      "category": "mission",
+      "difficulty": "active",
+      "mission_category": "record"
     }
   }
 ]

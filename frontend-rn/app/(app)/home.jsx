@@ -8,7 +8,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchRecoveryGate } from '../../utils/recovery';
-import { updatePet } from '../../api/pets';
 
 // ── 큰 카드 (메인 기능) ──────────────────────────
 function BigCard({ emoji, title, desc, route, gradient, badge, disabled }) {
@@ -130,6 +129,14 @@ function MemorialHome({ gateStatus }) {
       />
 
       <BigCard
+        emoji="🌱"
+        title="오늘의 미션"
+        desc="작은 일상 활동으로 회복의 첫 걸음을 내딛어요"
+        route="/(app)/mission"
+        gradient={['#EDFAF3', '#E8F5EC']}
+      />
+
+      <BigCard
         emoji={letterEmoji}
         title="추모 편지"
         desc={letterDesc}
@@ -139,18 +146,14 @@ function MemorialHome({ gateStatus }) {
         disabled={gateStatus === 'locked'}
       />
 
-      <BigCard
-        emoji="🌱"
-        title="오늘의 미션"
-        desc="작은 일상 활동으로 회복의 첫 걸음을 내딛어요"
-        route="/(app)/mission"
-        gradient={['#EDFAF3', '#E8F5EC']}
-      />
-
       <Text style={[styles.sectionTitle, { marginTop: 16 }]}>더 보기</Text>
       <View style={styles.subRow}>
         <SmallCard emoji="🌿" title="추모 타임라인" route="/(app)/timeline" />
         <SmallCard emoji="📊" title="회복 리포트" route="/(app)/report" />
+      </View>
+      <View style={styles.subRow}>
+        <SmallCard emoji="🎞️" title="추모 영상 만들기" route="/(app)/media" />
+        <SmallCard emoji="🔊" title="음성으로 듣기" route="/(app)/tts" />
       </View>
     </>
   );
@@ -160,6 +163,9 @@ function MemorialHome({ gateStatus }) {
 export default function HomeScreen() {
   const [petName, setPetName] = useState('');
   const [petSpecies, setPetSpecies] = useState('');
+  const [petGender, setPetGender] = useState('');
+  const [petStartDate, setPetStartDate] = useState('');
+  const [guardianTitle, setGuardianTitle] = useState('');
   const [callerName, setCallerName] = useState('보호자');
   const [memorialMode, setMemorialMode] = useState(false);
   const [gateStatus, setGateStatus] = useState('locked');
@@ -172,9 +178,12 @@ export default function HomeScreen() {
   }, []);
 
   async function loadData() {
-    const [name, species, caller, mode, fd, petId] = await Promise.all([
+    const [name, species, gender, startDate, guardTitle, caller, mode, fd, petId] = await Promise.all([
       AsyncStorage.getItem('pet_name'),
       AsyncStorage.getItem('pet_species'),
+      AsyncStorage.getItem('pet_gender'),
+      AsyncStorage.getItem('pet_start_date'),
+      AsyncStorage.getItem('pet_guardian_title'),
       AsyncStorage.getItem('caller_name'),
       AsyncStorage.getItem('memorial_mode'),
       AsyncStorage.getItem('pet_farewell_date'),
@@ -182,6 +191,9 @@ export default function HomeScreen() {
     ]);
     if (name) setPetName(name);
     if (species) setPetSpecies(species);
+    if (gender) setPetGender(gender);
+    if (startDate) setPetStartDate(startDate);
+    if (guardTitle) setGuardianTitle(guardTitle);
     if (caller) setCallerName(caller);
     if (mode === 'true') setMemorialMode(true);
     if (fd) setFarewellDate(fd);
@@ -192,9 +204,7 @@ export default function HomeScreen() {
   async function confirmFarewell() {
     setTransitioning(true);
     try {
-      const petId = await AsyncStorage.getItem('pet_id');
       await AsyncStorage.setItem('memorial_mode', 'true');
-      try { await updatePet(petId, { memorial_mode: true }); } catch {}
       setMemorialMode(true);
     } finally {
       setTransitioning(false);
@@ -230,10 +240,18 @@ export default function HomeScreen() {
             <Text style={styles.petEmoji}>{speciesEmoji}</Text>
             <View style={styles.petInfo}>
               <Text style={styles.petName}>{petDisplay}</Text>
+              {(petGender || petSpecies) ? (
+                <Text style={styles.petMeta}>
+                  {[petGender, petSpecies].filter(Boolean).join(' · ')}
+                </Text>
+              ) : null}
+              {petStartDate && farewellDate ? (
+                <Text style={styles.petPeriod}>{petStartDate} ~ {farewellDate}</Text>
+              ) : null}
               <Text style={styles.petSub}>
                 {memorialMode && daysAfter !== null
                   ? `이별 후 D+${daysAfter}`
-                  : `${callerName}님과 함께하는 공간이에요`}
+                  : `${guardianTitle || callerName || '보호자'}님과 함께하는 공간이에요`}
               </Text>
             </View>
           </View>
@@ -311,7 +329,9 @@ const styles = StyleSheet.create({
   petEmoji: { fontSize: 36 },
   petInfo: { flex: 1 },
   petName: { fontSize: 18, fontWeight: '800', color: '#5B4E75' },
-  petSub: { fontSize: 13, color: '#8A7D9E', marginTop: 2 },
+  petMeta: { fontSize: 12, color: '#A89FBC', marginTop: 3 },
+  petPeriod: { fontSize: 11, color: '#B8B0CC', marginTop: 2 },
+  petSub: { fontSize: 13, color: '#8A7D9E', marginTop: 4 },
 
   sectionTitle: {
     fontSize: 13, fontWeight: '700', color: '#A89FBC',

@@ -5,7 +5,7 @@ const CACHE_KEY = 'recovery_cache';
 const CACHE_TTL = 3600000; // 1시간
 
 function scoreToGate(score, riskGated) {
-  if (riskGated) return 'open'; // SafetyModal이 처리
+  if (riskGated) return 'locked'; // risk_level 2+ → 점수 무관하게 잠김
   if (score >= 80) return 'open';
   if (score >= 50) return 'teaser';
   return 'locked';
@@ -29,8 +29,9 @@ export async function fetchRecoveryGate(petId) {
       const res = await api.get(`/api/v1/emotions/recovery/${petId}`);
       const data = res.data;
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, ts: Date.now() }));
+      // 백엔드가 gate_status 3단계 필드를 내려주면 그대로 사용, 없으면 score로 계산
       return {
-        gateStatus: scoreToGate(data.recovery_score ?? 0, data.risk_gated ?? false),
+        gateStatus: data.gate_status ?? scoreToGate(data.recovery_score ?? 0, data.risk_gated ?? false),
         score: data.recovery_score ?? 0,
         riskGated: data.risk_gated ?? false,
       };

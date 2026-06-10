@@ -64,14 +64,15 @@ export default function MemoriesScreen() {
       await AsyncStorage.setItem('pet_name', profile.name.trim());
       await AsyncStorage.setItem('pet_species', profile.species || '');
     } finally {
-      // 호칭·보호자이름·이별날짜 항상 저장
+      // 호칭·이름·성별·기간 항상 저장
       await AsyncStorage.setItem('caller_name', callerName);
       if (profile.caller_name?.trim()) {
         await AsyncStorage.setItem('caller_name', profile.caller_name.trim());
       }
-      if (profile.end_date) {
-        await AsyncStorage.setItem('pet_farewell_date', profile.end_date);
-      }
+      await AsyncStorage.setItem('pet_guardian_title', profile.guardian_title?.trim() || '');
+      await AsyncStorage.setItem('pet_gender', profile.gender || '');
+      if (profile.start_date) await AsyncStorage.setItem('pet_start_date', profile.start_date);
+      if (profile.end_date) await AsyncStorage.setItem('pet_farewell_date', profile.end_date);
       setLoading(false);
       router.replace('/(app)/home');
     }

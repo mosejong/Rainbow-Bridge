@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
-
 class MissionResponse(BaseModel):
     id: str
     pet_id: str
@@ -14,23 +13,19 @@ class MissionResponse(BaseModel):
     created_at: datetime
     completed_at: Optional[datetime]
 
-
 class MissionComplete(BaseModel):
     completed: bool = True
-
 
 class MissionRecommendRequest(BaseModel):
     pet_id: str
     emotion_score: Optional[int] = None
     day_since: Optional[int] = None
 
-
 class MissionItem(BaseModel):
     title: str
     description: str = ""
     category: str = ""
     rationale: Optional[str] = None
-
 
 class MissionRecommendResponse(BaseModel):
     missions: list[MissionItem]

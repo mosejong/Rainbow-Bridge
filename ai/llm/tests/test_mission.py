@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 
+from .. import mission as mission_mod
 from ..mission import recommend
 from ..prompts import mission as mission_prompt
 
@@ -124,3 +125,40 @@ def test_resurrection_mission_filtered():
     )
     result = recommend(emotion_score=5, generate=fake, count=3)
     assert all("부활" not in m["title"] for m in result)
+
+
+# --- 4. RAG 난이도 필터 (corpus 보강 후 난이도별 검색) ----------------------- #
+
+
+def _capture_rag_where(monkeypatch):
+    """recommend() 가 RAG 에 넘기는 where 필터를 가로채 담는다(ChromaDB 없이 검증)."""
+    captured: dict = {}
+
+    def fake_retrieve(query, k=3, *, where=None):
+        captured["where"] = where
+        return []  # 빈 결과 → 규칙 풀로 진행(graceful)
+
+    monkeypatch.setattr(mission_mod, "_rag_retrieve", fake_retrieve)
+    return captured
+
+
+def test_rag_query_filters_by_category_and_difficulty(monkeypatch):
+    """RAG 검색이 category=mission 과 난이도를 $and 로 함께 필터한다."""
+    captured = _capture_rag_where(monkeypatch)
+    recommend(emotion_score=2, count=3)  # 낮은 점수 → gentle
+    assert captured["where"] == {
+        "$and": [{"category": "mission"}, {"difficulty": "gentle"}]
+    }
+
+
+def test_rag_difficulty_follows_emotion_score(monkeypatch):
+    """감정 점수에 따라 RAG 난이도 필터도 바뀐다(gentle/small/active)."""
+    captured = _capture_rag_where(monkeypatch)
+    for score, expected in [(2, "gentle"), (5, "small"), (9, "active")]:
+        recommend(emotion_score=score, count=2)
+        diffs = [
+            cond["difficulty"]
+            for cond in captured["where"]["$and"]
+            if "difficulty" in cond
+        ]
+        assert diffs == [expected]
