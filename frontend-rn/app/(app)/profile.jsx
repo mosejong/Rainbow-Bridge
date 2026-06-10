@@ -42,7 +42,7 @@ export default function ProfileScreen() {
     await AsyncStorage.multiRemove([
       'pet_id', 'pet_name', 'pet_species', 'caller_name',
       'diary_entries', 'bucketlist_items', 'pet_photos',
-      'recovery_cache', 'pet_farewell_date',
+      'recovery_cache', 'pet_farewell_date', 'memorial_mode',
     ]);
 
     // farewell_date 미리 저장 (memories.jsx에서 덮어씀)

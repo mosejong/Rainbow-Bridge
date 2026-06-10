@@ -8,7 +8,7 @@ export async function doLogout() {
     await AsyncStorage.multiRemove([
       'access_token', 'pet_id', 'pet_name', 'pet_species',
       'bucketlist_items', 'diary_entries', 'caller_name',
-      'pet_photos', 'recovery_cache', 'pet_farewell_date',
+      'pet_photos', 'recovery_cache', 'pet_farewell_date', 'memorial_mode',
     ]);
   } catch {}
   router.replace('/');
