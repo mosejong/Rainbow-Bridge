@@ -31,7 +31,6 @@ async def get_missions(pet_id: str) -> list[MissionResponse]:
 
 
 async def create_default_missions(pet_id: str) -> list[MissionResponse]:
-    # Redis에서 최근 감정 점수 조회 → AI 난이도 결정에 활용
     emotion_score = None
     try:
         records = await get_recent_emotions(pet_id)
@@ -40,8 +39,6 @@ async def create_default_missions(pet_id: str) -> list[MissionResponse]:
     except Exception:
         pass
 
-    # 반소람님 AI 미션 추천 (Redis 점수 기반 난이도 자동 조정)
-    # ⑧ 리포트용 라이트 로깅 — LLM 호출만 측정해 finally 에서 1건 적재.
     cfg = get_config()
     log_ok = True
     timer = None
@@ -59,30 +56,34 @@ async def create_default_missions(pet_id: str) -> list[MissionResponse]:
                 "title": "오늘 산책하기",
                 "description": "15분이라도 밖에 나가 바람을 쐬어보세요.",
                 "category": "activity",
+                "rationale": None,
             },
             {
                 "title": "좋아하는 음악 듣기",
                 "description": "마음이 편한 음악을 들으며 잠시 쉬어가세요.",
                 "category": "rest",
+                "rationale": None,
             },
             {
                 "title": "소중한 사람에게 연락하기",
                 "description": "가까운 가족이나 친구에게 안부를 전해보세요.",
                 "category": "connection",
+                "rationale": None,
             },
             {
                 "title": "따뜻한 음료 마시기",
                 "description": "따뜻한 차 한 잔으로 마음을 달래보세요.",
                 "category": "rest",
+                "rationale": None,
             },
             {
                 "title": "반려동물과의 추억 기록하기",
                 "description": "소중한 기억을 글이나 사진으로 남겨보세요.",
                 "category": "record",
+                "rationale": None,
             },
         ]
     finally:
-        # best-effort — 로그 적재 실패가 미션 응답을 깨면 안 됨.
         try:
             await alog_llm_call(
                 mongodb.db[LLM_LOGS],
@@ -102,6 +103,8 @@ async def create_default_missions(pet_id: str) -> list[MissionResponse]:
             "pet_id": pet_id,
             "title": m["title"],
             "description": m.get("description", ""),
+            "category": m.get("category", ""),
+            "rationale": m.get("rationale"),
             "completed": False,
             "created_at": now,
             "completed_at": None,
