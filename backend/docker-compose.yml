@@ -29,6 +29,7 @@ services:
       REDIS_URL: redis://rainbow_redis:6379
     volumes:
       - ../uploads:/app/backend/uploads
+      - sqlite_data:/app/backend/data
     depends_on:
       - mongo
       - redis
@@ -36,3 +37,4 @@ services:
 
 volumes:
   mongo_data:
+  sqlite_data:
