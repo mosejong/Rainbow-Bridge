@@ -34,6 +34,7 @@ async def get_db():
 async def init_db():
     if DATABASE_URL.startswith("sqlite"):
         import pathlib
+
         db_path = DATABASE_URL.split("///")[-1]
         pathlib.Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
