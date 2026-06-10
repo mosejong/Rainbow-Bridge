@@ -64,3 +64,23 @@ def test_recovery_signal_present_without_access():
     )
     assert r["recovery_signal"]["signal"] == "데이터 부족"
     assert r["recovery_signal"]["access_trend"] is None
+
+
+def test_recovery_signal_as_of_forwarded_detects_dropout():
+    """build_report 가 as_of 를 recovery_signal 까지 전달 → 장기 잠수 = 꾸준함 0% (종단)."""
+    from datetime import date
+
+    checkins = [
+        {"created_at": f"2026-06-{i + 1:02d}", "score": s}
+        for i, s in enumerate([5, 6, 7, 5, 6, 7])  # 6/1~6/6
+    ]
+    # as_of 없으면 최근 체크인 기준 → 꾸준함 있음
+    assert (
+        build_report("pet1", emotion_checkins=checkins)["recovery_signal"][
+            "checkin_consistency"
+        ]
+        > 0
+    )
+    # as_of=한 달 뒤 → 14일 창에 0일 → 이탈로 0%
+    r = build_report("pet1", emotion_checkins=checkins, as_of=date(2026, 7, 10))
+    assert r["recovery_signal"]["checkin_consistency"] == 0.0

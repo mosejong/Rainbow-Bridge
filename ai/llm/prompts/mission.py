@@ -32,16 +32,34 @@ CATEGORY_RATIONALE: Final[dict[str, str]] = {
     "record": "감정을 글로 꺼내면 마음이 가벼워져요 (표현적 글쓰기)",
 }
 
+# 카테고리별 1차 논문 근거(발표 방어용 — 사용자 노출 X, 코드/문서 추적용).
+# 출처: docs/scrum/발표준비_논문근거.md §미션 카테고리 × 학술 근거.
+#   record       표현적 글쓰기 메타분석(13 RCT) — 비탄 Hedges' g=0.388
+#   activity     행동활성화 — Papa 2013(PubMed 24094789)·Eisma 2015(26520217), d=0.8~0.9 (⚠병리적 비애 집단)
+#   connection   사회적 지지 — PMC7257446 (보호요인)
+#   rest         자기자비 — COMPACT(PubMed 39173331)
+#   remembrance  지속적 유대 — Field et al.(PubMed 32175829, 내면화=긍정 적응)
+# ⚠️ 인간 사별 연구 기반 = "방법론 근거"로만(펫로스 직접 아님). 효과크기로 점수 차등가중 금지(과장 방지).
+
+# 난이도 × 연구 권장 카테고리 (발표준비_논문근거.md §감정 상태 × 미션 구조).
+# 같은 점수라도 이 매핑대로 카테고리를 골라야 회복 단계에 맞는 미션이 나옵니다.
+#   gentle(risk1~2): 기록·추모·자기돌봄  | small(risk0~1): 행동활성화·사회적지지  | active(risk0): 사회적지지·지속적유대
+DIFFICULTY_CATEGORIES: Final[dict[str, tuple[str, ...]]] = {
+    "gentle": ("record", "remembrance", "rest"),
+    "small": ("activity", "connection"),
+    "active": ("connection", "remembrance", "activity"),
+}
+
 # 위 근거를 프롬프트에 넣는 블록(LLM 이 분류에 맞는 미션을 고르도록 안내).
 _RATIONALE_GUIDE: Final[str] = "[분류별 회복 근거 — 미션 선택 시 참고]\n" + "\n".join(
     f"- {cat}: {why}" for cat, why in CATEGORY_RATIONALE.items()
 )
 
-# 감정 점수 → 난이도. 힘들수록 더 작은 미션.
+# 감정 점수 → 난이도. 힘들수록 더 작은 미션. 괄호 = 그 단계의 연구 권장 카테고리.
 DIFFICULTY_GUIDE: Final[dict[str, str]] = {
-    "gentle": "지금 많이 힘든 상태예요. 집 안에서 1~5분이면 끝나는 아주 작은 것만 제안하세요.",
-    "small": "조금씩 움직일 수 있어요. 10분 내외의 가벼운 활동을 제안하세요.",
-    "active": "일상으로 돌아갈 힘이 있어요. 바깥·사람과 연결되는 활동도 좋습니다.",
+    "gentle": "지금 많이 힘든 상태예요. 집 안에서 1~5분이면 끝나는 아주 작은 것만 제안하세요(기록·추모·자기돌봄).",
+    "small": "조금씩 움직일 수 있어요. 10분 내외의 가벼운 활동을 제안하세요(가벼운 활동·사람과 연결).",
+    "active": "일상으로 돌아갈 힘이 있어요. 바깥·사람과 연결되는 활동도 좋습니다(사람과 연결·추모).",
 }
 
 # 회복 추이(백엔드 get_recovery 의 trend) → 프롬프트 표기. 난이도 보정은 ../mission.py.
@@ -52,7 +70,9 @@ TREND_GUIDE: Final[dict[str, str]] = {
 }
 
 
-SYSTEM_PROMPT: Final[str] = """\
+SYSTEM_PROMPT: Final[
+    str
+] = """\
 당신은 반려동물을 떠나보낸 보호자의 일상 회복을 돕는 조력자입니다.
 보호자가 지금 당장 할 수 있는, 작고 부담 없는 '회복 미션'을 제안합니다.
 
@@ -72,10 +92,13 @@ SYSTEM_PROMPT: Final[str] = """\
 """
 
 
-_USER_TEMPLATE: Final[str] = """\
+_USER_TEMPLATE: Final[
+    str
+] = """\
 [보호자 상태]
 - 감정 점수: {score}/10 (1=많이 힘듦 · 10=평온)
 - 난이도 지침: {difficulty_guide}
+- 이 단계 권장 분류(이 중에서 고르세요): {category_hint}
 {trend_block}- 반려동물을 떠나보낸 지: {day_since_text}
 - 최근 받은 미션(겹치지 않게 피하세요): {recent}
 {rag_block}
@@ -126,9 +149,12 @@ def build_prompt(
     """
     recent = ", ".join(recent_titles) if recent_titles else "(없음)"
     day_text = f"{day_since}일" if day_since is not None else "(모름)"
+    cats = DIFFICULTY_CATEGORIES.get(difficulty, ())
+    category_hint = " · ".join(cats) if cats else "(제한 없음)"
     user = _USER_TEMPLATE.format(
         score=emotion_score,
         difficulty_guide=DIFFICULTY_GUIDE.get(difficulty, DIFFICULTY_GUIDE["small"]),
+        category_hint=category_hint,
         trend_block=_format_trend(recovery_trend),
         day_since_text=day_text,
         recent=recent,

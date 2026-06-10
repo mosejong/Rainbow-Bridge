@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any, Iterable, Optional, Sequence
 
 # 신호 라벨 — 백엔드 get_recovery 의 trend 와 동일 어휘로 맞춥니다(혼선 방지).
@@ -29,6 +30,7 @@ SIGNAL_INSUFFICIENT = "데이터 부족"
 
 _MIN_CHECKINS = 3  # 신호를 내기 위한 최소 감정 체크인 수
 _DELTA = 0.5  # 감정 추이 상승/하락 판정 폭(점) — get_recovery 와 동일
+_RECENT_WINDOW = 7  # 회복 점수용 감정 평균 윈도우(최근 N회) — RECOVERY_GATE 설계와 동일
 
 
 def _scores_oldest_first(checkins: Iterable[dict[str, Any]]) -> list[float]:
@@ -71,12 +73,73 @@ def _freq_trend(counts: Optional[Sequence[float]]) -> Optional[dict[str, Any]]:
     }
 
 
+_CONSISTENCY_WINDOW = 14  # 꾸준함 산정 창(일) — RECOVERY_GATE 설계와 동일.
+
+
+def _consistency(
+    checkins: Iterable[dict[str, Any]], as_of: Optional[date] = None
+) -> Optional[float]:
+    """체크인 꾸준함(%) — 최근 14일 중 체크인한 '날 수' / 14 × 100.
+
+    Args:
+        checkins: 체크인 목록(`created_at` 보유).
+        as_of: 기준일. **주면 그날 기준 14일**(장기 잠수=이탈을 0%로 잡음 — 리뷰 Major 반영).
+            None 이면 가장 최근 체크인 날짜(결정적·하위호환). 백엔드는 `date.today()` 주입 권장.
+
+    Returns:
+        0~100 꾸준함(%), 날짜 파싱 불가하면 None.
+    """
+    days: set[date] = set()
+    for c in checkins:
+        token = str(c.get("created_at") or "")[:10]
+        try:
+            days.add(date.fromisoformat(token))
+        except ValueError:
+            continue
+    if not days:
+        return None
+    anchor = as_of if as_of is not None else max(days)
+    within = sum(1 for d in days if 0 <= (anchor - d).days < _CONSISTENCY_WINDOW)
+    return round(within / _CONSISTENCY_WINDOW * 100, 1)
+
+
+def recovery_score(
+    emotion_avg: float,
+    completion_rate: Optional[float] = None,
+    consistency_pct: Optional[float] = None,
+) -> int:
+    """회복 점수(0~100) — RECOVERY_GATE 설계 **감정40 / 미션완료35 / 꾸준함25**.
+
+    순수 함수. **risk_level≥2 중단**과 **기록 없을 때 50점 중립**은 게이트 호출부
+    (모세종 `services/recovery.py`)가 감싸 처리합니다. 여기선 점수 산식만 책임집니다.
+
+    Args:
+        emotion_avg: 감정 점수 평균(1~10). `(avg-1)/9*100` 로 0~100 정규화(범위 밖은 클램프).
+        completion_rate: 미션 완료율(0~1). **미션 추천 전이면 None → 감정 평균만으로 계산**
+            (RECOVERY_GATE 초기값 규칙). 미션 받고 전부 실패(0.0)면 35%가 0 → 점수 낮아짐.
+            ⚠️ 그래서 None(미추천)이 0.0(전부 실패)보다 높을 수 있음 — 의도된 순서(데이터
+            없음=중립 vs 낮은 참여). 사용자가 미션 추천 여부를 못 고르므로 악용 불가.
+        consistency_pct: 체크인 꾸준함(0~100, `_consistency`). 없으면 0 취급. None 분기에선 미사용.
+
+    Returns:
+        0~100 정수 회복 점수(클램프 보장).
+    """
+    e = max(0.0, min(100.0, (emotion_avg - 1) / 9 * 100))
+    if completion_rate is None:
+        # 미션 추천 전: RECOVERY_GATE 설계대로 '감정 평균만으로' 계산.
+        return max(0, min(100, round(e)))
+    c = max(0.0, min(100.0, consistency_pct if consistency_pct is not None else 0.0))
+    m = max(0.0, min(100.0, completion_rate * 100))
+    return max(0, min(100, round(0.40 * e + 0.35 * m + 0.25 * c)))
+
+
 def compute_recovery_signal(
     emotion_checkins: Iterable[dict[str, Any]],
     missions: Iterable[dict[str, Any]] = (),
     *,
     access_counts: Optional[Sequence[float]] = None,
     play_counts: Optional[Sequence[float]] = None,
+    as_of: Optional[date] = None,
 ) -> dict[str, Any]:
     """일상복귀 신호를 산출합니다.
 
@@ -87,13 +150,17 @@ def compute_recovery_signal(
             묶어 넣습니다. 없으면 생략(graceful).
         play_counts: 기간별 영상 재생 횟수(오래된→최근). 재생 이벤트 로그가 있을 때만.
             ⚠️ `play_count` 누적 카운터만 있으면 시계열이 아니라 못 넣음 → None.
+        as_of: 꾸준함 기준일. 백엔드가 `date.today()` 를 주면 **장기 미접속(이탈)** 이 꾸준함
+            0% 로 잡힘. None 이면 최근 체크인 기준(하위호환).
 
     Returns:
-        ``{signal, recovery_index, emotion, mission_completion_rate, access_trend,
-        play_trend, evidence, reason}`` — 발표/프론트 차트·요약용.
+        ``{signal, recovery_index, emotion, mission_completion_rate, checkin_consistency,
+        access_trend, play_trend, evidence, reason}`` — 발표/프론트 차트·요약용.
+        ``recovery_index`` 는 RECOVERY_GATE 40/35/25 산식(`recovery_score`).
         ``evidence`` 는 그대로 보여줄 수 있는 근거 문장 목록.
     """
-    scores = _scores_oldest_first(emotion_checkins)
+    rows = list(emotion_checkins)  # generator 두 번 순회(점수·꾸준함) 대비 materialize.
+    scores = _scores_oldest_first(rows)
 
     if len(scores) < _MIN_CHECKINS:
         return {
@@ -101,15 +168,20 @@ def compute_recovery_signal(
             "recovery_index": None,
             "emotion": None,
             "mission_completion_rate": _completion_rate(missions),
+            "checkin_consistency": None,
             "access_trend": None,
             "play_trend": None,
-            "evidence": [f"감정 체크인이 {len(scores)}회뿐이라 신호를 내기 어려워요(최소 {_MIN_CHECKINS}회)."],
+            "evidence": [
+                f"감정 체크인이 {len(scores)}회뿐이라 신호를 내기 어려워요(최소 {_MIN_CHECKINS}회)."
+            ],
             "reason": "아직 데이터가 적어요. 체크인이 쌓이면 회복 추이를 보여드릴게요.",
         }
 
     older, recent = _split_avg(scores)
     delta = recent - older
-    avg = sum(scores) / len(scores)
+    # 회복 점수용 감정 평균은 '최근 7회'(RECOVERY_GATE). 추이(older/recent)는 전체 사용.
+    recent_scores = scores[-_RECENT_WINDOW:]
+    avg = sum(recent_scores) / len(recent_scores)
 
     if delta > _DELTA:
         emo_dir, signal = "상승", SIGNAL_RECOVERING
@@ -119,13 +191,21 @@ def compute_recovery_signal(
         emo_dir, signal = "유지", SIGNAL_STABLE
 
     completion = _completion_rate(missions)
+    consistency = _consistency(rows, as_of)
     access = _freq_trend(access_counts)
     play = _freq_trend(play_counts)
+
+    # 회복 점수 — RECOVERY_GATE 40/35/25 산식(감정·미션완료·꾸준함). 단순 avg*10 대체.
+    index = recovery_score(avg, completion, consistency)
 
     # 근거 문장 — 발표/화면에 그대로 노출.
     evidence = [f"감정 점수 {round(older, 1)} → {round(recent, 1)} ({emo_dir})"]
     if completion is not None:
         evidence.append(f"미션 완료율 {round(completion * 100)}%")
+    if consistency is not None:
+        evidence.append(
+            f"체크인 꾸준함 {round(consistency)}% (최근 {_CONSISTENCY_WINDOW}일)"
+        )
     for label, trend in (("앱 접속", access), ("영상 재생", play)):
         if not trend:
             continue
@@ -134,7 +214,9 @@ def compute_recovery_signal(
                 f"{label} {trend['older']}→{trend['recent']}회 (감소 — 앱 의존이 줄어드는 회복 신호)"
             )
         else:
-            evidence.append(f"{label} {trend['older']}→{trend['recent']}회 ({trend['direction']})")
+            evidence.append(
+                f"{label} {trend['older']}→{trend['recent']}회 ({trend['direction']})"
+            )
 
     reason = {
         SIGNAL_RECOVERING: "감정이 오르고 있어요. 일상으로 돌아가는 신호입니다.",
@@ -144,7 +226,7 @@ def compute_recovery_signal(
 
     return {
         "signal": signal,
-        "recovery_index": round(avg * 10),  # 0~100, get_recovery 의 recovery_pct 와 동일 척도
+        "recovery_index": index,  # 0~100, RECOVERY_GATE 40/35/25 (recovery_score)
         "emotion": {
             "older_avg": round(older, 1),
             "recent_avg": round(recent, 1),
@@ -152,6 +234,7 @@ def compute_recovery_signal(
             "direction": emo_dir,
         },
         "mission_completion_rate": completion,
+        "checkin_consistency": consistency,
         "access_trend": access,
         "play_trend": play,
         "evidence": evidence,
