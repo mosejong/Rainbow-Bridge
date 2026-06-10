@@ -62,6 +62,8 @@ export default function MediaScreen() {
       formData.append('file', { uri: imageUri, name: filename, type: 'image/jpeg' });
       formData.append('pet_id', petId);
       const { asset_id } = await uploadMedia(formData);
+      // 편지(message) 화면의 '영상 보기' 버튼이 이 키로 asset_id를 읽어 recordPlay 호출
+      await AsyncStorage.setItem('pet_video_asset_id', asset_id);
       setStatusMsg('추모 영상을 만들고 있어요... (최대 1~2분)');
       pollStatus(asset_id, 0);
     } catch {

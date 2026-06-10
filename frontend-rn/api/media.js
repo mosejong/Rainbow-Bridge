@@ -13,3 +13,10 @@ export async function getMediaStatus(assetId) {
   const res = await api.get(`/api/v1/media/${assetId}`);
   return res.data;
 }
+
+// '영상 보기' 버튼 탭(능동 시청) 시 호출 → play_count +1.
+// (⑧ 회복 분석: 능동 시청 횟수 추이 → 일상복귀 신호. 배경 자동재생은 호출하지 않음)
+export async function recordPlay(assetId) {
+  const res = await api.post(`/api/v1/media/${assetId}/play`);
+  return res.data;
+}
