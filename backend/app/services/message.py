@@ -18,6 +18,7 @@ from ai.llm.safety import CRISIS_NOTICE, assess_crisis, CrisisAction, decide_act
 from app.db.mongodb import mongodb
 from app.db.redis_client import get_recent_emotions
 from app.schemas.message import MessageCreate, MessageResponse
+from app.services.emotion import get_recovery
 
 CRISIS_HOTLINE = "1393"
 
@@ -70,6 +71,18 @@ async def create_message(data: MessageCreate) -> MessageResponse:
     except Exception:
         pass
 
+    # 회복 게이트 — 1인칭 편지는 요청(보호자 동의) + 게이트 통과(창 내 risk=0) 동시 충족 시에만.
+    # 조회 실패 시 fail-closed(잠금 유지).
+    content_unlocked = False
+    allow_first_person = False
+    try:
+        recovery = await get_recovery(data.pet_id)
+        content_unlocked = recovery.content_unlocked
+        allow_first_person = recovery.allow_first_person
+    except Exception:
+        pass
+    first_person = data.request_first_person and allow_first_person
+
     tone = data.tone if data.tone in _VALID_TONES else "warm"
     note = data.note or ""
     emotion = {"emotion_score": data.emotion_score or 5, "note": note}
@@ -106,7 +119,7 @@ async def create_message(data: MessageCreate) -> MessageResponse:
                         tone=tone,
                         generate=generate,
                         source="local",
-                        first_person=bool(data.consent),
+                        first_person=first_person,
                         recovery_trend=recovery_trend,
                     )
                 except GuardrailViolation:
@@ -143,6 +156,10 @@ async def create_message(data: MessageCreate) -> MessageResponse:
                     )
 
                 response = MessageResponse(**doc)
+                # 회복 게이트 상태 + 1인칭 실제 적용 여부를 프론트에 전달
+                response.first_person = first_person
+                response.content_unlocked = content_unlocked
+                response.allow_first_person = allow_first_person
                 if result.get("crisis_message"):
                     response.crisis_message = result["crisis_message"]
                 if result.get("support_message"):

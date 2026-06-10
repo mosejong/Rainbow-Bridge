@@ -146,3 +146,41 @@ async def test_get_report_graceful_when_owner_missing():
     assert result.recovery_signal["access_trend"] is None
     assert result.recovery_signal["signal"] in {"회복 중", "유지 중"}
     assert result.mission_completion_rate is None
+
+
+@pytest.mark.asyncio
+async def test_get_report_play_logs_feed_recovery_signal():
+    """play_logs(날짜별 재생) → recovery_signal 의 play_trend 추세까지 끝단 연결 검증."""
+    emotions = [
+        {"created_at": _dt(1), "score": 3},
+        {"created_at": _dt(2), "score": 4},
+        {"created_at": _dt(3), "score": 7},
+        {"created_at": _dt(4), "score": 8},
+    ]
+    play_logs = [  # 날짜별 3,2,1 → 감소 추세
+        {"pet_id": _PET_ID, "played_at": _dt(1)},
+        {"pet_id": _PET_ID, "played_at": _dt(1)},
+        {"pet_id": _PET_ID, "played_at": _dt(1)},
+        {"pet_id": _PET_ID, "played_at": _dt(2)},
+        {"pet_id": _PET_ID, "played_at": _dt(2)},
+        {"pet_id": _PET_ID, "played_at": _dt(3)},
+    ]
+    collections = {
+        "emotions": _FakeCollection(emotions),
+        "missions": _FakeCollection([]),
+        "llm_logs": _FakeCollection([]),
+        "pets": _FakeCollection(find_one_result={"user_id": 42}),
+        "access_logs": _FakeCollection([]),
+        "media_assets": _FakeCollection([]),
+        "play_logs": _FakeCollection(play_logs),
+    }
+
+    with patch("app.services.report.mongodb", new=_fake_mongo(collections)):
+        result = await get_report(_PET_ID, period="2026-06")
+
+    # 표시용 play_trend(날짜별 리스트)도, recovery_signal 의 추세도 함께 채워진다
+    assert [pt.count for pt in result.play_trend] == [3, 2, 1]
+    play_trend = result.recovery_signal["play_trend"]
+    assert play_trend is not None
+    assert play_trend["direction"] == "감소"
+    assert any("영상 재생" in e for e in result.recovery_signal["evidence"])
