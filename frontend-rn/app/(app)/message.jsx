@@ -33,7 +33,7 @@ function makeFallbackMessage(petName) {
     first_person: false,
     source: 'local',
     risk_level: 0,
-    content_unlocked: true,
+    content_unlocked: false,
     allow_first_person: false,
   };
 }
@@ -606,7 +606,7 @@ export default function MessageScreen() {
               {/* 회복 게이트 — content_unlocked / allow_first_person */}
               {done && (
                 <View style={styles.gateSection}>
-                  {message?.content_unlocked !== false && (
+                  {message?.content_unlocked === true && (
                     <TouchableOpacity
                       style={styles.gateBtnWrap}
                       onPress={() => router.push('/(app)/mission')}

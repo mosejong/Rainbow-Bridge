@@ -49,7 +49,7 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
     "gentle": (
         ("물 한 잔 마시기", "천천히 물 한 잔을 마시며 숨을 고르세요.", "rest"),
         ("창문 열고 바람 쐬기", "잠시 창문을 열어 바깥 공기를 느껴보세요.", "rest"),
-        ("햇빛 1분 쬐기", "창가나 문 앞에서 잠깐 햇빛을 쬐어보세요.", "rest"),
+        ("창가에서 볕 쬐기", "창가에 앉아 잠시 들어오는 볕을 느껴보세요.", "rest"),
         ("좋아하는 음악 한 곡", "마음이 편해지는 음악을 한 곡 들어보세요.", "rest"),
         (
             "사진 한 장 바라보기",
@@ -110,7 +110,7 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
     ),
     "small": (
         ("집 앞 5분 산책", "집 근처를 5분만 천천히 걸어보세요.", "activity"),
-        ("따뜻한 차 한 잔", "따뜻한 차를 우려 천천히 마셔보세요.", "rest"),
+        ("간단한 집안일 하나", "설거지나 빨래 하나만 가볍게 해보세요.", "activity"),
         ("추억 한 가지 적기", "함께한 기억 하나를 짧게 적어보세요.", "record"),
         (
             "물건 하나 정리하기",
@@ -137,11 +137,7 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
             "오늘 스스로 잘했다고 느낀 일 하나를 적어보세요.",
             "record",
         ),
-        (
-            "창밖 풍경 바라보기",
-            "창밖을 5분만 바라보며 지금 이 순간에 머물러보세요.",
-            "rest",
-        ),
+        ("10분 낮잠 자기", "잠깐 눈을 붙여 10분만 몸을 쉬게 해주세요.", "rest"),
         ("고마운 것 세 가지", "오늘 고마웠던 것 세 가지를 짧게 적어보세요.", "record"),
         (
             "음악 들으며 정리",
@@ -149,13 +145,13 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
             "activity",
         ),
         (
-            "추억 한 장면 적기",
-            "오늘 떠오른 아이와의 한 장면을 짧게 적어보세요.",
+            "오늘 본 좋은 것 적기",
+            "오늘 눈에 들어온 좋은 것 하나를 적어보세요.",
             "record",
         ),
         (
-            "친구에게 안부 묻기",
-            "잘 지내냐고 친구에게 먼저 안부를 물어보세요.",
+            "가족과 짧은 통화",
+            "가족에게 전화해 5분만 이야기를 나눠보세요.",
             "connection",
         ),
         (
@@ -165,8 +161,8 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
         ),
         ("동네 한 바퀴 걷기", "동네를 천천히 한 바퀴 걸어보세요.", "activity"),
         (
-            "아이 물건 하나 닦기",
-            "아이의 물건 하나를 천천히 닦아 제자리에 두세요.",
+            "함께 듣던 노래 듣기",
+            "아이와 함께 듣던, 또는 떠오르는 노래를 들어보세요.",
             "remembrance",
         ),
         ("오늘 기분 색으로", "지금 기분을 색 하나로 떠올려 적어보세요.", "record"),
@@ -204,7 +200,7 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
             "가까운 사람에게 아이와의 추억을 이야기해보세요.",
             "connection",
         ),
-        ("추억 앨범 만들기", "함께한 사진을 모아 작은 앨범을 만들어보세요.", "record"),
+        ("좋아하는 공간 가보기", "가보고 싶던 전시나 공간에 다녀와보세요.", "activity"),
         (
             "가벼운 취미 시작하기",
             "전부터 해보고 싶던 가벼운 취미를 하나 시작해보세요.",
@@ -216,8 +212,8 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
             "connection",
         ),
         (
-            "작은 마음 나누기",
-            "작은 금액이라도 마음이 가는 동물 단체에 나눠보세요.",
+            "기억하는 날 표시하기",
+            "아이를 기억하고 싶은 날을 달력에 표시해보세요.",
             "remembrance",
         ),
         (
@@ -226,8 +222,8 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
             "activity",
         ),
         (
-            "가볍게 몸 움직이기",
-            "가벼운 운동으로 몸을 다시 천천히 움직여보세요.",
+            "가벼운 운동 30분",
+            "스트레칭이나 가벼운 운동으로 30분 몸을 움직여보세요.",
             "activity",
         ),
         (
@@ -388,11 +384,16 @@ def recommend(
     recent: set[str] = set(history or [])
     score = emotion_score if emotion_score is not None else 5
 
-    # RAG 검색 — 회복 미션 예시 검색. 실패 시 graceful fallback.
+    # RAG 검색 — 회복 미션 예시 검색. 난이도까지 필터해 맥락에 맞는 예시만 가져옴
+    # (키 2개라 $and 필요). 실패 시 graceful fallback.
     rag_hits = None
     try:
         query = mission_prompt.DIFFICULTY_GUIDE.get(difficulty, "회복 미션")
-        rag_hits = _rag_retrieve(query, k=3, where={"category": "mission"})
+        rag_hits = _rag_retrieve(
+            query,
+            k=3,
+            where={"$and": [{"category": "mission"}, {"difficulty": difficulty}]},
+        )
     except Exception:
         rag_hits = None
 

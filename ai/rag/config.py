@@ -44,10 +44,20 @@ class RAGConfig:
     corpus_path: str
 
 
+def _first_api_key() -> str:
+    """LLM_API_KEY 는 429 로테이션용으로 쉼표로 묶인 복수 키일 수 있다.
+    임베딩 클라이언트는 키 하나만 받으므로 첫 번째 유효 키만 사용한다.
+    (전체 문자열을 그대로 넘기면 Gemini 가 400 Invalid Auth key 로 거절.)
+    """
+    raw = os.getenv("LLM_API_KEY", "")
+    keys = [k.strip() for k in raw.split(",") if k.strip()]
+    return keys[0] if keys else ""
+
+
 def get_rag_config() -> RAGConfig:
     """현재 환경변수로부터 RAG 설정을 읽어옵니다."""
     return RAGConfig(
-        api_key=os.getenv("LLM_API_KEY", ""),
+        api_key=_first_api_key(),
         embed_base_url=os.getenv(
             "EMBED_BASE_URL",
             os.getenv("LLM_BASE_URL", _DEFAULT_EMBED_BASE_URL),

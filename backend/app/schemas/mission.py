@@ -9,6 +9,8 @@ class MissionResponse(BaseModel):
     pet_id: str
     title: str
     description: str
+    category: str = ""
+    rationale: str = ""
     completed: bool
     created_at: datetime
     completed_at: Optional[datetime]
@@ -28,6 +30,7 @@ class MissionItem(BaseModel):
     title: str
     description: str = ""
     category: str = ""
+    rationale: str = ""
 
 
 class MissionRecommendResponse(BaseModel):
