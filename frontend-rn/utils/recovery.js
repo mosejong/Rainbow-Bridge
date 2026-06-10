@@ -29,8 +29,9 @@ export async function fetchRecoveryGate(petId) {
       const res = await api.get(`/api/v1/emotions/recovery/${petId}`);
       const data = res.data;
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, ts: Date.now() }));
+      // 백엔드가 gate_status 3단계 필드를 내려주면 그대로 사용, 없으면 score로 계산
       return {
-        gateStatus: scoreToGate(data.recovery_score ?? 0, data.risk_gated ?? false),
+        gateStatus: data.gate_status ?? scoreToGate(data.recovery_score ?? 0, data.risk_gated ?? false),
         score: data.recovery_score ?? 0,
         riskGated: data.risk_gated ?? false,
       };
