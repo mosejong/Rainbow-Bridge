@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   StyleSheet, Text, View, TextInput, TouchableOpacity,
-  Image, KeyboardAvoidingView, Platform, ActivityIndicator,
+  Image, ScrollView, Platform, ActivityIndicator,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,9 +44,10 @@ export default function RegisterScreen() {
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.innerContainer}
+        <ScrollView
+          contentContainerStyle={styles.innerContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           {/* 상단 이미지 영역 */}
           <View style={styles.imageWrapper}>
@@ -120,7 +121,7 @@ export default function RegisterScreen() {
               </Link>
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -129,13 +130,13 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
-  innerContainer: { flex: 1 },
+  innerContainer: { flexGrow: 1 },
 
   imageWrapper: {
-    flex: 0.42,
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 30,
+    paddingBottom: 20,
   },
   mainImage: {
     width: 220,
@@ -150,8 +151,8 @@ const styles = StyleSheet.create({
   },
 
   bottomFormWrapper: {
-    flex: 0.58,
     paddingHorizontal: 28,
+    paddingBottom: 40,
     alignItems: 'center',
   },
   textContainer: {

@@ -37,7 +37,7 @@ class PetResponse(BaseModel):
     period: Optional[str]
     memories: Optional[list[MemoryItem]]
     photo_url: Optional[str]
-    bucket_list: Optional[list[str]]
-    caller_name: Optional[str]
+    bucket_list: Optional[list[str]] = None
+    caller_name: Optional[str] = None
     memorial_mode: bool = Field(False, description="추모 모드 전환 여부")
     created_at: datetime

@@ -9,6 +9,7 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { generateTts } from '../../api/tts';
+import { logPlay } from '../../api/playLogs';
 import { COLORS } from '../../constants/colors';
 
 const TONES = [
@@ -86,6 +87,8 @@ export default function TtsScreen() {
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.didJustFinish) setPlaying(false);
       });
+      const petId = await AsyncStorage.getItem('pet_id');
+      if (petId) logPlay({ pet_id: petId }).catch(() => {});
     }
   }
 

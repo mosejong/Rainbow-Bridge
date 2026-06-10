@@ -22,9 +22,33 @@ def test_usage_and_completion():
 
 def test_emotion_trend_sorted():
     checkins = [
-        {"created_at": "2026-06-02", "mood": 3},
-        {"created_at": "2026-06-01", "mood": 1},
+        {"created_at": "2026-06-02", "score": 3},
+        {"created_at": "2026-06-01", "score": 1},
     ]
     r = build_report("pet1", emotion_checkins=checkins)
-    moods = [row["mood"] for row in r["emotion_trend"]]
-    assert moods == [1, 3]  # created_at 오름차순 정렬
+    scores = [row["score"] for row in r["emotion_trend"]]
+    assert scores == [1, 3]  # created_at 오름차순 정렬
+
+
+def test_recovery_signal_integrated():
+    """build_report 가 recovery_signal 을 포함하고, 접속빈도 근거를 반영한다."""
+    checkins = [
+        {"created_at": f"2026-06-{i + 1:02d}", "score": s}
+        for i, s in enumerate([3, 3, 4, 7, 8, 8])
+    ]
+    r = build_report(
+        "pet1", emotion_checkins=checkins, access_counts=[10, 9, 7, 4, 2, 1]
+    )
+    sig = r["recovery_signal"]
+    assert sig["signal"] == "회복 중"
+    assert sig["access_trend"]["direction"] == "감소"
+    assert any("회복 신호" in e for e in sig["evidence"])
+
+
+def test_recovery_signal_present_without_access():
+    """접속빈도 없이도 recovery_signal 자리는 채워진다(graceful)."""
+    r = build_report(
+        "pet1", emotion_checkins=[{"created_at": "2026-06-01", "score": 5}]
+    )
+    assert r["recovery_signal"]["signal"] == "데이터 부족"
+    assert r["recovery_signal"]["access_trend"] is None

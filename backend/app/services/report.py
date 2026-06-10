@@ -1,10 +1,49 @@
 import app.core.ai_path  # noqa: F401
 
+from collections import Counter
+from typing import Any, Iterable
+
+from bson import ObjectId
+from bson.errors import InvalidId
+
 from ai.evaluation.report import build_report
 
 from app.db.mongodb import mongodb
-from app.schemas.report import EmotionTrend, ReportResponse
-from bson import ObjectId
+from app.schemas.report import EmotionTrend, PlayTrend, ReportResponse
+
+
+def _bucket_access_counts(timestamps: Iterable[Any]) -> list[int]:
+    """접속 시각 목록 → 날짜별 접속 횟수(오래된→최근).
+
+    recovery_signal 의 ``access_counts`` 입력용 순수 함수(DB 의존 없음 → 단위 테스트 가능).
+    access_logs 는 user 단위(`accessed_at`)라 pet 소유자 기준 **근사치**입니다
+    (다묘 가정 시 한 소유자 접속이 여러 pet 에 동일 적용됨).
+    """
+    days: Counter = Counter()
+    for ts in timestamps:
+        key = ts.date().isoformat() if hasattr(ts, "date") else str(ts)[:10]
+        days[key] += 1
+    return [days[k] for k in sorted(days)]
+
+
+async def _owner_access_counts(pet_id: str) -> list[int] | None:
+    """pet 소유자의 접속 로그를 날짜별 횟수 시계열로. 조회 실패 시 None(graceful)."""
+    try:
+        pet = await mongodb.db["pets"].find_one(
+            {"_id": ObjectId(pet_id)}, {"user_id": 1}
+        )
+    except (InvalidId, Exception):
+        return None
+    if not pet or pet.get("user_id") is None:
+        return None
+    logs = (
+        await mongodb.db["access_logs"]
+        .find({"user_id": pet["user_id"]}, {"accessed_at": 1})
+        .sort("accessed_at", 1)
+        .to_list(None)
+    )
+    counts = _bucket_access_counts(log.get("accessed_at") for log in logs)
+    return counts or None
 
 
 async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
@@ -12,11 +51,11 @@ async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
 
     DB 조회는 여기(백엔드)서 하고, 실제 집계는 ai/evaluation 의 순수 함수
     build_report 에 위임(정환주 ⑧). 컬렉션 필드명을 build_report 입력
-    규약(mood·done)에 맞춰 정규화해 넘긴다.
+    규약(score·done)에 맞춰 정규화해 넘긴다.
     """
-    # 감정: DB score → build_report 의 mood 키로 정규화
+    # 감정: DB score 그대로 (build_report 정본 키 = score)
     emotion_checkins = [
-        {"created_at": str(doc["created_at"]), "mood": doc["score"]}
+        {"created_at": str(doc["created_at"]), "score": doc["score"]}
         async for doc in mongodb.db["emotions"]
         .find({"pet_id": pet_id}, {"score": 1, "created_at": 1})
         .sort("created_at", 1)
@@ -46,12 +85,32 @@ async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
         else 0
     )
 
+    # 앱 접속 빈도(일상복귀 신호 근거) — pet 소유자 기준 근사치
+    access_counts = await _owner_access_counts(pet_id)
+
+    # TTS 재생 이벤트 날짜별 집계
+    play_docs = await mongodb.db["play_logs"].find({"pet_id": pet_id}).to_list(None)
+    play_day_counts: Counter = Counter()
+    for doc in play_docs:
+        played_at = doc.get("played_at")
+        if played_at:
+            key = (
+                played_at.date().isoformat()
+                if hasattr(played_at, "date")
+                else str(played_at)[:10]
+            )
+            play_day_counts[key] += 1
+    play_trend_data = [
+        PlayTrend(date=k, count=v) for k, v in sorted(play_day_counts.items())
+    ]
+
     report = build_report(
         pet_id,
         period,
         llm_logs=llm_logs,
         emotion_checkins=emotion_checkins,
         missions=missions,
+        access_counts=access_counts,
         play_count=play_count,
         session_count=session_count,
     )
@@ -61,10 +120,12 @@ async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
         period=report["period"],
         usage=report["usage"],
         emotion_trend=[
-            EmotionTrend(created_at=str(row["created_at"]), score=row["mood"])
+            EmotionTrend(created_at=str(row["created_at"]), score=row["score"])
             for row in report["emotion_trend"]
         ],
+        play_trend=play_trend_data,
         mission_completion_rate=report["mission_completion_rate"],
+        recovery_signal=report["recovery_signal"],
         revisit=report["revisit"],
         play_count=report["play_count"],
         session_count=report["session_count"],

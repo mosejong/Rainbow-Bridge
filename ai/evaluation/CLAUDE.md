@@ -20,7 +20,10 @@
 
 ## 2. 인터페이스
 
-- `build_report(pet_id, period) -> report`
+- `build_report(pet_id, period, *, llm_logs, emotion_checkins, missions, access_counts, play_count, session_count) -> report`
+  - 순수 함수(DB 주입). 출력에 **`recovery_signal`**(일상복귀 신호 정량: `signal`/`recovery_index`/`emotion`/`access_trend`/`evidence`) 포함 — 반소람 `compute_recovery_signal` 통합(2026-06-09).
+  - `emotion_checkins` 정본 키 = **`score`**(백엔드 `schemas/emotion.py` 와 일치, 과거 `mood` 폐기).
+  - `play_count`(영상 재생 누적)·`session_count`(로그인 접속 수)는 김윤한 추가 — 출력에 **별도 표시 지표**로 실림(`recovery_signal` 입력 아님: `play_count`는 누적 카운터라 '추세' 계산 불가, 추세 근거는 `access_counts`만). 머지 통합 2026-06-10.
 
 ---
 
@@ -32,7 +35,8 @@
 
 ## 4. 백엔드 계약
 
-- `GET /report/{pet_id}` 데이터 형태 합의.
+- `GET /report/{pet_id}` — 응답에 `recovery_signal` 포함 노출(기존 리포트 엔드포인트에 얹음, `/recovery` 게이트와 별개). 구현: `backend/app/services/report.py` `get_report`.
+- 접속빈도(`access_counts`)는 pet **소유자**의 `access_logs` 를 날짜별 버킷팅(`_bucket_access_counts`) — user 단위라 다묘 시 근사치.
 - 출력 스키마는 프론트 차트/요약 UI 기준으로 정의·문서화.
 
 ---
