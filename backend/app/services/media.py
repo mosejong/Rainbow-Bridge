@@ -240,6 +240,38 @@ async def run_perso(asset_id: str):
         )  # 메인 서비스에 영향 없음
 
 
+async def select_best_pet_photo(pet_id: str) -> Path | None:
+    """pet_id에 속한 업로드 사진 중 LivePortrait 적합도가 가장 높은 사진 경로를 반환."""
+    docs = (
+        await _collection()
+        .find({"pet_id": pet_id, "source_url": {"$ne": None}})
+        .to_list(length=None)
+    )
+
+    if not docs:
+        return None
+
+    paths = []
+    for doc in docs:
+        source_url = doc.get("source_url", "")
+        local = Path(source_url.lstrip("/"))
+        if local.exists():
+            paths.append(local)
+
+    if not paths:
+        return None
+
+    repo_root = str(Path(__file__).resolve().parents[3])
+    import sys
+
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+
+    from ai.liveportrait.photo_selector import pick_best
+
+    return pick_best(paths)
+
+
 async def increment_play_count(asset_id: str) -> None:
     """영상 재생 시 play_count +1."""
     oid = _to_object_id(asset_id)

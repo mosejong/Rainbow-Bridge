@@ -84,6 +84,7 @@ data/db/
 .vscode/
 .idea/
 .claude/
+.history/
 *.swp
 .DS_Store
 Thumbs.db

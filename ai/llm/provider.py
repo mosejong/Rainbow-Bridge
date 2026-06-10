@@ -6,7 +6,7 @@ OpenAI 호환 엔드포인트라 `config` 의 base_url/model/api_keys 만 바꾸
 
 복원력(강사님 6/9 피드백 대응):
   1) 429(할당량 소진) → 즉시 다음 키로 전환(LLM_API_KEY=key1,key2 형식).
-  2) 모든 키가 소진되면 폴백 모델(LLM_FALLBACK_MODEL, 예: gemini-3-flash)로 한 번 더
+  2) 모든 키가 소진되면 폴백 모델(LLM_FALLBACK_MODEL, 예: gemini-3.5-flash)로 한 번 더
      전체 키를 재시도 — 무료 할당량은 모델별로 따로라 폴백 모델엔 남아 있을 수 있음.
   3) 타임아웃·5xx 같은 일시적 오류는 같은 키로 재시도(지수 백오프).
 끝내 다 실패하면 `LLMError` 를 던집니다(상위에서 graceful 안내로 대체 가능).
