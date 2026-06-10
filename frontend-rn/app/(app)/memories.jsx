@@ -38,28 +38,42 @@ export default function MemoriesScreen() {
     }
     setError('');
     setLoading(true);
+
+    const memories = filled.map(e => ({
+      keyword: e.keyword.trim(),
+      detail: e.detail.trim(),
+    }));
+    const callerName = profile.guardian_title?.trim() || '보호자';
+
     try {
-      const memories = filled.map(e => ({
-        keyword: e.keyword.trim(),
-        detail: e.detail.trim(),
-      }));
       const payload = {
         name: profile.name.trim(),
         species: profile.species,
+        gender: profile.gender,
         period: `${profile.start_date} ~ ${profile.end_date}`,
-        caller_name: profile.guardian_title?.trim() || '보호자',
+        caller_name: callerName,
         bucket_list: [],
         memories,
       };
       const pet = await createPet(payload);
-      await AsyncStorage.setItem('pet_id', pet.id || pet._id);
-      await AsyncStorage.setItem('pet_name', pet.name);
+      await AsyncStorage.setItem('pet_id', String(pet.id || pet._id || ''));
+      await AsyncStorage.setItem('pet_name', pet.name || profile.name.trim());
       await AsyncStorage.setItem('pet_species', profile.species || '');
-      router.replace('/(app)/home');
     } catch {
-      setError('저장 중 오류가 발생했어요. 다시 시도해주세요.');
+      // 백엔드 연결 실패 시 로컬에만 저장하고 진행
+      await AsyncStorage.setItem('pet_name', profile.name.trim());
+      await AsyncStorage.setItem('pet_species', profile.species || '');
     } finally {
+      // 호칭·보호자이름·이별날짜 항상 저장
+      await AsyncStorage.setItem('caller_name', callerName);
+      if (profile.caller_name?.trim()) {
+        await AsyncStorage.setItem('caller_name', profile.caller_name.trim());
+      }
+      if (profile.end_date) {
+        await AsyncStorage.setItem('pet_farewell_date', profile.end_date);
+      }
       setLoading(false);
+      router.replace('/(app)/home');
     }
   }
 
