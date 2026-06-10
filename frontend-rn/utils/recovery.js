@@ -26,7 +26,7 @@ export async function fetchRecoveryGate(petId) {
   // 1순위: API 직접 조회
   if (petId) {
     try {
-      const res = await api.get(`/api/v1/pets/${petId}/recovery`);
+      const res = await api.get(`/api/v1/emotions/recovery/${petId}`);
       const data = res.data;
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, ts: Date.now() }));
       return {

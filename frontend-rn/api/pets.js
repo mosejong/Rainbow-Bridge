@@ -16,6 +16,6 @@ export async function getPet(petId) {
 }
 
 export async function getRecoveryStatus(petId) {
-  const res = await api.get(`/api/v1/pets/${petId}/recovery`);
+  const res = await api.get(`/api/v1/emotions/recovery/${petId}`);
   return res.data;
 }

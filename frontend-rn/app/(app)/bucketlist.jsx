@@ -7,11 +7,10 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getPet } from '../../api/pets';
 import { COLORS } from '../../constants/colors';
 
 const STORAGE_KEY = 'bucketlist_items';
-const SAMPLES = ['함께 산책하기', '좋아하는 간식 먹기', '사진 찍기'];
+const PLACEHOLDERS = ['예) 함께 산책하기', '예) 좋아하는 간식 먹기', '예) 사진 찍기'];
 
 export default function BucketlistScreen() {
   const router = useRouter();
@@ -29,23 +28,15 @@ export default function BucketlistScreen() {
       if (name) setPetName(name);
 
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) { setItems(JSON.parse(stored)); return; }
-
-      const petId = await AsyncStorage.getItem('pet_id');
-      if (petId) {
-        const pet = await getPet(petId);
-        if (pet.bucket_list?.length > 0) {
-          const initial = pet.bucket_list.map((text, i) => ({ id: String(i), text, checked: false }));
-          setItems(initial);
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
-          return;
-        }
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // 저장된 항목이 있을 때만 표시
+        if (parsed.length > 0) { setItems(parsed); return; }
       }
     } catch { /* ignore */ }
 
-    const initial = SAMPLES.map((text, i) => ({ id: String(i), text, checked: false }));
-    setItems(initial);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+    // 저장된 항목 없음 → 빈 목록으로 시작 (샘플은 placeholder로만)
+    setItems([]);
   }
 
   async function toggle(id) {
@@ -64,6 +55,7 @@ export default function BucketlistScreen() {
   }
 
   const doneCount = items.filter(i => i.checked).length;
+  const inputPlaceholder = PLACEHOLDERS[items.length % PLACEHOLDERS.length];
 
   return (
     <LinearGradient
@@ -119,6 +111,14 @@ export default function BucketlistScreen() {
               ))}
             </View>
 
+            {items.length === 0 && (
+              <View style={styles.emptyWrap}>
+                <Text style={styles.emptyIcon}>📋</Text>
+                <Text style={styles.emptyText}>아래 입력창에 함께 하고 싶은 것들을 적어보세요.</Text>
+                <Text style={styles.emptyHint}>예) 함께 산책하기 · 좋아하는 간식 먹기 · 사진 찍기</Text>
+              </View>
+            )}
+
             {doneCount === items.length && items.length > 0 && (
               <Text style={styles.allDone}>🎉 모든 항목을 완료했어요!</Text>
             )}
@@ -130,7 +130,7 @@ export default function BucketlistScreen() {
               style={styles.addInput}
               value={newText}
               onChangeText={setNewText}
-              placeholder="새 항목 추가..."
+              placeholder={inputPlaceholder}
               placeholderTextColor="#A89FBC"
               onSubmitEditing={addItem}
               returnKeyType="done"
@@ -267,4 +267,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginTop: 8,
   },
+  emptyWrap: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    gap: 8,
+  },
+  emptyIcon: { fontSize: 40 },
+  emptyText: { fontSize: 14, color: '#8A7D9E', textAlign: 'center', lineHeight: 22 },
+  emptyHint: { fontSize: 12, color: '#B0A0C0', textAlign: 'center' },
 });
