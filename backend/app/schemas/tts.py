@@ -3,7 +3,10 @@ from pydantic import BaseModel, Field
 
 class TtsCreate(BaseModel):
     text: str = Field(..., description="낭독할 텍스트 (보호자 대상 위로 메시지)")
-    tone: str = Field("female", description="음성 톤 (female·male·narration / 구버전: warm·calm·hopeful)")
+    tone: str = Field(
+        "female",
+        description="음성 톤 (female·male·narration / 구버전: warm·calm·hopeful)",
+    )
     pet_id: str = Field(..., description="반려동물 ID (로그용)")
 
 

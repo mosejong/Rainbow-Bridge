@@ -86,11 +86,14 @@ ACCOUNTS = [
 
 
 def register(client, account):
-    r = client.post("/api/v1/auth/register", json={
-        "email": account["email"],
-        "password": account["password"],
-        "nickname": account["nickname"],
-    })
+    r = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": account["email"],
+            "password": account["password"],
+            "nickname": account["nickname"],
+        },
+    )
     if r.status_code == 201:
         print("  ✅ 가입 완료")
     elif r.status_code == 400 and "already" in r.text.lower():
@@ -100,10 +103,13 @@ def register(client, account):
 
 
 def login(client, account):
-    r = client.post("/api/v1/auth/login", json={
-        "email": account["email"],
-        "password": account["password"],
-    })
+    r = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": account["email"],
+            "password": account["password"],
+        },
+    )
     if r.status_code != 200:
         print(f"  ❌ 로그인 실패: {r.status_code}")
         return None
@@ -111,12 +117,16 @@ def login(client, account):
 
 
 def create_pet(client, token, account):
-    r = client.post("/api/v1/pets", json={
-        "name": account["pet_name"],
-        "species": account["species"],
-        "period": "2020-01-01 ~ 2026-06-01",
-        "caller_name": "보호자",
-    }, headers={"Authorization": f"Bearer {token}"})
+    r = client.post(
+        "/api/v1/pets",
+        json={
+            "name": account["pet_name"],
+            "species": account["species"],
+            "period": "2020-01-01 ~ 2026-06-01",
+            "caller_name": "보호자",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
     if r.status_code == 201:
         print(f"  ✅ 펫 등록: {account['pet_name']}")
         return r.json()["id"]
@@ -131,25 +141,33 @@ def create_pet(client, token, account):
 
 def post_emotions(client, token, pet_id, emotions):
     for i, e in enumerate(emotions):
-        r = client.post("/api/v1/emotions", json={
-            "pet_id": pet_id,
-            "score": e["score"],
-            "note": e.get("note", ""),
-        }, headers={"Authorization": f"Bearer {token}"})
+        r = client.post(
+            "/api/v1/emotions",
+            json={
+                "pet_id": pet_id,
+                "score": e["score"],
+                "note": e.get("note", ""),
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
         status = "✅" if r.status_code == 201 else "❌"
         risk = r.json().get("risk_level", "?") if r.status_code == 201 else "?"
         print(f"  {status} 체크인 {i+1}: score={e['score']} risk={risk}")
 
 
 def check_gate(client, token, pet_id):
-    r = client.get(f"/api/v1/emotions/recovery/{pet_id}",
-                   headers={"Authorization": f"Bearer {token}"})
+    r = client.get(
+        f"/api/v1/emotions/recovery/{pet_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
     if r.status_code == 200:
         d = r.json()
-        print(f"  🔒 gate_status={d.get('gate_status')} | "
-              f"recovery_pct={d.get('recovery_pct')} | "
-              f"content_unlocked={d.get('content_unlocked')} | "
-              f"avg={d.get('avg_score')}")
+        print(
+            f"  🔒 gate_status={d.get('gate_status')} | "
+            f"recovery_pct={d.get('recovery_pct')} | "
+            f"content_unlocked={d.get('content_unlocked')} | "
+            f"avg={d.get('avg_score')}"
+        )
     else:
         print(f"  ❌ recovery 조회 실패: {r.status_code}")
 
