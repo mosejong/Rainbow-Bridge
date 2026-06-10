@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView,
+  StyleSheet, ScrollView, ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Card from '../../components/Card';
+import { createPet } from '../../api/pets';
 import { COLORS } from '../../constants/colors';
 
 const SPECIES = ['강아지', '고양이', '기타'];
 const GENDER = ['남아', '여아'];
 
 export default function ProfileScreen() {
-  const router = useRouter();
   const [form, setForm] = useState({
     name: '',
     species: '강아지',
@@ -24,8 +25,9 @@ export default function ProfileScreen() {
     caller_name: '',
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  function handleNext() {
+  async function handleNext() {
     if (!form.name.trim()) {
       setError('반려동물 이름을 입력해주세요.');
       return;
@@ -35,7 +37,39 @@ export default function ProfileScreen() {
       return;
     }
     setError('');
-    router.push({ pathname: '/(app)/memories', params: { profile: JSON.stringify(form) } });
+    setLoading(true);
+
+    // 이전 반려동물 데이터 초기화
+    await AsyncStorage.multiRemove([
+      'pet_id', 'pet_name', 'pet_species', 'caller_name',
+      'diary_entries', 'bucketlist_items',
+    ]);
+
+    try {
+      const payload = {
+        name: form.name.trim(),
+        species: form.species,
+        gender: form.gender,
+        period: `${form.start_date} ~ ${form.end_date}`,
+        caller_name: form.guardian_title?.trim() || '보호자',
+        bucket_list: [],
+        memories: [],
+      };
+      const pet = await createPet(payload);
+      await AsyncStorage.setItem('pet_id', String(pet.id || pet._id || ''));
+      await AsyncStorage.setItem('pet_name', pet.name || form.name.trim());
+      await AsyncStorage.setItem('pet_species', form.species);
+    } catch {
+      // 백엔드 연결 실패 시 로컬에만 저장하고 진행
+      await AsyncStorage.setItem('pet_name', form.name.trim());
+      await AsyncStorage.setItem('pet_species', form.species);
+    } finally {
+      if (form.caller_name.trim()) {
+        await AsyncStorage.setItem('caller_name', form.caller_name.trim());
+      }
+      setLoading(false);
+      router.replace('/(app)/home');
+    }
   }
 
   return (
@@ -140,7 +174,7 @@ export default function ProfileScreen() {
               />
             </View>
 
-            {/* 보호자 이름 (caller_name) */}
+            {/* 보호자 이름 */}
             <View style={styles.field}>
               <Text style={styles.label}>보호자 이름</Text>
               <Text style={styles.hint}>아이가 알던 이름이에요. 추모 메시지 개인화에 사용돼요.</Text>
@@ -159,6 +193,7 @@ export default function ProfileScreen() {
               activeOpacity={0.8}
               style={styles.btnShadow}
               onPress={handleNext}
+              disabled={loading}
             >
               <LinearGradient
                 colors={['#DDEDEA', '#DAEAF6']}
@@ -166,7 +201,10 @@ export default function ProfileScreen() {
                 end={{ x: 1, y: 0 }}
                 style={styles.btn}
               >
-                <Text style={styles.btnText}>다음 — 추억 입력</Text>
+                {loading
+                  ? <ActivityIndicator color="#5B4E75" />
+                  : <Text style={styles.btnText}>다음</Text>
+                }
               </LinearGradient>
             </TouchableOpacity>
           </Card>
