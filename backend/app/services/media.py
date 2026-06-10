@@ -90,7 +90,7 @@ async def run_liveportrait(asset_id: str, source_path: str, pet_id: str = ""):
             doc = await _collection().find_one({"_id": ObjectId(asset_id)})
             pet_id = doc.get("pet_id", "") if doc else ""
         tts_files = sorted(
-            _TTS_DIR.glob(f"{pet_id}_*.mp3"),
+            [*_TTS_DIR.glob(f"{pet_id}_*.mp3"), *_TTS_DIR.glob(f"{pet_id}_*.wav")],
             key=lambda f: f.stat().st_mtime,
             reverse=True,
         )

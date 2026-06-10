@@ -9,7 +9,7 @@ from bson.errors import InvalidId
 from ai.evaluation.report import build_report
 
 from app.db.mongodb import mongodb
-from app.schemas.report import EmotionTrend, ReportResponse
+from app.schemas.report import EmotionTrend, PlayTrend, ReportResponse
 
 
 def _bucket_access_counts(timestamps: Iterable[Any]) -> list[int]:
@@ -88,6 +88,22 @@ async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
     # 앱 접속 빈도(일상복귀 신호 근거) — pet 소유자 기준 근사치
     access_counts = await _owner_access_counts(pet_id)
 
+    # TTS 재생 이벤트 날짜별 집계
+    play_docs = await mongodb.db["play_logs"].find({"pet_id": pet_id}).to_list(None)
+    play_day_counts: Counter = Counter()
+    for doc in play_docs:
+        played_at = doc.get("played_at")
+        if played_at:
+            key = (
+                played_at.date().isoformat()
+                if hasattr(played_at, "date")
+                else str(played_at)[:10]
+            )
+            play_day_counts[key] += 1
+    play_trend_data = [
+        PlayTrend(date=k, count=v) for k, v in sorted(play_day_counts.items())
+    ]
+
     report = build_report(
         pet_id,
         period,
@@ -107,6 +123,7 @@ async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
             EmotionTrend(created_at=str(row["created_at"]), score=row["score"])
             for row in report["emotion_trend"]
         ],
+        play_trend=play_trend_data,
         mission_completion_rate=report["mission_completion_rate"],
         recovery_signal=report["recovery_signal"],
         revisit=report["revisit"],
