@@ -5,7 +5,7 @@ const CACHE_KEY = 'recovery_cache';
 const CACHE_TTL = 3600000; // 1시간
 
 function scoreToGate(score, riskGated) {
-  if (riskGated) return 'open'; // SafetyModal이 처리
+  if (riskGated) return 'locked'; // risk_level 2+ → 점수 무관하게 잠김
   if (score >= 80) return 'open';
   if (score >= 50) return 'teaser';
   return 'locked';
