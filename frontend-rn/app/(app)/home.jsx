@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
   LayoutAnimation, UIManager, Platform,
@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import { fetchRecoveryGate } from '../../utils/recovery';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -122,11 +123,25 @@ export default function HomeScreen() {
   const [livingOpen, setLivingOpen] = useState(true);
   const [farewellOpen, setFarewellOpen] = useState(false);
   const [openSubs, setOpenSubs] = useState({});
+  const [gateOpen, setGateOpen] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem('pet_name').then(v => v && setPetName(v));
     AsyncStorage.getItem('pet_species').then(v => v && setPetSpecies(v));
+    (async () => {
+      const petId = await AsyncStorage.getItem('pet_id');
+      const { gateStatus } = await fetchRecoveryGate(petId);
+      setGateOpen(gateStatus === 'open');
+    })();
   }, []);
+
+  // 회복 게이트 열리기 전엔 추모 메시지·TTS 숨김 (감정 체크인·미션으로 회복 유도)
+  const farewellSubs = useMemo(() => FAREWELL_SUBS.map(sub => {
+    if (sub.id === 'memorial' && !gateOpen) {
+      return { ...sub, cards: sub.cards.filter(c => !['message', 'tts'].includes(c.id)) };
+    }
+    return sub;
+  }), [gateOpen]);
 
   function animate(fn) {
     LayoutAnimation.configureNext({
@@ -226,7 +241,7 @@ export default function HomeScreen() {
 
             {farewellOpen && (
               <View style={styles.groupCards}>
-                {FAREWELL_SUBS.map(sub => (
+                {farewellSubs.map(sub => (
                   <SubSection
                     key={sub.id}
                     sub={sub}
