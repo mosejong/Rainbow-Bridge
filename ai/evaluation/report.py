@@ -47,6 +47,7 @@ def build_report(
     emotion_checkins: Iterable[dict[str, Any]] = (),
     missions: Iterable[dict[str, Any]] = (),
     access_counts: Optional[Sequence[float]] = None,
+    play_counts: Optional[Sequence[float]] = None,
     play_count: int = 0,
     session_count: int = 0,
 ) -> dict[str, Any]:
@@ -60,6 +61,9 @@ def build_report(
         missions: 미션 조회 결과(`done`).
         access_counts: 기간별 앱 접속 횟수(오래된→최근). `access_logs` 를 일/주 단위로
             묶어 넣으면 일상복귀 신호의 '의존 감소' 근거로 쓰입니다. 없으면 생략(graceful).
+        play_counts: 기간별 영상/음성 재생 횟수(오래된→최근). `play_logs`(per-play 타임스탬프)
+            를 날짜별로 묶어 넣으면 recovery_signal 의 '재생 빈도 추세' 근거로 쓰입니다.
+            누적 카운터 `play_count` 와 달리 시계열이라 추세 계산 가능. 없으면 생략(graceful).
 
     Returns:
         프론트 차트/요약 UI 용 리포트 dict.
@@ -82,7 +86,10 @@ def build_report(
         "mission_completion_rate": _completion_rate(mission_list),
         # 일상복귀 신호(정량) — 반소람 recovery_signal.py 통합. 접속빈도가 차별 근거.
         "recovery_signal": compute_recovery_signal(
-            checkins, mission_list, access_counts=access_counts
+            checkins,
+            mission_list,
+            access_counts=access_counts,
+            play_counts=play_counts,
         ),
         # 🚧 재방문(revisit): 세션/접속 로그 스키마 확정 후 추가 (백엔드 합의)
         "revisit": None,

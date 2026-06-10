@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Animated, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,8 +10,11 @@ import SafetyModal from '../../components/SafetyModal';
 import Button from '../../components/Button';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { generateMessage, getLatestMessage } from '../../api/messages';
+import { recordPlay } from '../../api/media';
 import { generateTts } from '../../api/tts';
 import { COLORS } from '../../constants/colors';
+import { fetchRecoveryGate } from '../../utils/recovery';
+import { doLogout } from './_layout';
 
 const BGM_3RD = require('../../assets/audio/bgm_3rd.mp3');
 const BGM_1ST = require('../../assets/audio/bgm_1st.mp3');
@@ -30,7 +33,7 @@ function makeFallbackMessage(petName) {
     first_person: false,
     source: 'local',
     risk_level: 0,
-    content_unlocked: true,
+    content_unlocked: false,
     allow_first_person: false,
   };
 }
@@ -62,27 +65,130 @@ function ResourceCard({ resource }) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// 회복 게이트 — 잠김 화면 (score 0~49)
+// 근거: 이별 직후 강한 자극은 집착·현실 부정으로 이어질 수 있음
+//       (Continuing Bonds 연구, RECOVERY_GATE.md)
+// ─────────────────────────────────────────────────────────────
+function GateLockedScreen({ petName, onGoCheckin, onGoMission, onGoHome, onLogout }) {
+  return (
+    <LinearGradient colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={gate.gradient}>
+      <SafeAreaView style={gate.safe}>
+        <View style={gate.navRow}>
+          <TouchableOpacity onPress={onGoHome} style={gate.navBtn} activeOpacity={0.7}>
+            <Text style={gate.navHome}>홈</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onLogout} style={gate.navBtn} activeOpacity={0.7}>
+            <Text style={gate.navLogout}>로그아웃</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView contentContainerStyle={gate.scroll}>
+          <View style={gate.card}>
+            <Text style={gate.lockIcon}>🌙</Text>
+            <Text style={gate.title}>아직 마음을 추스르는 중이에요</Text>
+            <Text style={gate.desc}>
+              이별 직후에는 강한 추모 편지가{'\n'}감정 회복을 더 어렵게 할 수 있어요.{'\n\n'}
+              매일 감정을 기록하고 작은 미션으로{'\n'}하루하루 회복해나가면,{'\n'}
+              {petName || '아이'}의 편지를 받을 수 있어요.
+            </Text>
+            <View style={gate.divider} />
+            <TouchableOpacity style={gate.primaryBtn} onPress={onGoCheckin} activeOpacity={0.85}>
+              <Text style={gate.primaryBtnText}>💭 감정 체크인 하러 가기</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={gate.secondaryBtn} onPress={onGoMission} activeOpacity={0.85}>
+              <Text style={gate.secondaryBtnText}>🌱 오늘의 미션 보기</Text>
+            </TouchableOpacity>
+            <Text style={gate.footnote}>
+              AI가 생성하는 편지는 충분히 마음을 추스른 뒤에 받는 게{'\n'}훨씬 더 따뜻하게 느껴질 거예요.
+            </Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// 회복 게이트 — 찌라시 카드 (score 50~79)
+// 근거: RECOVERY_GATE.md — "회복하면 OO이의 편지를 받을 수 있다"는
+//       찌라시가 회복 동기를 만든다
+// ─────────────────────────────────────────────────────────────
+function GateTeaserScreen({ petName, score, onGoCheckin, onGoHome, onLogout }) {
+  const pct = Math.min(100, (score / 80) * 100);
+  const filledBlocks = Math.round(pct / 10);
+  const bar = '█'.repeat(filledBlocks) + '░'.repeat(10 - filledBlocks);
+
+  return (
+    <LinearGradient colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={gate.gradient}>
+      <SafeAreaView style={gate.safe}>
+        <View style={gate.navRow}>
+          <TouchableOpacity onPress={onGoHome} style={gate.navBtn} activeOpacity={0.7}>
+            <Text style={gate.navHome}>홈</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onLogout} style={gate.navBtn} activeOpacity={0.7}>
+            <Text style={gate.navLogout}>로그아웃</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView contentContainerStyle={gate.scroll}>
+          <View style={gate.teaserCard}>
+            <Text style={gate.teaserLock}>🔒</Text>
+            <Text style={gate.teaserTitle}>{petName || '아이'}가 남긴 편지</Text>
+            <Text style={gate.teaserDesc}>
+              {petName || '아이'}와의 추억을 바탕으로 쓴{'\n'}특별한 편지가 기다리고 있어요.
+            </Text>
+
+            <View style={gate.progressWrap}>
+              <Text style={gate.progressBar}>{bar}</Text>
+              <Text style={gate.progressLabel}>
+                {score > 0 ? `${score}점` : '체크인을 시작해보세요'}
+              </Text>
+              <Text style={gate.progressHint}>80점이 되면 열립니다</Text>
+            </View>
+
+            <Text style={gate.teaserEncourage}>천천히 괜찮아요 🐾</Text>
+
+            <View style={gate.divider} />
+            <TouchableOpacity style={gate.primaryBtn} onPress={onGoCheckin} activeOpacity={0.85}>
+              <Text style={gate.primaryBtnText}>💭 감정 체크인으로 회복도 높이기</Text>
+            </TouchableOpacity>
+            <Text style={gate.footnote}>
+              감정 체크인과 오늘의 미션을 꾸준히 하면 회복도가 올라가요.
+            </Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
+  );
+}
+
 export default function MessageScreen() {
   const router = useRouter();
+  // gate: 'checking' | 'locked' | 'teaser' | 'open'
+  const [gateStatus, setGateStatus] = useState('checking');
+  const [recoveryScore, setRecoveryScore] = useState(0);
   const [phase, setPhase] = useState('loading'); // loading | envelope | letter
   const [message, setMessage] = useState(null);
   const [error, setError] = useState('');
   const [petName, setPetName] = useState('소중한 친구');
   const [petSpecies, setPetSpecies] = useState('');
   const [petVideoUrl, setPetVideoUrl] = useState(null);
+  const [petVideoAssetId, setPetVideoAssetId] = useState(null);
+  const [videoModalVisible, setVideoModalVisible] = useState(false);
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [lines, setLines] = useState([]);
   const [visibleCount, setVisibleCount] = useState(0);
   const [done, setDone] = useState(false);
   const [welfareExpanded, setWelfareExpanded] = useState(false);
 
-  const anims = useRef([]);
   // 봉투 애니메이션
-  const flapAnim = useRef(new Animated.Value(0)).current;        // 봉투 flap: 0=닫힘 1=열림
-  const envelopeAnim = useRef(new Animated.Value(1)).current;    // 봉투 body: 1=보임 0=사라짐
+  const flapAnim = useRef(new Animated.Value(0)).current;
+  const envelopeAnim = useRef(new Animated.Value(1)).current;
   // 편지지 애니메이션
   const paperOpacity = useRef(new Animated.Value(0)).current;
   const paperTranslate = useRef(new Animated.Value(40)).current;
+  // 편지 본문 블록 슬라이드업 (한 줄씩 → 전체 블록)
+  const contentSlide = useRef(new Animated.Value(36)).current;
+  const contentFade = useRef(new Animated.Value(0)).current;
 
   const bgmRef = useRef(null);
   const ttsRef = useRef(null);
@@ -93,9 +199,21 @@ export default function MessageScreen() {
     AsyncStorage.getItem('pet_name').then((v) => v && setPetName(v));
     AsyncStorage.getItem('pet_species').then((v) => v && setPetSpecies(v));
     AsyncStorage.getItem('pet_video_url').then((v) => v && setPetVideoUrl(v));
-    loadMessage();
+    AsyncStorage.getItem('pet_video_asset_id').then((v) => v && setPetVideoAssetId(v));
+    initGate();
     return () => cleanup();
   }, []);
+
+  async function initGate() {
+    const petId = await AsyncStorage.getItem('pet_id');
+    const { gateStatus: gs, score, riskGated } = await fetchRecoveryGate(petId);
+    setRecoveryScore(score);
+    setGateStatus(gs);
+    if (gs === 'open') {
+      if (riskGated) setSafetyOpen(true);
+      loadMessage();
+    }
+  }
 
   function cleanup() {
     timersRef.current.forEach(clearTimeout);
@@ -133,10 +251,6 @@ export default function MessageScreen() {
     if (message.source === 'unavailable') { setPhase('letter'); return; }
     const parsed = splitLines(message.content);
     parsedRef.current = parsed;
-    anims.current = parsed.map(() => ({
-      opacity: new Animated.Value(0),
-      translateY: new Animated.Value(20),
-    }));
     setLines(parsed);
     setPhase('envelope');
   }, [message]);
@@ -178,6 +292,8 @@ export default function MessageScreen() {
     envelopeAnim.setValue(1);
     paperOpacity.setValue(0);
     paperTranslate.setValue(40);
+    contentSlide.setValue(36);
+    contentFade.setValue(0);
     setPhase('loading');
     try {
       const petId = await AsyncStorage.getItem('pet_id');
@@ -193,6 +309,11 @@ export default function MessageScreen() {
     }
   }
 
+  async function handleWatchVideo() {
+    if (petVideoAssetId) recordPlay(petVideoAssetId).catch(() => {});
+    setVideoModalVisible(true);
+  }
+
   async function requestFirstPerson() {
     cleanup();
     setDone(false);
@@ -205,6 +326,8 @@ export default function MessageScreen() {
     envelopeAnim.setValue(1);
     paperOpacity.setValue(0);
     paperTranslate.setValue(40);
+    contentSlide.setValue(36);
+    contentFade.setValue(0);
     setPhase('loading');
     try {
       const petId = await AsyncStorage.getItem('pet_id');
@@ -218,6 +341,14 @@ export default function MessageScreen() {
   async function startSequence(parsed, isFirstPerson, msgData) {
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
 
+    // 전체 텍스트 블록 슬라이드업 (한 줄씩 대신)
+    setVisibleCount(parsed.length);
+    Animated.parallel([
+      Animated.timing(contentSlide, { toValue: 0, duration: 600, useNativeDriver: true }),
+      Animated.timing(contentFade, { toValue: 1, duration: 600, useNativeDriver: true }),
+    ]).start();
+
+    // BGM
     const bgmFile = isFirstPerson ? BGM_1ST : BGM_3RD;
     if (bgmFile) {
       try {
@@ -233,36 +364,20 @@ export default function MessageScreen() {
       } catch {}
     }
 
-    let ttsSound = null;
+    // TTS — 콘텐츠 등장 직후 재생
     try {
       const petId = await AsyncStorage.getItem('pet_id');
       const ttsData = await generateTts({ pet_id: petId, text: msgData.content, tone: msgData.tone || 'warm' });
       if (ttsData?.audio_url) {
         const { sound } = await Audio.Sound.createAsync({ uri: ttsData.audio_url }, { volume: 1.0 });
         ttsRef.current = sound;
-        ttsSound = sound;
+        timersRef.current.push(setTimeout(() => {
+          sound.playAsync().catch(() => {});
+        }, 700));
       }
     } catch {}
 
-    parsed.forEach((_, i) => {
-      const t = timersRef.current;
-      const delay = BGM_FADE_DURATION + i * LINE_DELAY;
-      t.push(setTimeout(() => {
-        setVisibleCount((c) => c + 1);
-        Animated.parallel([
-          Animated.timing(anims.current[i].opacity, { toValue: 1, duration: LINE_DURATION, useNativeDriver: true }),
-          Animated.timing(anims.current[i].translateY, { toValue: 0, duration: LINE_DURATION, useNativeDriver: true }),
-        ]).start();
-        if (i === 0) {
-          t.push(setTimeout(() => {
-            if (ttsSound) ttsSound.playAsync().catch(() => {});
-          }, TTS_START_OFFSET));
-        }
-      }, delay));
-    });
-
-    const total = BGM_FADE_DURATION + parsed.length * LINE_DELAY + LINE_DURATION;
-    timersRef.current.push(setTimeout(() => setDone(true), total));
+    timersRef.current.push(setTimeout(() => setDone(true), 1200));
   }
 
   const isFirst = message?.first_person;
@@ -274,10 +389,83 @@ export default function MessageScreen() {
   const flapTranslate = flapAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -120] });
   const flapOpacity = flapAnim.interpolate({ inputRange: [0, 0.8, 1], outputRange: [1, 0.3, 0] });
 
+  // ── 게이트 화면 렌더링 ──
+  if (gateStatus === 'checking') {
+    return (
+      <LinearGradient colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={styles.safe}>
+        <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <LoadingSpinner message="회복 상태를 확인하고 있어요..." />
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
+  if (gateStatus === 'locked') {
+    return (
+      <GateLockedScreen
+        petName={petName}
+        onGoCheckin={() => router.replace('/(app)/emotion')}
+        onGoMission={() => router.replace('/(app)/mission')}
+        onGoHome={() => router.replace('/(app)/home')}
+        onLogout={doLogout}
+      />
+    );
+  }
+  if (gateStatus === 'teaser') {
+    return (
+      <GateTeaserScreen
+        petName={petName}
+        score={recoveryScore}
+        onGoCheckin={() => router.replace('/(app)/emotion')}
+        onGoHome={() => router.replace('/(app)/home')}
+        onLogout={doLogout}
+      />
+    );
+  }
+
   return (
     <LinearGradient colors={['#12101A', '#1E1528', '#12101A']} style={styles.safe}>
       <SafeAreaView style={styles.safeInner}>
+        {/* 헤더 — 홈·로그아웃 */}
+        <View style={styles.msgHeader}>
+          <TouchableOpacity onPress={() => router.navigate('/(app)/home')} style={styles.msgHeaderBtn} activeOpacity={0.7}>
+            <Text style={styles.msgHeaderHome}>홈</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={doLogout} style={styles.msgHeaderBtn} activeOpacity={0.7}>
+            <Text style={styles.msgHeaderLogout}>로그아웃</Text>
+          </TouchableOpacity>
+        </View>
+
         <SafetyModal isOpen={safetyOpen} onClose={() => setSafetyOpen(false)} />
+
+        {/* 영상 풀스크린 모달 */}
+        <Modal
+          visible={videoModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setVideoModalVisible(false)}
+        >
+          <View style={styles.videoModal}>
+            <TouchableOpacity
+              style={styles.videoModalClose}
+              onPress={() => setVideoModalVisible(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.videoModalCloseText}>✕</Text>
+            </TouchableOpacity>
+            {petVideoUrl ? (
+              <Video
+                source={{ uri: petVideoUrl }}
+                style={styles.fullscreenVideo}
+                resizeMode={ResizeMode.CONTAIN}
+                shouldPlay
+                useNativeControls
+                isLooping
+              />
+            ) : (
+              <Text style={styles.videoModalNoUrl}>영상을 불러올 수 없어요.</Text>
+            )}
+          </View>
+        </Modal>
 
         {/* 로딩 */}
         {phase === 'loading' && !error && (
@@ -371,20 +559,19 @@ export default function MessageScreen() {
                   </View>
                 )}
 
-                {/* 편지 본문 */}
-                <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.bodyContent}
-                  scrollEnabled={done} showsVerticalScrollIndicator={false}>
-                  {lines.map((line, i) =>
-                    i < visibleCount ? (
-                      <Animated.Text key={i} style={[
-                        styles.line, isFirst && styles.lineFirst,
-                        { opacity: anims.current[i]?.opacity ?? 1, transform: [{ translateY: anims.current[i]?.translateY ?? 0 }] },
-                      ]}>
-                        {line}
-                      </Animated.Text>
-                    ) : null
-                  )}
-                </ScrollView>
+                {/* 편지 본문 — 전체 블록 슬라이드업 */}
+                <Animated.View style={{ opacity: contentFade, transform: [{ translateY: contentSlide }] }}>
+                  <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.bodyContent}
+                    scrollEnabled={done} showsVerticalScrollIndicator={false}>
+                    {lines.map((line, i) =>
+                      i < visibleCount ? (
+                        <Text key={i} style={[styles.line, isFirst && styles.lineFirst]}>
+                          {line}
+                        </Text>
+                      ) : null
+                    )}
+                  </ScrollView>
+                </Animated.View>
 
                 {/* 편지지 하단 — 윤리 고지 문구 */}
                 {done && (
@@ -405,10 +592,21 @@ export default function MessageScreen() {
                 </Button>
               )}
 
+              {/* 영상 보기 버튼 — pet_video_url이 있을 때만 표시 */}
+              {done && petVideoUrl && (
+                <TouchableOpacity
+                  style={styles.watchVideoBtn}
+                  onPress={handleWatchVideo}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.watchVideoBtnText}>🎬  영상 보기</Text>
+                </TouchableOpacity>
+              )}
+
               {/* 회복 게이트 — content_unlocked / allow_first_person */}
               {done && (
                 <View style={styles.gateSection}>
-                  {message?.content_unlocked !== false && (
+                  {message?.content_unlocked === true && (
                     <TouchableOpacity
                       style={styles.gateBtnWrap}
                       onPress={() => router.push('/(app)/mission')}
@@ -662,6 +860,134 @@ const styles = StyleSheet.create({
   gateBtnSub: { fontSize: 11, color: 'rgba(255,255,255,0.40)', marginTop: 2 },
   gateBtnArrow: { fontSize: 18, color: 'rgba(255,255,255,0.35)' },
 
+  // ── 커스텀 헤더 (headerShown: false 화면) ──
+  msgHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  msgHeaderBtn: { paddingHorizontal: 8, paddingVertical: 4 },
+  msgHeaderHome: { fontSize: 14, fontWeight: '700', color: '#C4A8D8' },
+  msgHeaderLogout: { fontSize: 14, fontWeight: '700', color: '#E57373' },
+
+  // ── 영상 보기 버튼 ──
+  watchVideoBtn: {
+    alignSelf: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 20,
+    backgroundColor: 'rgba(184,144,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(196,168,216,0.45)',
+    marginTop: 4,
+  },
+  watchVideoBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#C4A8D8',
+    letterSpacing: 0.5,
+  },
+
+  // ── 영상 풀스크린 모달 ──
+  videoModal: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.96)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoModalClose: {
+    position: 'absolute',
+    top: 52,
+    right: 20,
+    zIndex: 10,
+    padding: 10,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 20,
+  },
+  videoModalCloseText: {
+    fontSize: 20,
+    color: '#fff',
+    fontWeight: '700',
+  },
+  fullscreenVideo: {
+    width: '100%',
+    aspectRatio: 9 / 16,
+  },
+  videoModalNoUrl: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
+  },
+
   error: { color: COLORS.danger, fontSize: 14, textAlign: 'center', marginBottom: 16 },
   unavailable: { fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 20, lineHeight: 24 },
+});
+
+// ── 게이트 화면 전용 스타일 ──
+const gate = StyleSheet.create({
+  gradient: { flex: 1 },
+  safe: { flex: 1 },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  navRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5DCF0',
+  },
+  navBtn: { paddingHorizontal: 8, paddingVertical: 4 },
+  navHome: { fontSize: 14, fontWeight: '700', color: '#C4A8D8' },
+  navLogout: { fontSize: 14, fontWeight: '700', color: '#E57373' },
+
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24, padding: 28,
+    borderWidth: 1.5, borderColor: '#E5DCF0',
+    alignItems: 'center',
+    shadowColor: '#8A7D9E', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10, shadowRadius: 12, elevation: 3,
+  },
+  lockIcon: { fontSize: 48, marginBottom: 12 },
+  title: { fontSize: 18, fontWeight: '800', color: '#5B4E75', textAlign: 'center', marginBottom: 12 },
+  desc: { fontSize: 14, color: '#8A7D9E', textAlign: 'center', lineHeight: 22, marginBottom: 16 },
+  divider: { width: '100%', height: 1, backgroundColor: '#E5DCF0', marginVertical: 16 },
+
+  primaryBtn: {
+    width: '100%', backgroundColor: '#C4A8D8',
+    borderRadius: 14, paddingVertical: 14,
+    alignItems: 'center', marginBottom: 10,
+    shadowColor: '#C4A8D8', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.30, shadowRadius: 6, elevation: 3,
+  },
+  primaryBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  secondaryBtn: {
+    width: '100%', borderRadius: 14, paddingVertical: 13,
+    alignItems: 'center', borderWidth: 1.5, borderColor: '#C4A8D8',
+    backgroundColor: 'transparent',
+  },
+  secondaryBtnText: { fontSize: 14, fontWeight: '600', color: '#8A7D9E' },
+  footnote: { fontSize: 11, color: '#B0A0C0', textAlign: 'center', lineHeight: 18, marginTop: 14 },
+
+  // teaser 카드
+  teaserCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24, padding: 28,
+    borderWidth: 1.5, borderColor: '#D4C4E8',
+    alignItems: 'center',
+    shadowColor: '#8A7D9E', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10, shadowRadius: 12, elevation: 3,
+  },
+  teaserLock: { fontSize: 44, marginBottom: 10 },
+  teaserTitle: { fontSize: 18, fontWeight: '800', color: '#5B4E75', marginBottom: 10 },
+  teaserDesc: { fontSize: 14, color: '#8A7D9E', textAlign: 'center', lineHeight: 22, marginBottom: 20 },
+  progressWrap: { width: '100%', alignItems: 'center', gap: 6, marginBottom: 16 },
+  progressBar: { fontSize: 16, color: '#C4A8D8', letterSpacing: 2, fontWeight: '700' },
+  progressLabel: { fontSize: 22, fontWeight: '800', color: '#5B4E75' },
+  progressHint: { fontSize: 12, color: '#A89FBC' },
+  teaserEncourage: { fontSize: 15, color: '#8A7D9E', marginBottom: 8 },
 });

@@ -28,18 +28,46 @@ export default function LoginScreen() {
       const { access_token } = await login({ email: email.trim(), password });
       await AsyncStorage.setItem('access_token', access_token);
 
-      // 이전 유저 데이터 완전 삭제
-      await AsyncStorage.multiRemove(['pet_id', 'pet_name', 'pet_species', 'bucketlist_items', 'diary_entries']);
+      // 신규 가입자 플래그 확인 — 있으면 기존 데이터 무시하고 프로필 등록으로
+      const isNewRegistration = await AsyncStorage.getItem('new_registration');
+      if (isNewRegistration === 'true') {
+        await AsyncStorage.multiRemove([
+          'new_registration',
+          'pet_id', 'pet_name', 'pet_species', 'caller_name',
+          'bucketlist_items', 'diary_entries', 'pet_photos',
+          'recovery_cache', 'pet_farewell_date', 'memorial_mode',
+          'pet_guardian_title', 'pet_gender', 'pet_start_date',
+        ]);
+        router.replace('/(app)/profile');
+        return;
+      }
 
-      // 이 계정의 펫이 이미 있는지 API로 확인
+      // 재방문자: 이 계정의 펫이 이미 있는지 API로 확인
+      await AsyncStorage.multiRemove(['pet_id', 'pet_name', 'pet_species', 'bucketlist_items', 'diary_entries']);
       let hasPet = false;
       try {
-        const pets = await getMyPets();
-        if (pets?.length > 0) {
-          const pet = pets[0];
-          await AsyncStorage.setItem('pet_id', pet.id || pet._id || '');
+        const raw = await getMyPets();
+        // 배열 직접 or { pets: [...] } or { data: [...] } 형식 모두 처리
+        const petList = Array.isArray(raw) ? raw : (raw?.pets ?? raw?.data ?? []);
+        if (petList.length > 0) {
+          const pet = petList[0];
+          await AsyncStorage.setItem('pet_id', String(pet.id || pet._id || ''));
           await AsyncStorage.setItem('pet_name', pet.name || '');
           await AsyncStorage.setItem('pet_species', pet.species || '');
+          // 호칭·이별날짜도 복원 — 재방문자가 다시 프로필 입력 안 해도 되게
+          if (pet.caller_name) {
+            await AsyncStorage.setItem('caller_name', pet.caller_name);
+          }
+          if (pet.gender) {
+            await AsyncStorage.setItem('pet_gender', pet.gender);
+          }
+          if (pet.period) {
+            const parts = pet.period.split('~');
+            const startPart = parts[0]?.trim();
+            const endPart = parts[1]?.trim();
+            if (startPart) await AsyncStorage.setItem('pet_start_date', startPart);
+            if (endPart) await AsyncStorage.setItem('pet_farewell_date', endPart);
+          }
           hasPet = true;
         }
       } catch { /* 펫 없음 → 프로필 등록으로 */ }

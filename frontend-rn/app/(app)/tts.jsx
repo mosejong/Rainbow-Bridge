@@ -11,6 +11,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import { generateTts } from '../../api/tts';
 import { logPlay } from '../../api/playLogs';
 import { COLORS } from '../../constants/colors';
+import { fetchRecoveryGate } from '../../utils/recovery';
 
 const TONES = [
   { value: 'female', label: '여성 목소리', emoji: '🌸' },
@@ -24,6 +25,8 @@ const API_BASE =
 
 export default function TtsScreen() {
   const router = useRouter();
+  const [gateStatus, setGateStatus] = useState('checking'); // checking | locked | teaser | open
+  const [recoveryScore, setRecoveryScore] = useState(0);
   const [selectedTone, setSelectedTone] = useState('warm');
   const [audioUrl, setAudioUrl] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -37,11 +40,16 @@ export default function TtsScreen() {
     Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
     AsyncStorage.getItem('pet_name').then((v) => v && setPetName(v));
     AsyncStorage.getItem('message_content').then((v) => v && setMessageText(v));
-    AsyncStorage.getItem('pet_id').then((v) => { if (v) void v; });
-    return () => {
-      soundRef.current?.unloadAsync();
-    };
+    initGate();
+    return () => { soundRef.current?.unloadAsync(); };
   }, []);
+
+  async function initGate() {
+    const petId = await AsyncStorage.getItem('pet_id');
+    const { gateStatus: gs, score } = await fetchRecoveryGate(petId);
+    setRecoveryScore(score);
+    setGateStatus(gs);
+  }
 
   async function handleGenerate() {
     if (!messageText) return;
@@ -90,6 +98,60 @@ export default function TtsScreen() {
       const petId = await AsyncStorage.getItem('pet_id');
       if (petId) logPlay({ pet_id: petId }).catch(() => {});
     }
+  }
+
+  // ── 게이트 분기 ──
+  if (gateStatus === 'checking') {
+    return (
+      <LinearGradient colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={styles.gradient}>
+        <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <LoadingSpinner message="회복 상태를 확인하고 있어요..." />
+        </SafeAreaView>
+      </LinearGradient>
+    );
+  }
+
+  if (gateStatus === 'locked' || gateStatus === 'teaser') {
+    const pct = Math.min(100, (recoveryScore / 80) * 100);
+    const filled = Math.round(pct / 10);
+    const bar = '█'.repeat(filled) + '░'.repeat(10 - filled);
+    return (
+      <LinearGradient colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={styles.gradient}>
+        <SafeAreaView style={styles.safe}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
+            <View style={ttsGate.card}>
+              <Text style={ttsGate.icon}>{gateStatus === 'locked' ? '🔇' : '🔒'}</Text>
+              <Text style={ttsGate.title}>
+                {gateStatus === 'locked'
+                  ? '아직 목소리를 들을 준비가 안 됐어요'
+                  : `${petName}의 목소리가 기다리고 있어요`}
+              </Text>
+              <Text style={ttsGate.desc}>
+                {gateStatus === 'locked'
+                  ? `이별 직후에 ${petName}의 목소리를 듣는 건\n감정 회복을 더 어렵게 할 수 있어요.\n먼저 감정 체크인으로 마음을 돌봐요.`
+                  : `회복도가 80점이 되면\n${petName}의 목소리로 편지를 들을 수 있어요.`}
+              </Text>
+              {gateStatus === 'teaser' && (
+                <View style={ttsGate.progressWrap}>
+                  <Text style={ttsGate.bar}>{bar}</Text>
+                  <Text style={ttsGate.scoreText}>
+                    {recoveryScore > 0 ? `${recoveryScore}점 / 80점` : '체크인을 시작해보세요'}
+                  </Text>
+                </View>
+              )}
+              <TouchableOpacity
+                style={ttsGate.btn}
+                onPress={() => router.replace('/(app)/emotion')}
+                activeOpacity={0.85}
+              >
+                <Text style={ttsGate.btnText}>💭 감정 체크인 하러 가기</Text>
+              </TouchableOpacity>
+              <Text style={ttsGate.footnote}>천천히 괜찮아요 🐾</Text>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </LinearGradient>
+    );
   }
 
   return (
@@ -203,4 +265,30 @@ const styles = StyleSheet.create({
   nextBtn: { marginTop: 4 },
   noMessage: { fontSize: 13, color: COLORS.textLight, textAlign: 'center', marginBottom: 12 },
   error: { color: COLORS.danger, fontSize: 13, textAlign: 'center', marginBottom: 12 },
+});
+
+const ttsGate = StyleSheet.create({
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24, padding: 28,
+    borderWidth: 1.5, borderColor: '#E5DCF0',
+    alignItems: 'center', gap: 12,
+    shadowColor: '#8A7D9E', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10, shadowRadius: 12, elevation: 3,
+  },
+  icon: { fontSize: 48 },
+  title: { fontSize: 17, fontWeight: '800', color: '#5B4E75', textAlign: 'center' },
+  desc: { fontSize: 13, color: '#8A7D9E', textAlign: 'center', lineHeight: 21 },
+  progressWrap: { alignItems: 'center', gap: 6, marginTop: 4 },
+  bar: { fontSize: 16, color: '#C4A8D8', letterSpacing: 2, fontWeight: '700' },
+  scoreText: { fontSize: 20, fontWeight: '800', color: '#5B4E75' },
+  btn: {
+    width: '100%', backgroundColor: '#C4A8D8',
+    borderRadius: 14, paddingVertical: 14, alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#C4A8D8', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.28, shadowRadius: 6, elevation: 3,
+  },
+  btnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  footnote: { fontSize: 12, color: '#B0A0C0' },
 });

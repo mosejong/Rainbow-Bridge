@@ -81,6 +81,7 @@ export default function MediaScreen() {
           const fullUrl = `${API_URL}${url}`;
           setVideoUrl(fullUrl);
           await AsyncStorage.setItem('pet_video_url', fullUrl);
+          await AsyncStorage.setItem('pet_video_asset_id', assetId);
           setLoading(false);
         } else if (res.status === 'error') {
           setError('영상 생성 중 문제가 생겼어요. 다른 사진으로 시도해보세요.');

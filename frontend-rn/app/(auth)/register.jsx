@@ -6,6 +6,7 @@ import {
 import { useRouter, Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { register } from '../../api/auth';
 
 export default function RegisterScreen() {
@@ -29,6 +30,8 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       await register({ name: name.trim(), email: email.trim(), password });
+      // 신규 가입자 플래그 — login.jsx에서 profile.jsx로 강제 이동할 때 사용
+      await AsyncStorage.setItem('new_registration', 'true');
       router.replace('/(auth)/login');
     } catch (err) {
       setError(err.response?.data?.detail || '회원가입 중 오류가 발생했어요.');
