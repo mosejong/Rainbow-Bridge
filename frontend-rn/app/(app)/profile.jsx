@@ -8,7 +8,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Card from '../../components/Card';
-import { createPet } from '../../api/pets';
 import { COLORS } from '../../constants/colors';
 
 const SPECIES = ['강아지', '고양이', '기타'];
@@ -42,34 +41,21 @@ export default function ProfileScreen() {
     // 이전 반려동물 데이터 초기화
     await AsyncStorage.multiRemove([
       'pet_id', 'pet_name', 'pet_species', 'caller_name',
-      'diary_entries', 'bucketlist_items',
+      'diary_entries', 'bucketlist_items', 'pet_photos',
+      'recovery_cache', 'pet_farewell_date', 'memorial_mode',
     ]);
 
-    try {
-      const payload = {
-        name: form.name.trim(),
-        species: form.species,
-        gender: form.gender,
-        period: `${form.start_date} ~ ${form.end_date}`,
-        caller_name: form.guardian_title?.trim() || '보호자',
-        bucket_list: [],
-        memories: [],
-      };
-      const pet = await createPet(payload);
-      await AsyncStorage.setItem('pet_id', String(pet.id || pet._id || ''));
-      await AsyncStorage.setItem('pet_name', pet.name || form.name.trim());
-      await AsyncStorage.setItem('pet_species', form.species);
-    } catch {
-      // 백엔드 연결 실패 시 로컬에만 저장하고 진행
-      await AsyncStorage.setItem('pet_name', form.name.trim());
-      await AsyncStorage.setItem('pet_species', form.species);
-    } finally {
-      if (form.caller_name.trim()) {
-        await AsyncStorage.setItem('caller_name', form.caller_name.trim());
-      }
-      setLoading(false);
-      router.replace('/(app)/home');
+    // farewell_date 미리 저장 (memories.jsx에서 덮어씀)
+    if (form.end_date) {
+      await AsyncStorage.setItem('pet_farewell_date', form.end_date);
     }
+
+    setLoading(false);
+    // createPet은 memories.jsx에서 추억 데이터와 함께 한 번에 호출
+    router.push({
+      pathname: '/(app)/memories',
+      params: { profile: JSON.stringify(form) },
+    });
   }
 
   return (
