@@ -151,6 +151,10 @@ function MemorialHome({ gateStatus }) {
         <SmallCard emoji="🌿" title="추모 타임라인" route="/(app)/timeline" />
         <SmallCard emoji="📊" title="회복 리포트" route="/(app)/report" />
       </View>
+      <View style={styles.subRow}>
+        <SmallCard emoji="🎞️" title="추모 영상 만들기" route="/(app)/media" />
+        <SmallCard emoji="🔊" title="음성으로 듣기" route="/(app)/tts" />
+      </View>
     </>
   );
 }

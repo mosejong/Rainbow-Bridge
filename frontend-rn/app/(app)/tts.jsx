@@ -14,9 +14,9 @@ import { COLORS } from '../../constants/colors';
 import { fetchRecoveryGate } from '../../utils/recovery';
 
 const TONES = [
-  { value: 'warm', label: '따뜻하게', emoji: '🌸' },
-  { value: 'calm', label: '차분하게', emoji: '🌿' },
-  { value: 'hopeful', label: '부드럽게', emoji: '☁️' },
+  { value: 'female', label: '여성 목소리', emoji: '🌸' },
+  { value: 'male', label: '남성 목소리', emoji: '🌿' },
+  { value: 'narration', label: '나레이션', emoji: '☁️' },
 ];
 
 const API_BASE =
@@ -27,7 +27,7 @@ export default function TtsScreen() {
   const router = useRouter();
   const [gateStatus, setGateStatus] = useState('checking'); // checking | locked | teaser | open
   const [recoveryScore, setRecoveryScore] = useState(0);
-  const [selectedTone, setSelectedTone] = useState('warm');
+  const [selectedTone, setSelectedTone] = useState('female');
   const [audioUrl, setAudioUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);

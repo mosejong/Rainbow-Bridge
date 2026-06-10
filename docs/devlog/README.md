@@ -190,10 +190,10 @@
 |------|------------|------|
 | 모세종 | — | [→](members/모세종.md) |
 | 김윤한 | — | [→](members/김윤한.md) |
-| 반소람 | — | [→](members/반소람.md) |
+| 반소람 | 미션 5분류 논문근거 전부 보강(PubMed/PMC ID·수치), 추모편지 마지막줄 보호자이름 버그 수정, AI 위로편지 완료 확인, 미션 RAG corpus 난이도별 보강(5→15)·난이도 필터 검색 추가·테스트 16통과, RAG 임베딩 키 파싱 버그 수정(쉼표 묶음 키→첫 키, ingest 정상화) | [→](members/반소람.md#2026-06-10-day-8) |
 | 정환주 | `report.py` 머지 충돌 해결(접속/재생 지표 병행·additive)·PetResponse 500 수정(테스트 27통과), ④ TTS E2E 음성재생 막힘 진단(원인=NCP nginx `/uploads` 라우팅)→윤한님 수정 후 wav 정상 재검증 | [→](members/정환주.md#2026-06-10-day-10) |
 | 민경이 | 홈 생존/이별 모드 분리(BigCard·이별전환모달), 온보딩 프로필 데이터 홈 연동, 신규 가입자 버그 수정, missions·회복 API 경로 수정 | [→](members/민경이.md#2026-06-10-day-10) |
-| 장민수 | — | [→](members/장민수.md) |
+| 장민수 | driving_multiplier 0.4→0.5(PR #188, env 누락 안전망), 중간점검 체크리스트·갭분석 멀티모달 검증·정정(corpus 63건·comfort/vet_protocol 빔·GPU remote 소람PC 2터널 실증·TTS wav 합성 실측검증), 강사 회의록 검토(능동시청 '버튼=play_count' 확정이 우리 구현과 일치), 영상 능동시청 recordPlay 작업→민경이 #198 중복 확인·#200 닫고 dev 정리, photo_selector 입다뭄 미판정 발견(팀 논의 대기) | [→](members/장민수.md#2026-06-10-day-10) |
 
 ---
 
