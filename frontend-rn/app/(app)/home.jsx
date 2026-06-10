@@ -129,6 +129,14 @@ function MemorialHome({ gateStatus }) {
       />
 
       <BigCard
+        emoji="🌱"
+        title="오늘의 미션"
+        desc="작은 일상 활동으로 회복의 첫 걸음을 내딛어요"
+        route="/(app)/mission"
+        gradient={['#EDFAF3', '#E8F5EC']}
+      />
+
+      <BigCard
         emoji={letterEmoji}
         title="추모 편지"
         desc={letterDesc}
@@ -136,14 +144,6 @@ function MemorialHome({ gateStatus }) {
         gradient={['#EDF5FF', '#F0EAFA']}
         badge={letterBadge}
         disabled={gateStatus === 'locked'}
-      />
-
-      <BigCard
-        emoji="🌱"
-        title="오늘의 미션"
-        desc="작은 일상 활동으로 회복의 첫 걸음을 내딛어요"
-        route="/(app)/mission"
-        gradient={['#EDFAF3', '#E8F5EC']}
       />
 
       <Text style={[styles.sectionTitle, { marginTop: 16 }]}>더 보기</Text>

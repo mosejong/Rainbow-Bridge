@@ -16,7 +16,7 @@ import { fetchRecoveryGate } from '../../utils/recovery';
 const TONES = [
   { value: 'warm', label: '따뜻하게', emoji: '🌸' },
   { value: 'calm', label: '차분하게', emoji: '🌿' },
-  { value: 'soft', label: '부드럽게', emoji: '☁️' },
+  { value: 'hopeful', label: '부드럽게', emoji: '☁️' },
 ];
 
 const API_BASE =
