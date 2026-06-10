@@ -237,11 +237,16 @@ def recommend(
     recent: set[str] = set(history or [])
     score = emotion_score if emotion_score is not None else 5
 
-    # RAG 검색 — 회복 미션 예시 검색. 실패 시 graceful fallback.
+    # RAG 검색 — 회복 미션 예시 검색. 난이도까지 필터해 맥락에 맞는 예시만 가져옴
+    # (키 2개라 $and 필요). 실패 시 graceful fallback.
     rag_hits = None
     try:
         query = mission_prompt.DIFFICULTY_GUIDE.get(difficulty, "회복 미션")
-        rag_hits = _rag_retrieve(query, k=3, where={"category": "mission"})
+        rag_hits = _rag_retrieve(
+            query,
+            k=3,
+            where={"$and": [{"category": "mission"}, {"difficulty": difficulty}]},
+        )
     except Exception:
         rag_hits = None
 
