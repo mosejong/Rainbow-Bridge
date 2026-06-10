@@ -191,7 +191,7 @@
 | 모세종 | — | [→](members/모세종.md) |
 | 김윤한 | — | [→](members/김윤한.md) |
 | 반소람 | — | [→](members/반소람.md) |
-| 정환주 | — | [→](members/정환주.md) |
+| 정환주 | `report.py` 머지 충돌 해결(접속/재생 지표 병행·additive)·PetResponse 500 수정(테스트 27통과), ④ TTS E2E 음성재생 막힘 진단(원인=NCP nginx `/uploads` 라우팅)→윤한님 수정 후 wav 정상 재검증 | [→](members/정환주.md#2026-06-10-day-10) |
 | 민경이 | 홈 생존/이별 모드 분리(BigCard·이별전환모달), 온보딩 프로필 데이터 홈 연동, 신규 가입자 버그 수정, missions·회복 API 경로 수정 | [→](members/민경이.md#2026-06-10-day-10) |
 | 장민수 | — | [→](members/장민수.md) |
 
