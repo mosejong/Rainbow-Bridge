@@ -92,9 +92,9 @@ def register(client, account):
         "nickname": account["nickname"],
     })
     if r.status_code == 201:
-        print(f"  ✅ 가입 완료")
+        print("  ✅ 가입 완료")
     elif r.status_code == 400 and "already" in r.text.lower():
-        print(f"  ⚠️  이미 존재하는 계정, 계속 진행")
+        print("  ⚠️  이미 존재하는 계정, 계속 진행")
     else:
         print(f"  ❌ 가입 실패: {r.status_code} {r.text}")
 
@@ -155,7 +155,7 @@ def check_gate(client, token, pet_id):
 
 
 def main():
-    print(f"🌈 레인보우 브릿지 테스트 계정 시드")
+    print("🌈 레인보우 브릿지 테스트 계정 시드")
     print(f"   서버: {BASE_URL}\n")
 
     with httpx.Client(base_url=BASE_URL, timeout=30) as client:
