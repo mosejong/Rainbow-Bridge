@@ -27,7 +27,7 @@ export default function TtsScreen() {
   const router = useRouter();
   const [gateStatus, setGateStatus] = useState('checking'); // checking | locked | teaser | open
   const [recoveryScore, setRecoveryScore] = useState(0);
-  const [selectedTone, setSelectedTone] = useState('warm');
+  const [selectedTone, setSelectedTone] = useState('female');
   const [audioUrl, setAudioUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -200,22 +200,33 @@ export default function TtsScreen() {
           </Card>
         ) : null}
 
-        {loading ? (
-          <LoadingSpinner message="음성을 생성하고 있어요..." />
-        ) : (
-          <Button
-            onPress={handleGenerate}
-            disabled={!messageText}
-            variant="primary"
-            style={styles.btn}
-          >
-            {audioUrl ? '다시 생성하기' : '낭독 시작'}
-          </Button>
-        )}
-
+        {/* message_content 없을 때 — 추모 메시지 화면으로 안내 */}
         {!messageText ? (
-          <Text style={styles.noMessage}>먼저 추모 메시지를 생성해주세요.</Text>
-        ) : null}
+          <View style={styles.noMessageBox}>
+            <Text style={styles.noMessageText}>
+              📭  아직 추모 메시지가 없어요.{'\n'}먼저 추모 메시지를 받아보세요.
+            </Text>
+            <Button
+              variant="primary"
+              onPress={() => router.replace('/(app)/message')}
+              style={styles.goMessageBtn}
+            >
+              ✉️  추모 메시지 화면으로 가기
+            </Button>
+          </View>
+        ) : (
+          loading ? (
+            <LoadingSpinner message="음성을 생성하고 있어요..." />
+          ) : (
+            <Button
+              onPress={handleGenerate}
+              variant="primary"
+              style={styles.btn}
+            >
+              {audioUrl ? '다시 생성하기' : '낭독 시작'}
+            </Button>
+          )
+        )}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -263,7 +274,23 @@ const styles = StyleSheet.create({
   playerTone: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   btn: { marginBottom: 12 },
   nextBtn: { marginTop: 4 },
-  noMessage: { fontSize: 13, color: COLORS.textLight, textAlign: 'center', marginBottom: 12 },
+  noMessageBox: {
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: 'rgba(196,168,216,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(196,168,216,0.30)',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 8,
+  },
+  noMessageText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  goMessageBtn: { width: '100%' },
   error: { color: COLORS.danger, fontSize: 13, textAlign: 'center', marginBottom: 12 },
 });
 
