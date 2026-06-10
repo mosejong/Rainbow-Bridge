@@ -104,6 +104,7 @@ async def test_get_report_full_with_recovery_signal():
         "pets": _FakeCollection(find_one_result={"user_id": 42}),
         "access_logs": _FakeCollection(access_logs),
         "media_assets": _FakeCollection([{"play_count": 5}, {"play_count": 3}]),
+        "play_logs": _FakeCollection([]),
     }
 
     with patch("app.services.report.mongodb", new=_fake_mongo(collections)):
@@ -136,6 +137,7 @@ async def test_get_report_graceful_when_owner_missing():
         "pets": _FakeCollection(find_one_result=None),  # 소유자 없음
         "access_logs": _FakeCollection([]),
         "media_assets": _FakeCollection([]),
+        "play_logs": _FakeCollection([]),
     }
 
     with patch("app.services.report.mongodb", new=_fake_mongo(collections)):
