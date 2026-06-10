@@ -576,22 +576,22 @@ export default function MessageScreen() {
                   </ScrollView>
                 </Animated.View>
 
-                {/* 편지지 하단 — 윤리 고지 문구 */}
-                {done && (
-                  <View style={styles.paperFooter}>
-                    <View style={[styles.footerLine, isFirst && styles.headerLineFirst]} />
-                    <Text style={styles.disclaimer}>
-                      {isFirst
-                        ? 'AI가 보호자가 전해준 추억을 바탕으로 재해석한 꿈 속 작별 인사입니다.'
-                        : 'AI가 생성한 추모 글입니다. 반려동물이 직접 한 말이 아닙니다.'}
-                    </Text>
-                  </View>
-                )}
               </View>
+
+              {/* 윤리 고지 — 편지 카드 밖, 버튼 위에 분리 배치 */}
+              {done && (
+                <View style={styles.disclaimerWrap}>
+                  <Text style={styles.disclaimer}>
+                    {isFirst
+                      ? 'AI가 보호자가 전해준 추억을 바탕으로 재해석한 꿈 속 작별 인사입니다.'
+                      : 'AI가 생성한 추모 글입니다. 반려동물이 직접 한 말이 아닙니다.'}
+                  </Text>
+                </View>
+              )}
 
               {done && (
                 <Button variant="ghost" onPress={regenerate} style={styles.regenBtn}>
-                  🔄 다시 재생
+                  🌸 다시 재생
                 </Button>
               )}
 
@@ -758,7 +758,7 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   paperScroll: { flex: 1 },
-  paperScrollContent: { flexGrow: 1, justifyContent: 'center', gap: 20, paddingBottom: 24 },
+  paperScrollContent: { flexGrow: 1, gap: 20, paddingBottom: 32, paddingTop: 8 },
   paper: {
     width: '100%',
     backgroundColor: '#FFF8EE',
@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 20,
     elevation: 12,
-    maxHeight: '82%',
+    overflow: 'hidden',
   },
   paperFirst: { backgroundColor: '#FDF3DC', borderWidth: 1, borderColor: '#E8C97A' },
   paperHeader: { alignItems: 'center', marginBottom: 20, gap: 10 },
@@ -788,13 +788,13 @@ const styles = StyleSheet.create({
   },
   videoWrapFirst: { borderColor: '#C9A84C', width: 140, height: 140, borderRadius: 70 },
   video: { width: '100%', height: '100%' },
-  bodyScroll: { flexGrow: 0 },
+  bodyScroll: { maxHeight: 300, flexGrow: 0 },
   bodyContent: { gap: 16, paddingBottom: 4 },
   line: { fontSize: 16, color: '#3A2A1A', lineHeight: 27, textAlign: 'center', fontWeight: '400' },
   lineFirst: { color: '#4A2E0A', fontStyle: 'italic', fontWeight: '400' },
-  paperFooter: { marginTop: 20, alignItems: 'center', gap: 10 },
   footerLine: { width: 48, height: 1, backgroundColor: '#D4C0A0' },
-  disclaimer: { fontSize: 11, color: '#A09070', textAlign: 'center', lineHeight: 17 },
+  disclaimerWrap: { alignItems: 'center', paddingHorizontal: 16 },
+  disclaimer: { fontSize: 11, color: 'rgba(255,255,255,0.50)', textAlign: 'center', lineHeight: 17 },
   regenBtn: { alignSelf: 'center' },
 
   // ── 상담 자원 ──

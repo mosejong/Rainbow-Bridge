@@ -31,7 +31,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-av"
+      "expo-av",
+      "@react-native-community/datetimepicker"
     ]
   }
 }
