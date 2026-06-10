@@ -14,9 +14,9 @@ import { COLORS } from '../../constants/colors';
 import { fetchRecoveryGate } from '../../utils/recovery';
 
 const TONES = [
-  { value: 'warm', label: '따뜻하게', emoji: '🌸' },
-  { value: 'calm', label: '차분하게', emoji: '🌿' },
-  { value: 'soft', label: '부드럽게', emoji: '☁️' },
+  { value: 'female', label: '여성 목소리', emoji: '🌸' },
+  { value: 'male', label: '남성 목소리', emoji: '🌿' },
+  { value: 'narration', label: '나레이션', emoji: '☁️' },
 ];
 
 const API_BASE =

@@ -39,8 +39,13 @@ os.environ.setdefault("TTS_OUTPUT_DIR", "uploads/tts")
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-# tone(감성) → Qwen3 보이스 키 매핑
+# tone → Qwen3 보이스 키 매핑
+# female: 1인칭 여성 / male: 1인칭 남성 / narration: 3인칭 나레이션
+# 구버전 호환 (warm·hopeful·calm) 유지
 _TONE_TO_VOICE: dict[str, str] = {
+    "female": "girl",
+    "narration": "girl",
+    "male": "boy",
     "warm": "girl",
     "hopeful": "girl",
     "calm": "boy",
