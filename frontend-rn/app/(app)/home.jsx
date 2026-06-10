@@ -8,7 +8,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fetchRecoveryGate } from '../../utils/recovery';
-import { updatePet } from '../../api/pets';
 
 // ── 큰 카드 (메인 기능) ──────────────────────────
 function BigCard({ emoji, title, desc, route, gradient, badge, disabled }) {
@@ -201,9 +200,7 @@ export default function HomeScreen() {
   async function confirmFarewell() {
     setTransitioning(true);
     try {
-      const petId = await AsyncStorage.getItem('pet_id');
       await AsyncStorage.setItem('memorial_mode', 'true');
-      try { await updatePet(petId, { memorial_mode: true }); } catch {}
       setMemorialMode(true);
     } finally {
       setTransitioning(false);
