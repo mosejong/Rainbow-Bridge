@@ -45,6 +45,18 @@ def test_recovery_signal_integrated():
     assert any("회복 신호" in e for e in sig["evidence"])
 
 
+def test_recovery_signal_play_counts_forwarded():
+    """build_report 가 play_counts 를 recovery_signal 의 재생 빈도 추세로 연결한다."""
+    checkins = [
+        {"created_at": f"2026-06-{i + 1:02d}", "score": s}
+        for i, s in enumerate([3, 3, 4, 7, 8, 8])
+    ]
+    r = build_report("pet1", emotion_checkins=checkins, play_counts=[8, 7, 5, 3, 2, 1])
+    sig = r["recovery_signal"]
+    assert sig["play_trend"]["direction"] == "감소"
+    assert any("영상 재생" in e for e in sig["evidence"])
+
+
 def test_recovery_signal_present_without_access():
     """접속빈도 없이도 recovery_signal 자리는 채워진다(graceful)."""
     r = build_report(
