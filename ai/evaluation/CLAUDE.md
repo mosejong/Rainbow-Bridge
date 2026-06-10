@@ -20,10 +20,11 @@
 
 ## 2. 인터페이스
 
-- `build_report(pet_id, period, *, llm_logs, emotion_checkins, missions, access_counts, play_count, session_count) -> report`
-  - 순수 함수(DB 주입). 출력에 **`recovery_signal`**(일상복귀 신호 정량: `signal`/`recovery_index`/`emotion`/`access_trend`/`evidence`) 포함 — 반소람 `compute_recovery_signal` 통합(2026-06-09).
+- `build_report(pet_id, period, *, llm_logs, emotion_checkins, missions, access_counts, play_counts, play_count, session_count) -> report`
+  - 순수 함수(DB 주입). 출력에 **`recovery_signal`**(일상복귀 신호 정량: `signal`/`recovery_index`/`emotion`/`access_trend`/`play_trend`/`evidence`) 포함 — 반소람 `compute_recovery_signal` 통합(2026-06-09).
   - `emotion_checkins` 정본 키 = **`score`**(백엔드 `schemas/emotion.py` 와 일치, 과거 `mood` 폐기).
-  - `play_count`(영상 재생 누적)·`session_count`(로그인 접속 수)는 김윤한 추가 — 출력에 **별도 표시 지표**로 실림(`recovery_signal` 입력 아님: `play_count`는 누적 카운터라 '추세' 계산 불가, 추세 근거는 `access_counts`만). 머지 통합 2026-06-10.
+  - `play_count`(영상 재생 누적)·`session_count`(로그인 접속 수)는 김윤한 추가 — 출력에 **별도 표시 지표**로 실림(`recovery_signal` 입력 아님: `play_count`는 누적 카운터라 '추세' 계산 불가). 머지 통합 2026-06-10.
+  - ⚠️ 이름 구분: `play_count`(누적 int, 표시용) vs **`play_counts`**(시계열, 추세용). `play_logs`(per-play 타임스탬프) 날짜별 집계를 `play_counts` 로 넘기면 `recovery_signal` 의 **재생 빈도 추세**(`play_trend`) 근거로 쓰입니다 — 정환주 연결 2026-06-10. 누적 카운터만 있던 과거 제약 해소.
 
 ---
 
