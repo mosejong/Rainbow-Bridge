@@ -111,6 +111,8 @@ async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
         emotion_checkins=emotion_checkins,
         missions=missions,
         access_counts=access_counts,
+        # play_trend(날짜 오름차순)의 횟수만 시계열로 → recovery_signal 재생 빈도 추세 근거
+        play_counts=[pt.count for pt in play_trend_data],
         play_count=play_count,
         session_count=session_count,
     )

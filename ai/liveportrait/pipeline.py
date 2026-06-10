@@ -15,7 +15,7 @@
     LIVEPORTRAIT_HOME       외부 LivePortrait 클론 경로 (local 모드, GPU 서버)
     LIVEPORTRAIT_DRIVING    기본 모션(driving) 영상 경로 (GPU 서버에 올린 영상)
     LIVEPORTRAIT_CONDA_ENV  conda 환경 이름      (기본 liveportrait)
-    LIVEPORTRAIT_DRIVING_MULTIPLIER 모션 강도            (기본 0.4)
+    LIVEPORTRAIT_DRIVING_MULTIPLIER 모션 강도            (기본 0.5)
     LIVEPORTRAIT_REMOTE_URL remote 모드일 때 터널된 GPU 서비스 주소
                             (예: https://xxxx.ngrok.io) — 백엔드가 사용
     REPLICATE_API_TOKEN     replicate 모드일 때만
@@ -50,10 +50,10 @@ DEFAULT_DRIVING = Path(
     )
 )
 
-# 모션 강도. 동물은 animation_region(eyes 등)이 무시되므로, driving_multiplier를
-# 낮춰서 입 움직임을 억제하고 잔잔한 ambient 느낌을 냄. 0.4 = 입 거의 닫힘 + 눈/고개 미세.
-# (검증 2026-06-04: 강아지·고양이·기타 7종 모두 0.4에서 잔잔한 추모 톤 확인)
-DRIVING_MULTIPLIER = float(os.getenv("LIVEPORTRAIT_DRIVING_MULTIPLIER", "0.4"))
+# 모션 강도. 동물은 animation_region(eyes 등)이 무시되므로, driving_multiplier로
+# 입 움직임을 조절. 0.5 = 차분하되 적당한 발화 느낌(입움직임 ~3.6) — 발표 확정 레시피(2026-06-09).
+# (이력: 06-04 7종 0.4 잔잔 검증 → 06-09 발표 데모 탐색서 d3+0.5 확정. env로 override 가능.)
+DRIVING_MULTIPLIER = float(os.getenv("LIVEPORTRAIT_DRIVING_MULTIPLIER", "0.5"))
 
 
 class LivePortraitError(RuntimeError):
