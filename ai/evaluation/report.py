@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from datetime import date
 from typing import Any, Iterable, Optional, Sequence
 
 from .recovery_signal import compute_recovery_signal
@@ -50,6 +51,7 @@ def build_report(
     play_counts: Optional[Sequence[float]] = None,
     play_count: int = 0,
     session_count: int = 0,
+    as_of: Optional[date] = None,
 ) -> dict[str, Any]:
     """반려동물별 사용 데이터를 리포트로 집계합니다.
 
@@ -64,6 +66,8 @@ def build_report(
         play_counts: 기간별 영상/음성 재생 횟수(오래된→최근). `play_logs`(per-play 타임스탬프)
             를 날짜별로 묶어 넣으면 recovery_signal 의 '재생 빈도 추세' 근거로 쓰입니다.
             누적 카운터 `play_count` 와 달리 시계열이라 추세 계산 가능. 없으면 생략(graceful).
+        as_of: 꾸준함 기준일(보통 `date.today()`). 백엔드 `get_report` 가 넘기면 장기 미접속
+            (이탈)이 꾸준함 0% 로 잡힘. None 이면 최근 체크인 기준(하위호환).
 
     Returns:
         프론트 차트/요약 UI 용 리포트 dict.
@@ -90,6 +94,7 @@ def build_report(
             mission_list,
             access_counts=access_counts,
             play_counts=play_counts,
+            as_of=as_of,
         ),
         # 🚧 재방문(revisit): 세션/접속 로그 스키마 확정 후 추가 (백엔드 합의)
         "revisit": None,

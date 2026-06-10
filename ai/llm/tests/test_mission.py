@@ -45,6 +45,33 @@ def test_none_score_defaults_to_small():
     assert len(result) == 3
 
 
+# --- 1-b. 논문 재설정: 난이도 × 권장 카테고리 정합 -------------------------- #
+
+
+def test_gentle_surfaces_diverse_prescribed_categories():
+    """재설정: gentle 은 rest 도배가 아니라 기록·추모·자기돌봄이 '고루' 나온다(라운드로빈)."""
+    result = recommend(emotion_score=1, count=3)
+    cats = [m["category"] for m in result]
+    prescribed = set(mission_prompt.DIFFICULTY_CATEGORIES["gentle"])
+    assert all(c in prescribed for c in cats)
+    assert len(set(cats)) >= 2  # 한 분류 도배 방지(이전 버그: rest 3개)
+    assert "record" in cats or "remembrance" in cats  # 글쓰기/추모 최소 1개
+
+
+def test_small_surfaces_prescribed_categories():
+    """재설정: small 은 행동활성화·사회적지지(activity·connection)가 먼저 노출된다."""
+    result = recommend(emotion_score=5, count=5)
+    prescribed = set(mission_prompt.DIFFICULTY_CATEGORIES["small"])
+    assert all(m["category"] in prescribed for m in result)
+
+
+def test_prompt_includes_category_hint():
+    """LLM 프롬프트에 난이도별 권장 분류가 명시된다(텍스트 권유 → 분류 제약)."""
+    prompt = mission_prompt.build_prompt(emotion_score=2, difficulty="gentle", count=3)
+    assert "권장 분류" in prompt
+    assert "record" in prompt and "remembrance" in prompt
+
+
 def test_history_avoided():
     """history 에 있는 미션은 추천에서 제외된다."""
     first = recommend(emotion_score=2, count=2)
@@ -69,8 +96,16 @@ def _fake_llm(missions):
 def test_llm_output_used_when_valid():
     fake = _fake_llm(
         [
-            {"title": "편지 한 줄 쓰기", "description": "짧게 적어보세요.", "category": "record"},
-            {"title": "창밖 보기", "description": "잠시 바깥을 보세요.", "category": "rest"},
+            {
+                "title": "편지 한 줄 쓰기",
+                "description": "짧게 적어보세요.",
+                "category": "record",
+            },
+            {
+                "title": "창밖 보기",
+                "description": "잠시 바깥을 보세요.",
+                "category": "rest",
+            },
             {"title": "차 한 잔", "description": "따뜻하게.", "category": "rest"},
         ]
     )
@@ -81,7 +116,13 @@ def test_llm_output_used_when_valid():
 def test_rationale_attached_to_llm_missions():
     """LLM 이 만든 미션에도 카테고리 기준 근거가 붙는다(환각 아닌 큐레이션 근거)."""
     fake = _fake_llm(
-        [{"title": "편지 한 줄 쓰기", "description": "짧게 적어보세요.", "category": "record"}]
+        [
+            {
+                "title": "편지 한 줄 쓰기",
+                "description": "짧게 적어보세요.",
+                "category": "record",
+            }
+        ]
     )
     result = recommend(emotion_score=5, generate=fake, count=1)
     assert result[0]["rationale"] == mission_prompt.CATEGORY_RATIONALE["record"]
@@ -119,7 +160,11 @@ def test_llm_short_output_topped_up_by_rule():
 def test_resurrection_mission_filtered():
     fake = _fake_llm(
         [
-            {"title": "봄이 부활시키기", "description": "다시 살아나길.", "category": "rest"},
+            {
+                "title": "봄이 부활시키기",
+                "description": "다시 살아나길.",
+                "category": "rest",
+            },
             {"title": "산책 가기", "description": "5분만.", "category": "activity"},
         ]
     )
