@@ -74,6 +74,7 @@ export default function AppLayout() {
       <Stack.Screen name="profile"        options={{ title: '프로필 등록' }} />
       <Stack.Screen name="memories"       options={{ title: '추억 입력' }} />
       <Stack.Screen name="memories_diary" options={{ title: '추억 메모' }} />
+      <Stack.Screen name="photos"         options={{ title: '사진 기록' }} />
     </Stack>
   );
 }

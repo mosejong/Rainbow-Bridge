@@ -42,8 +42,14 @@ export default function ProfileScreen() {
     // 이전 반려동물 데이터 초기화
     await AsyncStorage.multiRemove([
       'pet_id', 'pet_name', 'pet_species', 'caller_name',
-      'diary_entries', 'bucketlist_items',
+      'diary_entries', 'bucketlist_items', 'pet_photos',
+      'recovery_cache', 'pet_farewell_date',
     ]);
+
+    // farewell_date: end_date가 과거이면 회복 게이트 시간 계산에 사용
+    if (form.end_date) {
+      await AsyncStorage.setItem('pet_farewell_date', form.end_date);
+    }
 
     try {
       const payload = {

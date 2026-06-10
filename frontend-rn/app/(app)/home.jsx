@@ -18,6 +18,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const LIVING_CARDS = [
   { id: 'bucketlist', emoji: '📋', title: '버킷리스트',      desc: '함께 하고 싶은 것들을 체크해요',           route: '/(app)/bucketlist' },
   { id: 'diary',      emoji: '📔', title: '일기 & 추억 메모', desc: '함께한 소중한 하루하루를 기록해요',         route: '/(app)/diary' },
+  { id: 'photos',     emoji: '📸', title: '사진 기록',        desc: '소중한 사진을 남겨요 · 추모 영상 재료가 돼요', route: '/(app)/photos' },
 ];
 
 const FAREWELL_SUBS = [
