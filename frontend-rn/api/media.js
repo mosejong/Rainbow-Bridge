@@ -13,3 +13,9 @@ export async function getMediaStatus(assetId) {
   const res = await api.get(`/api/v1/media/${assetId}`);
   return res.data;
 }
+
+// 영상 능동 시청(버튼 탭)만 play_count +1. 배경 자동재생은 카운트 안 함.
+export async function recordPlay(assetId) {
+  const res = await api.post(`/api/v1/media/${assetId}/play`);
+  return res.data;
+}

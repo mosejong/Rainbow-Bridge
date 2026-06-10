@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Animated, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import SafetyModal from '../../components/SafetyModal';
 import Button from '../../components/Button';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { generateMessage, getLatestMessage } from '../../api/messages';
+import { recordPlay } from '../../api/media';
 import { generateTts } from '../../api/tts';
 import { COLORS } from '../../constants/colors';
 import { fetchRecoveryGate } from '../../utils/recovery';
@@ -171,6 +172,8 @@ export default function MessageScreen() {
   const [petName, setPetName] = useState('소중한 친구');
   const [petSpecies, setPetSpecies] = useState('');
   const [petVideoUrl, setPetVideoUrl] = useState(null);
+  const [petVideoAssetId, setPetVideoAssetId] = useState(null);
+  const [videoModalVisible, setVideoModalVisible] = useState(false);
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [lines, setLines] = useState([]);
   const [visibleCount, setVisibleCount] = useState(0);
@@ -196,6 +199,7 @@ export default function MessageScreen() {
     AsyncStorage.getItem('pet_name').then((v) => v && setPetName(v));
     AsyncStorage.getItem('pet_species').then((v) => v && setPetSpecies(v));
     AsyncStorage.getItem('pet_video_url').then((v) => v && setPetVideoUrl(v));
+    AsyncStorage.getItem('pet_video_asset_id').then((v) => v && setPetVideoAssetId(v));
     initGate();
     return () => cleanup();
   }, []);
@@ -303,6 +307,11 @@ export default function MessageScreen() {
     } catch {
       setError('메시지 생성에 실패했어요. 다시 시도해주세요.');
     }
+  }
+
+  async function handleWatchVideo() {
+    if (petVideoAssetId) recordPlay(petVideoAssetId).catch(() => {});
+    setVideoModalVisible(true);
   }
 
   async function requestFirstPerson() {
@@ -428,6 +437,36 @@ export default function MessageScreen() {
 
         <SafetyModal isOpen={safetyOpen} onClose={() => setSafetyOpen(false)} />
 
+        {/* 영상 풀스크린 모달 */}
+        <Modal
+          visible={videoModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setVideoModalVisible(false)}
+        >
+          <View style={styles.videoModal}>
+            <TouchableOpacity
+              style={styles.videoModalClose}
+              onPress={() => setVideoModalVisible(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.videoModalCloseText}>✕</Text>
+            </TouchableOpacity>
+            {petVideoUrl ? (
+              <Video
+                source={{ uri: petVideoUrl }}
+                style={styles.fullscreenVideo}
+                resizeMode={ResizeMode.CONTAIN}
+                shouldPlay
+                useNativeControls
+                isLooping
+              />
+            ) : (
+              <Text style={styles.videoModalNoUrl}>영상을 불러올 수 없어요.</Text>
+            )}
+          </View>
+        </Modal>
+
         {/* 로딩 */}
         {phase === 'loading' && !error && (
           <View style={styles.center}>
@@ -551,6 +590,17 @@ export default function MessageScreen() {
                 <Button variant="ghost" onPress={regenerate} style={styles.regenBtn}>
                   🔄 다시 재생
                 </Button>
+              )}
+
+              {/* 영상 보기 버튼 — pet_video_url이 있을 때만 표시 */}
+              {done && petVideoUrl && (
+                <TouchableOpacity
+                  style={styles.watchVideoBtn}
+                  onPress={handleWatchVideo}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.watchVideoBtnText}>🎬  영상 보기</Text>
+                </TouchableOpacity>
               )}
 
               {/* 회복 게이트 — content_unlocked / allow_first_person */}
@@ -823,6 +873,54 @@ const styles = StyleSheet.create({
   msgHeaderBtn: { paddingHorizontal: 8, paddingVertical: 4 },
   msgHeaderHome: { fontSize: 14, fontWeight: '700', color: '#C4A8D8' },
   msgHeaderLogout: { fontSize: 14, fontWeight: '700', color: '#E57373' },
+
+  // ── 영상 보기 버튼 ──
+  watchVideoBtn: {
+    alignSelf: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 20,
+    backgroundColor: 'rgba(184,144,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(196,168,216,0.45)',
+    marginTop: 4,
+  },
+  watchVideoBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#C4A8D8',
+    letterSpacing: 0.5,
+  },
+
+  // ── 영상 풀스크린 모달 ──
+  videoModal: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.96)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoModalClose: {
+    position: 'absolute',
+    top: 52,
+    right: 20,
+    zIndex: 10,
+    padding: 10,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 20,
+  },
+  videoModalCloseText: {
+    fontSize: 20,
+    color: '#fff',
+    fontWeight: '700',
+  },
+  fullscreenVideo: {
+    width: '100%',
+    aspectRatio: 9 / 16,
+  },
+  videoModalNoUrl: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
+  },
 
   error: { color: COLORS.danger, fontSize: 14, textAlign: 'center', marginBottom: 16 },
   unavailable: { fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 20, lineHeight: 24 },
