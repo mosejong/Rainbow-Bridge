@@ -47,6 +47,8 @@ def build_report(
     emotion_checkins: Iterable[dict[str, Any]] = (),
     missions: Iterable[dict[str, Any]] = (),
     access_counts: Optional[Sequence[float]] = None,
+    play_count: int = 0,
+    session_count: int = 0,
 ) -> dict[str, Any]:
     """반려동물별 사용 데이터를 리포트로 집계합니다.
 
@@ -84,4 +86,6 @@ def build_report(
         ),
         # 🚧 재방문(revisit): 세션/접속 로그 스키마 확정 후 추가 (백엔드 합의)
         "revisit": None,
+        "play_count": play_count,
+        "session_count": session_count,
     }
