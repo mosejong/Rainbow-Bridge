@@ -65,25 +65,23 @@ _VOICES: dict[str, dict] = {
         eq_fc=4000.0,
         atempo=1.0,
     ),
-    # audio (12).wav — woman, 성인 여성 차분 (#5) — 3인칭 나레이션 전용
-    # pace="slow"도 빨라서 atempo=0.9 후처리로 10% 감속 (PROTOTYPE_VOICE.md #5 참고)
-    # 추모 나레이션 튜닝: 밝기↓ + 숨소리↓ + 위로 온기 + 고역 EQ 감쇠
-    # instruct 결과: "...gently warm, low and subdued tone, lower pitch,
-    #                 comforting and reassuring, speaking slowly, not whispering, not breathy"
+    # woman, 성인 여성 차분 — 3인칭 나레이션 서비스 최종 보이스.
+    # 다이얼은 audio12(PROTOTYPE_VOICE.md #5)와 동일(w1·b1·low·calm·c1·temp0.5·EQ미사용·seed21424).
+    # 속도만 변경: pace slow→normal + atempo 0.9→0.95 (세종님 청취 후 확정 2026-06-11).
     "woman": dict(
         gender="woman",
         age="child",   # build_instruct에서 성인 앵커 사용 (age 무시됨)
-        warmth=2,      # "gently warm" — 추모 위로 온기
-        bright=0,      # "low and subdued tone" — 밝음 억제
+        warmth=1,
+        bright=1,
         pitch="low",
-        emotion="comfort",  # "comforting and reassuring" — 나레이터 역할에 맞음
-        clarity=0,
-        pace="slow",
-        temp=0.3,
+        emotion="calm",
+        clarity=1,
+        pace="normal",
+        temp=0.5,
         seed=21424,
-        eq_db=9.0,     # 고역 감쇠 — 숨소리/쨍함 억제
+        eq_db=0.0,     # EQ 미사용
         eq_fc=4000.0,
-        atempo=0.9,
+        atempo=0.95,
     ),
 }
 # 호출부가 고를 수 있는 보이스 키(공개).
