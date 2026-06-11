@@ -44,11 +44,8 @@ if str(_REPO_ROOT) not in sys.path:
 # 구버전 호환 (warm·hopeful·calm) 유지
 _TONE_TO_VOICE: dict[str, str] = {
     "female": "girl",
-    "narration": "girl",
     "male": "boy",
-    "warm": "girl",
-    "hopeful": "girl",
-    "calm": "boy",
+    "narration": "woman",
 }
 _DEFAULT_VOICE = "girl"
 
@@ -63,18 +60,25 @@ async def generate_tts(data: TtsCreate) -> TtsResponse:
 
     TTS_SERVER_URL 설정 시 Qwen3 GPU 서버(B안)로 호출.
     미설정 시 Google TTS → gTTS 순으로 폴백.
+    TTS 완료 후 pet의 최신 무음 영상에 자동으로 음성을 합칩니다.
     """
     tts_server_url = os.environ.get("TTS_SERVER_URL", "").strip()
 
     if tts_server_url:
         # 터널 끊김·타임아웃·5xx 등 remote 실패 시 500 대신 Google 폴백으로 자동 전환.
         try:
-            return await _qwen3_remote(data, tts_server_url)
+            result = await _qwen3_remote(data, tts_server_url)
         except (httpx.HTTPError, OSError) as exc:
             logger.warning("Qwen3 remote TTS 실패(%s) → Google 폴백 사용", exc)
-            return await _google_tts_fallback(data)
+            result = await _google_tts_fallback(data)
     else:
-        return await _google_tts_fallback(data)
+        result = await _google_tts_fallback(data)
+
+    # TTS 완료 후 기존 영상에 자동으로 음성 합치기 (fire-and-forget, 실패해도 응답에 영향 없음)
+    asyncio.create_task(
+        _merge_tts_with_video(data.pet_id, result.audio_url.lstrip("/"))
+    )
+    return result
 
 
 async def _qwen3_remote(data: TtsCreate, server_url: str) -> TtsResponse:
@@ -113,7 +117,7 @@ async def _google_tts_fallback(data: TtsCreate) -> TtsResponse:
     try:
         tone = TtsTone(data.tone)
     except ValueError:
-        tone = TtsTone.WARM
+        tone = TtsTone.NARRATION
 
     filename = f"{data.pet_id}_{tone.value}_{abs(hash(data.text)) % 10_000_000}.mp3"
 
@@ -143,3 +147,46 @@ def _gtts_fallback(text: str, filename: str) -> dict:
         "duration": round(len(text) / 5.0, 1),
         "format": "mp3",
     }
+
+
+async def _merge_tts_with_video(pet_id: str, tts_path: str) -> None:
+    """TTS 완료 후 pet의 최신 영상에 음성을 자동으로 합칩니다 (fire-and-forget)."""
+    try:
+        from app.db.mongodb import mongodb
+
+        doc = await mongodb.db["media_assets"].find_one(
+            {"pet_id": pet_id, "status": "done", "video_url": {"$ne": None}},
+            sort=[("created_at", -1)],
+        )
+        if not doc:
+            return
+
+        video_path = Path(doc["video_url"].lstrip("/"))
+        if not video_path.exists():
+            return
+
+        tts_file = Path(tts_path)
+        if not tts_file.exists():
+            return
+
+        out_dir = Path("uploads/videos")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        output_path = out_dir / f"{video_path.stem}_voiced.mp4"
+
+        if str(_REPO_ROOT) not in sys.path:
+            sys.path.insert(0, str(_REPO_ROOT))
+
+        from ai.liveportrait.pipeline import merge_audio
+
+        voiced_path = await asyncio.to_thread(
+            merge_audio, video_path, tts_file, output_path=output_path
+        )
+        await mongodb.db["media_assets"].update_one(
+            {"_id": doc["_id"]},
+            {"$set": {"voiced_url": f"/uploads/videos/{voiced_path.name}"}},
+        )
+        logger.info(
+            "TTS→영상 자동 합치기 완료 pet_id=%s asset=%s", pet_id, str(doc["_id"])
+        )
+    except Exception:
+        logger.warning("TTS→영상 자동 합치기 실패 pet_id=%s", pet_id, exc_info=True)

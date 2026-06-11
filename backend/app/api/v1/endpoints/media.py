@@ -17,6 +17,7 @@ from app.services.media import (
     create_asset,
     get_asset,
     run_liveportrait,
+    run_liveportrait_gif,
     run_perso,
     increment_play_count,
     select_best_pet_photo,
@@ -55,7 +56,8 @@ async def upload_media(
     save_path.write_bytes(contents)
 
     asset_id = await create_asset(pet_id, str(save_path), user_id=user["user_id"])
-    background_tasks.add_task(run_liveportrait, asset_id, str(save_path), pet_id)
+    # ① GIF 먼저 생성 (d9 잔잔한 드라이빙 — 치료적 목적, 바로 다운로드 가능)
+    background_tasks.add_task(run_liveportrait_gif, asset_id, str(save_path))
 
     return MediaUploadResponse(asset_id=asset_id)
 
@@ -157,6 +159,28 @@ async def generate_memorial_video(
         "message": "추모 영상 생성이 시작됐습니다.",
         "selected_photo": best_photo.name,
     }
+
+
+@router.get("/{asset_id}/gif")
+async def download_gif(asset_id: str, user: dict = Depends(get_current_user)):
+    """추모 GIF 다운로드 (① 단계 — d9 잔잔한 드라이빙)."""
+    asset = await get_asset(asset_id, user_id=user["user_id"])
+    if not asset:
+        raise HTTPException(status_code=404, detail="asset을 찾을 수 없습니다.")
+
+    gif_url = asset.get("gif_url")
+    if not gif_url:
+        raise HTTPException(status_code=404, detail="GIF가 아직 준비되지 않았습니다.")
+
+    gif_path = Path(gif_url.lstrip("/"))
+    if not gif_path.exists():
+        raise HTTPException(status_code=404, detail="GIF 파일을 찾을 수 없습니다.")
+
+    return FileResponse(
+        path=gif_path,
+        media_type="image/gif",
+        filename=f"{asset_id}.gif",
+    )
 
 
 @router.post("/{asset_id}/play", status_code=200)

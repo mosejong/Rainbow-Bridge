@@ -40,9 +40,17 @@ REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 # remote 모드: 터널된 GPU 서비스(server.py) 주소. 백엔드(NCP)가 이걸로 호출.
 REMOTE_URL = os.getenv("LIVEPORTRAIT_REMOTE_URL", "").rstrip("/")
 
-# 추모 영상에 어울리는 기본 모션(잔잔한 움직임). 추후 전용 템플릿으로 교체 예정.
-# 서버 배포 대비: LIVEPORTRAIT_DRIVING 으로 경로 분리(없으면 LivePortrait 예제 d0).
-# → 서버에선 driving 영상을 올리고 LIVEPORTRAIT_DRIVING 에 그 경로를 지정하세요.
+# ① GIF용 드라이빙: 눈·고개 움직임만 (잔잔, 입모양 없음) — d9 확정 2026-06-11
+# LIVEPORTRAIT_DRIVING_GIF 로 경로 지정. 없으면 d9.mp4 기본값.
+DRIVING_GIF = Path(
+    os.getenv(
+        "LIVEPORTRAIT_DRIVING_GIF",
+        str(LP_HOME / "assets" / "examples" / "driving" / "d9.mp4"),
+    )
+)
+
+# ③ 1인칭 편지용 드라이빙: 입모양 발화 — d3+0.5 확정 레시피(2026-06-09)
+# LIVEPORTRAIT_DRIVING 으로 경로 지정.
 DEFAULT_DRIVING = Path(
     os.getenv(
         "LIVEPORTRAIT_DRIVING",
@@ -137,6 +145,58 @@ def merge_audio(
     if not output_path.exists():
         raise LivePortraitError(f"합쳐진 영상을 찾을 수 없음: {output_path}")
     return output_path
+
+
+def video_to_gif(
+    video_path: str | Path,
+    output_path: str | Path | None = None,
+    fps: int = 10,
+    width: int = 320,
+) -> Path:
+    """무음 MP4 → GIF 변환. 결과 경로 반환.
+
+    palette 최적화로 고품질 GIF 생성. 모바일 다운로드·공유용.
+
+    Args:
+        video_path: 변환할 MP4 경로
+        output_path: 결과 GIF 경로 (None이면 영상 옆에 `<stem>.gif`)
+        fps: GIF 프레임레이트 (기본 10 — 용량·품질 균형)
+        width: GIF 가로 픽셀 (기본 320, 세로 비율 유지)
+    """
+    video_path = Path(video_path)
+    if not video_path.exists():
+        raise FileNotFoundError(f"영상 없음: {video_path}")
+
+    if output_path is None:
+        output_path = video_path.with_suffix(".gif")
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    ffmpeg = _find_ffmpeg()
+    # palette 기반 2-pass: 색상 손실 최소화하는 표준 고품질 GIF 레시피
+    vf = f"fps={fps},scale={width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
+    cmd = [ffmpeg, "-y", "-i", str(video_path), "-vf", vf, "-loop", "0", str(output_path)]
+    result = subprocess.run(
+        cmd, capture_output=True, text=True, encoding="utf-8", errors="ignore"
+    )
+    if result.returncode != 0:
+        raise LivePortraitError(f"GIF 변환 실패:\n{result.stderr[-2000:]}")
+    if not output_path.exists():
+        raise LivePortraitError(f"GIF 파일을 찾을 수 없음: {output_path}")
+    return output_path
+
+
+def generate_gif(
+    source_image: str | Path,
+    output_dir: str | Path = "output",
+) -> Path:
+    """사진 → 추모 GIF 생성 (d9 잔잔한 드라이빙). 결과 GIF 경로 반환.
+
+    치료적 목적의 첫 번째 LP 단계 — 입모양 없이 눈·고개 움직임만.
+    """
+    mp4_path = generate_video(source_image, driving_video=DRIVING_GIF, output_dir=output_dir)
+    gif_path = video_to_gif(mp4_path, output_path=Path(output_dir) / f"{Path(source_image).stem}.gif")
+    return gif_path
 
 
 def generate_video(
