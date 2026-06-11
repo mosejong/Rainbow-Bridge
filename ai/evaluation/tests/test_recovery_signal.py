@@ -59,8 +59,8 @@ def test_unordered_checkins_sorted_by_date():
 def test_mission_completion_rate():
     missions = [{"done": True}, {"done": True}, {"done": False}, {"done": False}]
     out = compute_recovery_signal(_checkins([5, 5, 6, 6]), missions)
-    assert out["mission_completion_rate"] == 0.5
-    assert any("미션 완료율 50%" in e for e in out["evidence"])
+    assert out["mission_completion_rate"] == 2
+    assert any("미션 누적 2개 완료" in e for e in out["evidence"])
 
 
 def test_access_decrease_reads_as_recovery_evidence():
@@ -78,36 +78,23 @@ def test_graceful_without_engagement_or_missions():
     assert out["signal"] in {SIGNAL_RECOVERING, SIGNAL_STABLE}
     assert out["access_trend"] is None
     assert out["play_trend"] is None
-    assert out["mission_completion_rate"] is None
+    assert out["mission_completion_rate"] == 0
 
 
 # --- 회복 점수 (RECOVERY_GATE 40/35/25) ------------------------------------- #
 
 
 def test_recovery_score_weighted_40_35_25():
-    """감정40·미션35·꾸준25 가중합. 모두 만점이면 100, 모두 절반이면 50."""
-    assert recovery_score(10, 1.0, 100) == 100  # E=100·M=100·C=100
-    assert recovery_score(5.5, 0.5, 50) == 50  # E=50·M=50·C=50
-
-
-def test_recovery_score_null_mission_emotion_only():
-    """미션 추천 전(None)은 감정 평균만으로 계산(RECOVERY_GATE). 꾸준함·미션 미반영."""
-    assert recovery_score(10, None, 0) == 100  # E=100
-    assert recovery_score(10, None, 100) == 100  # 꾸준함 무시(감정-only)
-    assert recovery_score(5.5, None, 50) == 50  # E=50
+    """감정40·미션누적35(sticky)·꾸준25 가중합. 모두 만점이면 100, 모두 절반이면 50."""
+    assert recovery_score(10, 35, 100) == 100  # E=100·M=35·C=25
+    assert recovery_score(5.5, 17, 50) == 50  # E=50·M=17·C=12.5
 
 
 def test_recovery_score_clamped_0_100():
     """범위 밖 입력이어도 0~100 보장(음수/초과 클램프)."""
-    assert recovery_score(1, 0.0, 0) == 0  # E=0
-    assert recovery_score(0, 0.0, 0) == 0  # 음수 입력 → 0
-    assert recovery_score(11, 1.0, 100) == 100  # 초과 입력 → 100
-
-
-def test_emotion_avg_uses_recent_7_only():
-    """회복 점수 감정평균은 '최근 7회'만 — 오래된 저점에 끌려가지 않는다."""
-    out = compute_recovery_signal(_checkins([1] * 8 + [10] * 7))  # 최근 7회=10
-    assert out["recovery_index"] == 100  # 미션 None → 감정-only, 최근7 avg=10 → E=100
+    assert recovery_score(1, 0, 0) == 0  # E=0
+    assert recovery_score(0, 0, 0) == 0  # 음수 입력 → 0
+    assert recovery_score(11, 35, 100) == 100  # 초과 입력 → 100
 
 
 # --- 불변식 (예시가 아닌 '어떤 입력이든' 보장) ------------------------------ #
@@ -116,7 +103,7 @@ def test_emotion_avg_uses_recent_7_only():
 def test_recovery_score_always_in_0_100():
     """어떤 입력(범위 밖 포함)이어도 점수는 0~100."""
     for emo in (0, 1, 5.5, 10, 11, -3):
-        for comp in (None, 0.0, 0.5, 1.0):
+        for comp in (0, 1, 17, 35, 50):
             for cons in (-10, 0, 50, 100, 150):
                 s = recovery_score(emo, comp, cons)
                 assert 0 <= s <= 100, (emo, comp, cons, s)
@@ -126,7 +113,7 @@ def test_recovery_score_monotonic_in_emotion():
     """미션·꾸준함 고정 시 감정만 올리면 점수는 줄지 않는다(단조)."""
     prev = -1
     for emo in (1, 3, 5, 7, 10):
-        s = recovery_score(emo, 0.5, 50)
+        s = recovery_score(emo, 17, 50)
         assert s >= prev
         prev = s
 
@@ -145,12 +132,12 @@ def test_consistency_detects_dropout_with_as_of():
 
 def test_recovery_index_uses_composite_not_avg10():
     """recovery_index 가 단순 avg*10 이 아니라 40/35/25 산식(꾸준함 포함)으로 나온다."""
-    missions = [{"done": True}, {"done": False}]  # 완료율 0.5
+    missions = [{"done": True}, {"done": False}]  # 완료 1개
     out = compute_recovery_signal(_checkins([5, 5, 6, 6]), missions)
     c = out["checkin_consistency"]
     assert c is not None
-    # index == recovery_score(평균, 완료율, 꾸준함)
-    assert out["recovery_index"] == recovery_score(5.5, 0.5, c)
+    # index == recovery_score(평균, 완료 미션 수, 꾸준함)
+    assert out["recovery_index"] == recovery_score(5.5, 1, c)
     # 과거 단순 척도(avg*10=55)와는 다르다(미션·꾸준함 반영).
     assert out["recovery_index"] != round(5.5 * 10)
 
