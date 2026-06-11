@@ -370,7 +370,7 @@ export default function MessageScreen() {
     // TTS — 콘텐츠 등장 직후 재생
     try {
       const petId = await AsyncStorage.getItem('pet_id');
-      const ttsData = await generateTts({ pet_id: petId, text: msgData.content, tone: 'female' });
+      const ttsData = await generateTts({ pet_id: petId, text: msgData.content, tone: msgData.tone || 'narration' });
       if (ttsData?.audio_url) {
         const { sound } = await Audio.Sound.createAsync({ uri: ttsData.audio_url }, { volume: 1.0 });
         ttsRef.current = sound;

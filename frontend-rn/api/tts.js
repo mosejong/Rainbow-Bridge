@@ -5,7 +5,7 @@ export async function generateTts({ pet_id, text, tone }) {
   const res = await api.post('/api/v1/tts', {
     pet_id,
     text,
-    tone: tone || 'female',
+    tone: tone || 'narration',
   });
   return res.data;
 }
