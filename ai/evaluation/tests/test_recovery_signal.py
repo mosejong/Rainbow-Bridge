@@ -98,7 +98,8 @@ def test_unordered_checkins_sorted_by_date():
 def test_mission_completion_rate():
     missions = [{"done": True}, {"done": True}, {"done": False}, {"done": False}]
     out = compute_recovery_signal(_checkins([5, 5, 6, 6]), missions)
-    assert out["mission_completion_rate"] == 2
+    # 완료율(0~1) — 키 이름·report 최상위와 일치. 완료개수는 evidence 문장으로 노출.
+    assert out["mission_completion_rate"] == 0.5  # 2/4 완료
     assert any("미션 누적 2개 완료" in e for e in out["evidence"])
 
 
@@ -117,7 +118,9 @@ def test_graceful_without_engagement_or_missions():
     assert out["signal"] in {SIGNAL_RECOVERING, SIGNAL_STABLE}
     assert out["access_trend"] is None
     assert out["play_trend"] is None
-    assert out["mission_completion_rate"] == 0
+    assert (
+        out["mission_completion_rate"] is None
+    )  # 미션 없음 → None(개수 0 아님, 최상위 관례와 일치)
 
 
 # --- 회복 점수 (RECOVERY_GATE 40/35/25) ------------------------------------- #

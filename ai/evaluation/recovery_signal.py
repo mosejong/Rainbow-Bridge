@@ -268,7 +268,9 @@ def compute_recovery_signal(
             "delta": round(delta, 1),
             "direction": emo_dir,
         },
-        "mission_completion_rate": completed_missions,
+        "mission_completion_rate": _completion_rate(
+            missions
+        ),  # 율(0~1) — 키 이름·최상위와 일치
         "checkin_consistency": consistency,
         "access_trend": access,
         "play_trend": play,
