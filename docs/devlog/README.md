@@ -222,3 +222,16 @@
 | 정환주 | `report.py` 머지 충돌 해결(접속/재생 지표 병행·additive)·PetResponse 500 수정(테스트 27통과), ④ TTS E2E 음성재생 막힘 진단(원인=NCP nginx `/uploads` 라우팅)→윤한님 수정 후 wav 정상 재검증 | [→](members/정환주.md#2026-06-10-day-10) |
 | 민경이 | 홈 생존/이별 모드 분리(BigCard·이별전환모달), 온보딩 프로필 데이터 홈 연동, 신규 가입자 버그 수정, missions·회복 API 경로 수정 | [→](members/민경이.md#2026-06-10-day-10) |
 | 장민수 | driving_multiplier 0.4→0.5(PR #188, env 누락 안전망), 중간점검 체크리스트·갭분석 멀티모달 검증·정정(corpus 63건·comfort/vet_protocol 빔·GPU remote 소람PC 2터널 실증·TTS wav 합성 실측검증), 강사 회의록 검토(능동시청 '버튼=play_count' 확정이 우리 구현과 일치), 영상 능동시청 recordPlay 작업→민경이 #198 중복 확인·#200 닫고 dev 정리, photo_selector 입다뭄 미판정 발견(팀 논의 대기) | [→](members/장민수.md#2026-06-10-day-10) |
+
+---
+
+## 2026-06-11 (Day 11)
+
+| 이름 | 한 일 (요약) | 상세 |
+|------|------------|------|
+| 모세종 | — | [→](members/모세종.md) |
+| 김윤한 | — | [→](members/김윤한.md) |
+| 반소람 | — | [→](members/반소람.md) |
+| 정환주 | — | [→](members/정환주.md) |
+| 민경이 | **Expo SDK 52→54 업그레이드** (강사 요청) — iOS·Android 최신 Expo Go 지원, RN 0.81.5 breaking change 대응(pointerEvents·ImagePicker), 트러블슈팅 문서 신규 작성, 추모 메시지 봉투 미표시 버그 수정(unavailable 폴백 처리) | [→](members/민경이.md#2026-06-11-day-11) |
+| 장민수 | — | [→](members/장민수.md) |
