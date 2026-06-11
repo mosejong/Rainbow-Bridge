@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, TextInput,
-  StyleSheet, ScrollView,
+  StyleSheet, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -70,9 +70,14 @@ export default function EmotionScreen() {
       style={styles.gradient}
     >
     <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={true}
       >
         <Text style={styles.title}>오늘 기분이 어떠세요?</Text>
         <Text style={styles.subtitle}>솔직하게 선택해주세요.</Text>
@@ -105,6 +110,8 @@ export default function EmotionScreen() {
           multiline
           numberOfLines={3}
           textAlignVertical="top"
+          selectionColor={COLORS.cta}
+          cursorColor={COLORS.cta}
         />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -126,6 +133,7 @@ export default function EmotionScreen() {
           router.push('/(app)/message');
         }}
       />
+      </KeyboardAvoidingView>
     </SafeAreaView>
     </LinearGradient>
   );

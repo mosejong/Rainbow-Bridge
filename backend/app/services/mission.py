@@ -128,3 +128,8 @@ async def complete_mission(mission_id: str) -> MissionResponse | None:
         return None
     doc["id"] = str(doc.pop("_id"))
     return MissionResponse(**doc)
+
+
+async def get_completed_mission_count(pet_id: str) -> int:
+    """pet_id 기준 완료된 미션 누적 수 반환 (sticky 점수용)."""
+    return await _collection().count_documents({"pet_id": pet_id, "completed": True})

@@ -237,10 +237,12 @@ export default function MessageScreen() {
     const petNameLocal = await AsyncStorage.getItem('pet_name') || '소중한 친구';
     try {
       const existing = await getLatestMessage(petId);
+      if (!existing || existing.source === 'unavailable') throw new Error('unavailable');
       await saveMessage(existing);
     } catch {
       try {
         const data = await generateMessage({ pet_id: petId });
+        if (!data || data.source === 'unavailable') throw new Error('unavailable');
         await saveMessage(data);
       } catch {
         await saveMessage(makeFallbackMessage(petNameLocal));
@@ -370,15 +372,20 @@ export default function MessageScreen() {
     // TTS — 콘텐츠 등장 직후 재생
     try {
       const petId = await AsyncStorage.getItem('pet_id');
+      if (!petId || !msgData.content) throw new Error('pet_id 또는 content 없음');
       const ttsData = await generateTts({ pet_id: petId, text: msgData.content, tone: msgData.tone || 'narration' });
-      if (ttsData?.audio_url) {
-        const { sound } = await Audio.Sound.createAsync({ uri: ttsData.audio_url }, { volume: 1.0 });
-        ttsRef.current = sound;
-        timersRef.current.push(setTimeout(() => {
-          sound.playAsync().catch(() => {});
-        }, 700));
-      }
-    } catch {}
+      if (!ttsData?.audio_url) throw new Error('audio_url 없음');
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: ttsData.audio_url },
+        { volume: 1.0, shouldPlay: false },
+      );
+      ttsRef.current = sound;
+      timersRef.current.push(setTimeout(() => {
+        sound.playAsync().catch((e) => console.warn('[TTS] playAsync 실패:', e));
+      }, 800));
+    } catch (e) {
+      console.warn('[TTS] 생성 실패:', e?.message ?? e);
+    }
 
     timersRef.current.push(setTimeout(() => setDone(true), 1200));
   }
@@ -535,11 +542,13 @@ export default function MessageScreen() {
 
         {/* ── 편지지 단계 ── */}
         {(phase === 'envelope' || phase === 'letter') && message && message.source !== 'unavailable' && (
-          <Animated.View style={[
-            styles.paperWrap,
-            { opacity: paperOpacity, transform: [{ translateY: paperTranslate }] },
-            phase === 'envelope' && styles.paperHidden,
-          ]}>
+          <Animated.View
+            pointerEvents={phase === 'envelope' ? 'none' : 'auto'}
+            style={[
+              styles.paperWrap,
+              { opacity: paperOpacity, transform: [{ translateY: paperTranslate }] },
+              phase === 'envelope' && styles.paperHidden,
+            ]}>
             <ScrollView
               style={styles.paperScroll}
               contentContainerStyle={styles.paperScrollContent}
@@ -576,6 +585,11 @@ export default function MessageScreen() {
                   </ScrollView>
                 </Animated.View>
 
+                {/* 편지 끝 AI 안내 */}
+                <View style={styles.aiFooter}>
+                  <View style={styles.aiFooterLine} />
+                  <Text style={styles.aiFooterText}>AI가 생성한 메시지입니다</Text>
+                </View>
               </View>
 
               {/* 윤리 고지 — 편지 카드 밖, 버튼 위에 분리 배치 */}
@@ -927,6 +941,9 @@ const styles = StyleSheet.create({
 
   error: { color: COLORS.danger, fontSize: 14, textAlign: 'center', marginBottom: 16 },
   unavailable: { fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 20, lineHeight: 24 },
+  aiFooter: { alignItems: 'center', marginTop: 20, gap: 8 },
+  aiFooterLine: { width: 48, height: 1, backgroundColor: '#D4C0A0' },
+  aiFooterText: { fontSize: 11, color: '#B0987A', textAlign: 'center', letterSpacing: 0.5 },
 });
 
 // ── 게이트 화면 전용 스타일 ──
