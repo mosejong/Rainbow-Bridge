@@ -234,4 +234,4 @@
 | 반소람 | 자책감 감지→위기 조합 상향(safety.py, 자책 단독 무동작·골든셋 테스트), 미션 수면 질 modifier(5단계→난이도 3축약, 점수 제외·강도 보조), 회복점수·미션·수면·자책 결정 문서 정리, 미션 규칙풀 정리(중복·모호 9건 교체), 미션 문항 검수 가이드 작성→팀원 인계(연락/날씨/자기자비 미션 재검토안 — 실제 수정은 팀원 진행 예정), 신호→점수 치환 갭 식별(Expo Go 실측 범위 검증: 걸음 7일·수면은 dev build 필요→하이브리드), 활동 신호↔활동 미션 양방향 연관 설계, LivePortrait GIF 404 장애 진단(구버전 서버 구동→`/generate/gif` 없음, 재시작으로 해결) | [→](members/반소람.md#2026-06-11-day-9) |
 | 정환주 | — | [→](members/정환주.md) |
 | 민경이 | **Expo SDK 52→54 업그레이드** (강사 요청) — iOS·Android 최신 Expo Go 지원, RN 0.81.5 breaking change 대응(pointerEvents·ImagePicker), 트러블슈팅 문서 신규 작성, 추모 메시지 봉투 미표시 버그 수정(unavailable 폴백 처리) | [→](members/민경이.md#2026-06-11-day-11) |
-| 장민수 | — | [→](members/장민수.md) |
+| 장민수 | 온보딩 화면 신규(onboard.jsx·배경이미지·별 반짝임), 편지 해금 ✉️ 리디자인(다크 네이비·별·흔들림·제목 헤더·Easing, PR #231 dev 머지), LivePortrait 좀비 프로세스 수정(conda run 제거→python.exe 직접호출·Semaphore·Popen wait, 소람님 서버 적용·검증 완료 RAM 92%→34%) | [→](members/장민수.md#2026-06-11-day-11) |
