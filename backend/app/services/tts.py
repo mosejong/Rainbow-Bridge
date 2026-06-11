@@ -39,15 +39,16 @@ os.environ.setdefault("TTS_OUTPUT_DIR", "uploads/tts")
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-# tone → Qwen3 보이스 키 매핑
-# female: 1인칭 여성 / male: 1인칭 남성 / narration: 3인칭 나레이션
-# 구버전 호환 (warm·hopeful·calm) 유지
+# tone → Qwen3 보이스 키 매핑 (TtsTone 3종과 1:1)
+# female: 1인칭 여성(girl) / male: 1인칭 남성(boy) / narration: 3인칭 나레이션(woman)
+# ※ 메시지 톤(warm/calm/hopeful)과 TTS 톤은 별개 필드 — 프론트가 TTS 호출 시 직접 지정.
+#   미지정·구버전 폴백은 narration(woman)이 기본.
 _TONE_TO_VOICE: dict[str, str] = {
     "female": "girl",
     "male": "boy",
     "narration": "woman",
 }
-_DEFAULT_VOICE = "girl"
+_DEFAULT_VOICE = "woman"  # 3인칭 나레이션이 기본 (TtsTone.NARRATION과 일치)
 
 
 def _map_tone_to_voice(tone: str) -> str:
