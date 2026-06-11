@@ -10,6 +10,9 @@ class EmotionCreate(BaseModel):
         ..., ge=1, le=10, description="감정 점수 (1=매우 힘듦, 10=괜찮음)"
     )
     note: Optional[str] = Field(None, description="감정 메모")
+    sleep_quality: Optional[int] = Field(
+        None, ge=1, le=5, description="수면 질 (1=매우 나쁨, 5=매우 좋음)"
+    )
 
 
 class EmotionResponse(BaseModel):
