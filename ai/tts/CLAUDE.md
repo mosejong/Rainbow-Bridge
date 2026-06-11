@@ -20,7 +20,13 @@
 
 ## 3. 톤 매핑
 
-- 메시지 톤(반소람 ③)과 **1:1 매핑 테이블** — 반소람과 합의해 고정.
+- 현재 톤(`TtsTone`, [tts.py](tts.py)): `female`·`male`·`narration` **3종 고정** (2026-06-11 확정).
+- **톤은 발화 속도·피치(`_TONE_MAP`)와 목소리(`_TONE_VOICE`)를 함께 결정.**
+  - `female` → `female_a`(ko-KR-Neural2-A), 1인칭 여성
+  - `male` → `male_c`(ko-KR-Neural2-C), 1인칭 남성
+  - `narration` → `female_b`(ko-KR-Neural2-B), 3인칭 나레이션 — female_a와 목소리 구별
+- Qwen3 서버 연결 시: `female`→girl / `male`→boy / `narration`→woman (seed 21424, atempo=0.9).
+- 기본 톤: `narration` (3인칭 편지가 먼저 나옴).
 
 ---
 

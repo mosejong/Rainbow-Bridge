@@ -85,7 +85,7 @@ _TONE_MAP: Final[dict[TtsTone, _VoiceParams]] = {
 _TONE_VOICE: Final[dict[TtsTone, str]] = {
     TtsTone.FEMALE: "female_a",    # ko-KR-Neural2-A
     TtsTone.MALE: "male_c",        # ko-KR-Neural2-C
-    TtsTone.NARRATION: "female_b", # ko-KR-Neural2-B — 1인칭 여성과 구별
+    TtsTone.NARRATION: "female_b",  # ko-KR-Neural2-B — 1인칭 여성과 구별
 }
 
 
@@ -105,6 +105,7 @@ def _resolve_voice(voice: Optional[str], tone: Optional[TtsTone] = None) -> str:
         raise ValueError(
             f"지원하지 않는 목소리: {voice!r}. 가능: {', '.join(_VOICES)}"
         ) from e
+
 
 _SENTENCE_SPLIT_RE: Final[re.Pattern[str]] = re.compile(r"(?<=[.!?。…\n])\s+")
 
