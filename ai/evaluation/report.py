@@ -51,6 +51,9 @@ def build_report(
     play_counts: Optional[Sequence[float]] = None,
     play_count: int = 0,
     session_count: int = 0,
+    sleep_score: Optional[float] = None,
+    sleep_hours: Optional[float] = None,
+    steps: Optional[int] = None,
     as_of: Optional[date] = None,
 ) -> dict[str, Any]:
     """반려동물별 사용 데이터를 리포트로 집계합니다.
@@ -66,6 +69,10 @@ def build_report(
         play_counts: 기간별 영상/음성 재생 횟수(오래된→최근). `play_logs`(per-play 타임스탬프)
             를 날짜별로 묶어 넣으면 recovery_signal 의 '재생 빈도 추세' 근거로 쓰입니다.
             누적 카운터 `play_count` 와 달리 시계열이라 추세 계산 가능. 없으면 생략(graceful).
+        sleep_score: 삼성헬스(→Health Connect) 수면점수 0~100. 넘기면 recovery_signal 의
+            회복점수가 수면·활동 재정규화 산식으로 바뀌고 주관·객관 교차검증이 실립니다.
+        sleep_hours: 수면점수 없을 때 수면시간(시간)으로 환산(어댑터 `from_health_connect`).
+        steps: 걸음수 → 활동점수. 위 셋 모두 없으면 기존 동작 그대로(하위호환).
         as_of: 꾸준함 기준일(보통 `date.today()`). 백엔드 `get_report` 가 넘기면 장기 미접속
             (이탈)이 꾸준함 0% 로 잡힘. None 이면 최근 체크인 기준(하위호환).
 
@@ -88,12 +95,15 @@ def build_report(
         },
         "emotion_trend": _emotion_trend(checkins),
         "mission_completion_rate": _completion_rate(mission_list),
-        # 일상복귀 신호(정량) — 반소람 recovery_signal.py 통합. 접속빈도가 차별 근거.
+        # 일상복귀 신호(정량) — recovery_signal.py 통합. 접속빈도 + 수면·활동이 차별 근거.
         "recovery_signal": compute_recovery_signal(
             checkins,
             mission_list,
             access_counts=access_counts,
             play_counts=play_counts,
+            sleep_score=sleep_score,
+            sleep_hours=sleep_hours,
+            steps=steps,
             as_of=as_of,
         ),
         # 🚧 재방문(revisit): 세션/접속 로그 스키마 확정 후 추가 (백엔드 합의)

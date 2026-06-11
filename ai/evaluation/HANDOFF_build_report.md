@@ -80,3 +80,37 @@ async def get_report(pet_id: str, period: str | None = None) -> ReportResponse:
 - 검증 끝나면 `report.py:4~5`의 TODO 주석 2줄 삭제.
 
 > 백엔드는 모세종 영역이라 정환주가 직접 안 고치고 이 메모로 넘깁니다. 합치실 때 위 코드 그대로 쓰시면 됩니다.
+
+---
+
+## 추가 (2026-06-11) — 수면·활동 객관데이터 파라미터
+
+`build_report` 가 `sleep_score`/`sleep_hours`/`steps`(전부 optional, 기본 `None`)를 받아 `recovery_signal` 까지 전달합니다. **하위호환** — 미제공 시 기존과 100% 동일. 출력 `recovery_signal` 에 `sleep_score`·`activity_score`·`cross_check`·`scoring` 키가 추가됩니다.
+
+- **데이터 출처:** 삼성헬스 → Health Connect → 앱(개발빌드) → 저장. 영속화 컬렉션(`health_logs`)·스키마는 **모세종 영역 + P0 결정 대기**.
+- 연결법: `get_report` 가 그 데이터를 읽어 위 교체안 `build_report(...)` 호출에 `sleep_score=`/`steps=` 인자만 추가하면 끝.
+- ⚠️ **P0 미정이라 아직 붙이지 말 것:** 수면 입력을 'Health Connect 수면시간'으로 할지 '주관 수면질 5점'으로 할지 미확정 → 확정 시 공개 시그니처가 바뀔 수 있음(`sleep_hours` vs 체크인 신규 필드).
+
+---
+
+## health_logs 입력 계약 (제안 — 모세종 영역, P0 조건부)
+
+> Plan 에이전트 감사(2026-06-11)가 "정환주가 입력 스키마 계약을 안 줘서 모세종이 막힘"이라 지적 → 제안만 적어둠. **P0 결정 전엔 구현하지 말 것.** 수면 필드 형식이 P0에서 갈림.
+
+영속화 컬렉션 `health_logs` (반려동물·날짜별 1문서, 삼성헬스→Health Connect→앱이 적재):
+
+```jsonc
+{
+  "pet_id": "string",
+  "date": "2026-06-11",          // 일 단위 집계 키
+  "steps": 6200,                 // 정수, 하루 걸음 (없으면 필드 생략 → activity 미측정)
+  "sleep_hours": 7.5,            // (분기A) Health Connect 객관 수면시간
+  // "sleep_quality": 4,         // (분기B) P0가 '주관 수면질'이면 이 필드로 — 체크인에 신규 필드 추가(모세종·민경이)
+  "source": "health_connect",    // 출처 추적
+  "synced_at": "2026-06-11T08:00:00+09:00"
+}
+```
+
+- `get_report` 가 `health_logs.find({pet_id, 기간})` → 최근 1건(또는 평균)을 골라 `build_report(... sleep_score=/sleep_hours=/steps=)` 에 그대로 전달.
+- **P0 분기:** (A) 객관 수면시간 점수반영 → `sleep_hours` 그대로. (B) 주관 수면질 → 체크인 스키마에 `sleep_quality` 신규 필드(모세종·민경이 작업) + 산식/테스트 재작성(정환주). 어느 쪽이든 **객관 `steps`·`sleep_hours`는 cross_check(교차검증)용으로 항상 적재**하면 손해 없음.
+- 미측정 표현: 필드 생략 = `None` 전달 = 옵션A 재정규화로 점수 안 깎임(이미 구현됨).
