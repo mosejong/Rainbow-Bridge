@@ -31,15 +31,27 @@ def test_tone_map_covers_all_tones():
         assert tone in _TONE_MAP
 
 
-def test_soft_tone_accepted():
-    """프론트가 보내는 'soft'가 유효한 톤이어야 함(이전엔 warm으로 폴백)."""
-    assert TtsTone("soft") is TtsTone.SOFT
-    assert TtsTone.SOFT in _TONE_MAP
+def test_three_tones_defined():
+    """female/male/narration 3종만 노출돼야 함."""
+    assert set(TtsTone) == {TtsTone.FEMALE, TtsTone.MALE, TtsTone.NARRATION}
+
+
+def test_narration_tone_accepted():
+    """기본 톤 narration이 유효해야 함."""
+    assert TtsTone("narration") is TtsTone.NARRATION
+    assert TtsTone.NARRATION in _TONE_MAP
 
 
 def test_resolve_voice_default_is_current():
-    """voice 미지정(None)이면 현재 기본 목소리를 써야 함(하위호환)."""
+    """voice·tone 둘 다 None이면 기본 목소리(female_a)를 써야 함."""
     assert _resolve_voice(None) == _VOICE_NAME
+
+
+def test_resolve_voice_tone_maps_correctly():
+    """각 톤이 올바른 목소리로 매핑돼야 함."""
+    assert _resolve_voice(None, TtsTone.FEMALE) == _VOICES["female_a"]
+    assert _resolve_voice(None, TtsTone.MALE) == _VOICES["male_c"]
+    assert _resolve_voice(None, TtsTone.NARRATION) == _VOICES["female_b"]
 
 
 def test_resolve_voice_known_key():
@@ -82,16 +94,16 @@ def test_probe_duration_missing_file_returns_none():
 def test_fallback_path_none_when_empty(tmp_path, monkeypatch):
     """샘플이 없으면 폴백 경로 없음(None)."""
     monkeypatch.setattr(tts_mod, "_SAMPLE_DIR", str(tmp_path))
-    assert _fallback_path(TtsTone.WARM) is None
+    assert _fallback_path(TtsTone.NARRATION) is None
 
 
 def test_fallback_path_prefers_per_tone(tmp_path, monkeypatch):
     """톤별 샘플이 공통 샘플보다 우선."""
     monkeypatch.setattr(tts_mod, "_SAMPLE_DIR", str(tmp_path))
     (tmp_path / "fallback.mp3").write_bytes(b"generic")
-    assert _fallback_path(TtsTone.WARM).endswith("fallback.mp3")
-    (tmp_path / "fallback_warm.mp3").write_bytes(b"warm")
-    assert _fallback_path(TtsTone.WARM).endswith("fallback_warm.mp3")
+    assert _fallback_path(TtsTone.NARRATION).endswith("fallback.mp3")
+    (tmp_path / "fallback_narration.mp3").write_bytes(b"narration")
+    assert _fallback_path(TtsTone.NARRATION).endswith("fallback_narration.mp3")
 
 
 def test_synthesize_falls_back_on_error(tmp_path, monkeypatch):
@@ -104,7 +116,7 @@ def test_synthesize_falls_back_on_error(tmp_path, monkeypatch):
         raise RuntimeError("인증 없음")
 
     monkeypatch.setattr(tts_mod, "_synthesize_google", boom)
-    result = synthesize("안녕하세요", TtsTone.WARM)
+    result = synthesize("안녕하세요", TtsTone.NARRATION)
     assert result["fallback"] is True
     assert result["format"] == "mp3"
     assert os.path.exists(result["audio_path"])
@@ -120,7 +132,7 @@ def test_synthesize_reraises_without_fallback(tmp_path, monkeypatch):
 
     monkeypatch.setattr(tts_mod, "_synthesize_google", boom)
     with pytest.raises(RuntimeError):
-        synthesize("안녕하세요", TtsTone.WARM)
+        synthesize("안녕하세요", TtsTone.FEMALE)
 
 
 def test_synthesize_success_has_fallback_false(monkeypatch, tmp_path):
@@ -128,6 +140,6 @@ def test_synthesize_success_has_fallback_false(monkeypatch, tmp_path):
     monkeypatch.setattr(tts_mod, "_OUTPUT_DIR", str(tmp_path / "out"))
     monkeypatch.setattr(tts_mod, "_synthesize_google", lambda *a, **k: b"ID3 ok")
     monkeypatch.setattr(tts_mod, "_probe_duration", lambda p: None)
-    result = synthesize("안녕하세요", TtsTone.CALM)
+    result = synthesize("안녕하세요", TtsTone.MALE)
     assert result["fallback"] is False
     assert os.path.exists(result["audio_path"])

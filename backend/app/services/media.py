@@ -61,10 +61,57 @@ async def get_asset(asset_id: str, user_id: int | None = None) -> dict | None:
     return {
         "asset_id": str(doc["_id"]),
         "status": doc["status"],
+        "gif_url": doc.get("gif_url"),
         "video_url": doc.get("video_url"),
         "voiced_url": doc.get("voiced_url"),
         "dubbed_url": doc.get("dubbed_url"),
     }
+
+
+async def trigger_liveportrait_for_pet(pet_id: str) -> None:
+    """1인칭 편지 허용 시 d3 입모양 영상 백그라운드 생성. 이미 video_url 있으면 skip."""
+    try:
+        doc = await _collection().find_one(
+            {"pet_id": pet_id, "source_url": {"$ne": None}},
+            sort=[("created_at", -1)],
+        )
+        if not doc:
+            return
+        if doc.get("video_url"):
+            return
+        asset_id = str(doc["_id"])
+        source_path = Path(doc["source_url"].lstrip("/"))
+        if source_path.exists():
+            asyncio.create_task(run_liveportrait(asset_id, str(source_path), pet_id))
+    except Exception:
+        logger.warning("1인칭 LP 트리거 실패 pet_id=%s", pet_id, exc_info=True)
+
+
+async def run_liveportrait_gif(asset_id: str, source_path: str):
+    """백그라운드에서 GIF 생성 (d9 잔잔한 드라이빙). 실패 시 status=error."""
+    try:
+        _VIDEO_DIR.mkdir(parents=True, exist_ok=True)
+
+        import sys
+
+        repo_root = str(Path(__file__).resolve().parents[3])
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+
+        from ai.liveportrait.pipeline import generate_gif
+
+        gif_path = await asyncio.to_thread(generate_gif, source_path, str(_VIDEO_DIR))
+
+        await _collection().update_one(
+            {"_id": ObjectId(asset_id)},
+            {"$set": {"gif_url": f"/uploads/videos/{gif_path.name}", "status": "done"}},
+        )
+    except Exception:
+        logger.exception("GIF 생성 실패 asset_id=%s", asset_id)
+        await _collection().update_one(
+            {"_id": ObjectId(asset_id)},
+            {"$set": {"status": "error"}},
+        )
 
 
 async def run_liveportrait(asset_id: str, source_path: str, pet_id: str = ""):

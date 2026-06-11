@@ -33,7 +33,7 @@ from starlette.concurrency import run_in_threadpool
 
 # server.py 와 pipeline.py 가 같은 폴더 → 직접 import 되도록 경로 보장.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pipeline import DRIVING_MULTIPLIER, LivePortraitError, generate_video  # noqa: E402
+from pipeline import DRIVING_MULTIPLIER, LivePortraitError, generate_gif, generate_video  # noqa: E402
 
 app = FastAPI(title="LivePortrait 추론 서비스", version="1.0")
 
@@ -92,6 +92,43 @@ async def generate(source: UploadFile = File(...)) -> FileResponse:
     return FileResponse(
         path=str(result_path),
         media_type="video/mp4",
+        filename=result_path.name,
+    )
+
+
+@app.post("/generate/gif")
+async def generate_memorial_gif(source: UploadFile = File(...)) -> FileResponse:
+    """반려동물 사진 → 추모 GIF (d9 잔잔한 드라이빙). GIF 파일을 그대로 반환.
+
+    입모양 없이 눈·고개 움직임만 — 치료적 목적의 첫 번째 LP 단계.
+    """
+    ext = Path(source.filename or "").suffix.lower() or ".jpg"
+    if ext not in _ALLOWED_EXT:
+        raise HTTPException(status_code=400, detail=f"지원하지 않는 이미지 형식: {ext}")
+
+    job_id = uuid.uuid4().hex[:12]
+    src_path = _WORK_DIR / f"src_{job_id}{ext}"
+    out_dir = _WORK_DIR / job_id
+
+    contents = await source.read()
+    if not contents:
+        raise HTTPException(status_code=400, detail="빈 파일입니다.")
+    src_path.write_bytes(contents)
+
+    try:
+        result_path = await run_in_threadpool(
+            generate_gif, src_path, str(out_dir)
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except LivePortraitError as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+    finally:
+        src_path.unlink(missing_ok=True)
+
+    return FileResponse(
+        path=str(result_path),
+        media_type="image/gif",
         filename=result_path.name,
     )
 

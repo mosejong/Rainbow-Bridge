@@ -1,3 +1,4 @@
+import asyncio
 import app.core.ai_path  # noqa: F401
 from datetime import datetime, timezone
 
@@ -158,6 +159,11 @@ async def create_message(data: MessageCreate) -> MessageResponse:
                 response = MessageResponse(**doc)
                 # 회복 게이트 상태 + 1인칭 실제 적용 여부를 프론트에 전달
                 response.first_person = first_person
+                # 1인칭 편지 생성 시 d3 입모양 영상 백그라운드 트리거 (voiced_url 준비)
+                if first_person:
+                    from app.services.media import trigger_liveportrait_for_pet
+
+                    asyncio.create_task(trigger_liveportrait_for_pet(data.pet_id))
                 response.content_unlocked = content_unlocked
                 response.allow_first_person = allow_first_person
                 if result.get("crisis_message"):

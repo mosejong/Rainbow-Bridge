@@ -61,18 +61,11 @@ _CHARS_PER_SEC: Final[float] = 5.0
 
 
 class TtsTone(str, Enum):
-    """TTS 톤 — 메시지 톤(③ 반소람)과 1:1 매핑.
+    """TTS 톤 — 반려동물 성별·화자 기준 3종."""
 
-    값은 메시지 톤 키와 맞춥니다(반소람과 합의해 고정). 톤별로 발화
-    속도·피치를 다르게 줍니다.
-    """
-
-    WARM = "warm"  # 따뜻함 — 부드럽고 약간 느리게
-    CALM = "calm"  # 담담함 — 평이하게
-    HOPEFUL = "hopeful"  # 희망 — 약간 밝고 보통 속도
-    SOFT = "soft"  # 나직이 — 가장 부드럽고 낮게(프론트 '부드럽게' 대응)
-    MALE = "male"  # 남성 낭독 — 기본 목소리를 남성으로
-    NARRATION = "narration"  # 담담한 내레이션 — 남성, 평이한 속도
+    FEMALE = "female"  # 1인칭 여성
+    MALE = "male"  # 1인칭 남성
+    NARRATION = "narration"  # 3인칭 나레이션 (여성)
 
 
 @dataclass(frozen=True)
@@ -83,32 +76,29 @@ class _VoiceParams:
 
 # 톤 → 음성 파라미터. 추모 맥락이라 전체적으로 차분하게.
 _TONE_MAP: Final[dict[TtsTone, _VoiceParams]] = {
-    TtsTone.WARM: _VoiceParams(speaking_rate=0.92, pitch=-1.0),
-    TtsTone.CALM: _VoiceParams(speaking_rate=0.95, pitch=0.0),
-    TtsTone.HOPEFUL: _VoiceParams(speaking_rate=1.0, pitch=1.0),
-    TtsTone.SOFT: _VoiceParams(speaking_rate=0.88, pitch=-2.0),
-    TtsTone.MALE: _VoiceParams(speaking_rate=0.95, pitch=-2.0),
-    TtsTone.NARRATION: _VoiceParams(speaking_rate=0.97, pitch=0.0),
+    TtsTone.FEMALE: _VoiceParams(speaking_rate=0.92, pitch=-1.0),
+    TtsTone.MALE: _VoiceParams(speaking_rate=0.93, pitch=-2.0),
+    TtsTone.NARRATION: _VoiceParams(speaking_rate=0.90, pitch=-0.5),
 }
 
-
-# 톤별 기본 목소리 — voice 미지정 시 톤에 맞는 성별/결 선택.
-# (이게 없으면 voice=None일 때 무조건 _VOICE_NAME(여성)으로 떨어지는 버그)
-# 여기 없는 톤은 _VOICE_NAME(여성 기본) 유지 → 기존 동작/테스트 하위호환.
+# 톤별 고정 목소리
 _TONE_VOICE: Final[dict[TtsTone, str]] = {
-    TtsTone.MALE: "male_c",
-    TtsTone.NARRATION: "male_c",
+    TtsTone.FEMALE: "female_a",  # ko-KR-Neural2-A
+    TtsTone.MALE: "male_c",  # ko-KR-Neural2-C
+    TtsTone.NARRATION: "female_b",  # ko-KR-Neural2-B — 1인칭 여성과 구별
 }
 
 
-def _resolve_voice(voice: Optional[str], tone: TtsTone = TtsTone.WARM) -> str:
+def _resolve_voice(voice: Optional[str], tone: Optional[TtsTone] = None) -> str:
     """목소리 키(또는 None)를 실제 Google voice 이름으로 변환.
 
-    None → 톤별 기본 목소리(`_TONE_VOICE`), 없으면 현재 기본값(`_VOICE_NAME`).
-    알려진 키 → 해당 voice 이름. 미지원 키 → ValueError(호출부에서 폴백/안내 처리).
+    tone 지정 시 _TONE_VOICE 우선 적용. voice 명시 시 _VOICES 직접 참조.
+    둘 다 없으면 기본값(_VOICE_NAME, female_a).
     """
+    if tone is not None and tone in _TONE_VOICE:
+        return _VOICES[_TONE_VOICE[tone]]
     if voice is None:
-        return _VOICES.get(_TONE_VOICE.get(tone, ""), _VOICE_NAME)
+        return _VOICE_NAME
     try:
         return _VOICES[voice]
     except KeyError as e:
@@ -176,7 +166,7 @@ def _probe_duration(path: str) -> Optional[float]:
 
 def synthesize(
     text: str,
-    tone: TtsTone = TtsTone.WARM,
+    tone: TtsTone = TtsTone.NARRATION,
     *,
     voice: Optional[str] = None,
     filename: Optional[str] = None,
