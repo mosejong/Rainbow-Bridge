@@ -63,7 +63,8 @@ export default function TtsScreen() {
     try {
       const petId = await AsyncStorage.getItem('pet_id');
       const res = await generateTts({ pet_id: petId, text: messageText, tone: selectedTone });
-      const url = res.audio_url?.startsWith('http')
+      if (!res.audio_url) throw new Error('audio_url 없음');
+      const url = res.audio_url.startsWith('http')
         ? res.audio_url
         : `${API_BASE}${res.audio_url}`;
       setAudioUrl(url);
