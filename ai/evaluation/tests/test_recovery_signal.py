@@ -25,6 +25,23 @@ def test_insufficient_data():
     assert out["recovery_index"] is None
 
 
+def test_insufficient_surfaces_health_input_not_discarded():
+    # 체크인 부족이라 점수는 못 내지만, 들어온 수면·걸음은 버리지 않고 노출(조용히 None 금지).
+    out = compute_recovery_signal(_checkins([4, 5]), sleep_score=80, steps=8000)
+    assert out["signal"] == SIGNAL_INSUFFICIENT
+    assert out["recovery_index"] is None
+    assert out["sleep_score"] == 80
+    assert out["activity_score"] == 100
+    assert any("점수엔 반영하지 못해요" in e for e in out["evidence"])
+
+
+def test_insufficient_no_health_keeps_none():
+    # 헬스 미제공이면 기존대로 None(하위호환).
+    out = compute_recovery_signal(_checkins([4, 5]))
+    assert out["sleep_score"] is None
+    assert out["activity_score"] is None
+
+
 def test_recovering_when_scores_rise():
     out = compute_recovery_signal(_checkins([3, 3, 4, 7, 8, 8]))
     assert out["signal"] == SIGNAL_RECOVERING
@@ -40,6 +57,28 @@ def test_at_risk_when_scores_fall():
 def test_stable_when_flat():
     out = compute_recovery_signal(_checkins([5, 5, 5, 5, 5]))
     assert out["signal"] == SIGNAL_STABLE
+
+
+def test_health_args_omitted_is_backward_compatible():
+    # 수면·활동 미제공 시 — 기존과 동일 동작(하위호환). 새 키는 None.
+    rows = _checkins([5, 6, 6, 7, 7, 8])
+    base = compute_recovery_signal(rows)
+    explicit_none = compute_recovery_signal(rows, sleep_score=None, steps=None)
+    assert base["recovery_index"] == explicit_none["recovery_index"]
+    assert base["sleep_score"] is None
+    assert base["activity_score"] is None
+    assert base["cross_check"] is None
+    assert base["scoring"] == "base"  # 어느 산식 썼는지 명시
+
+
+def test_health_args_switch_index_and_flag_mismatch():
+    # 감정 높은데 수면 나쁨 → 점수에 수면 반영 + 교차검증 불일치 플래그.
+    rows = _checkins([8, 8, 8, 8, 8, 8])
+    out = compute_recovery_signal(rows, sleep_score=30)
+    assert out["sleep_score"] == 30
+    assert out["cross_check"]["mismatch"] is True
+    assert out["scoring"] == "blend"
+    assert any("수면점수" in e for e in out["evidence"])
 
 
 def test_unordered_checkins_sorted_by_date():

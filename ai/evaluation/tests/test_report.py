@@ -57,6 +57,31 @@ def test_recovery_signal_play_counts_forwarded():
     assert any("영상 재생" in e for e in sig["evidence"])
 
 
+def test_recovery_signal_health_forwarded():
+    """build_report 가 sleep_score/steps 를 recovery_signal 까지 끝까지 전달한다(배선)."""
+    checkins = [
+        {"created_at": f"2026-06-{i + 1:02d}", "score": s}
+        for i, s in enumerate([8, 8, 8, 8, 8, 8])  # 감정 높음
+    ]
+    r = build_report("pet1", emotion_checkins=checkins, sleep_score=30, steps=2000)
+    sig = r["recovery_signal"]
+    assert sig["sleep_score"] == 30
+    assert sig["scoring"] == "blend"  # 헬스 들어오면 blend 산식
+    assert sig["cross_check"]["mismatch"] is True  # 수면 나쁨 + 기분 좋음
+    assert any("수면점수" in e for e in sig["evidence"])
+
+
+def test_health_omitted_keeps_base_scoring():
+    """헬스 미제공 시 build_report → recovery_signal 이 base 산식(하위호환)."""
+    checkins = [
+        {"created_at": f"2026-06-{i + 1:02d}", "score": s}
+        for i, s in enumerate([5, 6, 6, 7, 7, 8])
+    ]
+    r = build_report("pet1", emotion_checkins=checkins)
+    assert r["recovery_signal"]["scoring"] == "base"
+    assert r["recovery_signal"]["sleep_score"] is None
+
+
 def test_recovery_signal_present_without_access():
     """접속빈도 없이도 recovery_signal 자리는 채워진다(graceful)."""
     r = build_report(

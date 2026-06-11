@@ -22,6 +22,13 @@ from __future__ import annotations
 from datetime import date
 from typing import Any, Iterable, Optional, Sequence
 
+from .health_signal import (  # 수면·활동 객관데이터 확장(프로토타입)
+    activity_to_score,
+    blend_recovery_score,
+    cross_check,
+    sleep_to_score,
+)
+
 # 신호 라벨 — 백엔드 get_recovery 의 trend 와 동일 어휘로 맞춥니다(혼선 방지).
 SIGNAL_RECOVERING = "회복 중"
 SIGNAL_STABLE = "유지 중"
@@ -130,6 +137,9 @@ def compute_recovery_signal(
     *,
     access_counts: Optional[Sequence[float]] = None,
     play_counts: Optional[Sequence[float]] = None,
+    sleep_score: Optional[float] = None,
+    sleep_hours: Optional[float] = None,
+    steps: Optional[int] = None,
     as_of: Optional[date] = None,
 ) -> dict[str, Any]:
     """일상복귀 신호를 산출합니다.
@@ -146,14 +156,28 @@ def compute_recovery_signal(
 
     Returns:
         ``{signal, recovery_index, emotion, mission_completion_rate, checkin_consistency,
-        access_trend, play_trend, evidence, reason}`` — 발표/프론트 차트·요약용.
-        ``recovery_index`` 는 RECOVERY_GATE 40/35/25 산식(`recovery_score`).
+        access_trend, play_trend, sleep_score, activity_score, cross_check, evidence, reason}``.
+        ``recovery_index`` 는 기본 RECOVERY_GATE 40/35/25 산식(`recovery_score`)이지만,
+        **수면·활동 객관데이터가 들어오면** 35/25/15/15/10 가중치를 들어온 항목끼리
+        재정규화한 산식(`blend_recovery_score`)으로 교체된다(빠진 외부신호는 분모서 제외 —
+        데이터 없다고 페널티 없음). 스케일 동일 0~100. 소비자는 ``cross_check`` 유무로 구분.
         ``evidence`` 는 그대로 보여줄 수 있는 근거 문장 목록.
     """
     rows = list(emotion_checkins)  # generator 두 번 순회(점수·꾸준함) 대비 materialize.
     scores = _scores_oldest_first(rows)
 
     if len(scores) < _MIN_CHECKINS:
+        # 감정 baseline이 없어 blend 점수는 못 내지만, 들어온 수면·활동은 버리지 않고
+        # 정규화값을 그대로 노출(조용히 None 처리하면 "데이터 없음"으로 오해됨).
+        sleep_norm = sleep_to_score(sleep_score, sleep_hours)
+        activity_norm = activity_to_score(steps)
+        evidence = [
+            f"감정 체크인이 {len(scores)}회뿐이라 신호를 내기 어려워요(최소 {_MIN_CHECKINS}회)."
+        ]
+        if sleep_norm is not None or activity_norm is not None:
+            evidence.append(
+                "수면·활동 데이터는 있으나 체크인이 부족해 아직 점수엔 반영하지 못해요."
+            )
         return {
             "signal": SIGNAL_INSUFFICIENT,
             "recovery_index": None,
@@ -162,9 +186,11 @@ def compute_recovery_signal(
             "checkin_consistency": None,
             "access_trend": None,
             "play_trend": None,
-            "evidence": [
-                f"감정 체크인이 {len(scores)}회뿐이라 신호를 내기 어려워요(최소 {_MIN_CHECKINS}회)."
-            ],
+            "sleep_score": sleep_norm,
+            "activity_score": activity_norm,
+            "cross_check": None,
+            "scoring": "insufficient",
+            "evidence": evidence,
             "reason": "아직 데이터가 적어요. 체크인이 쌓이면 회복 추이를 보여드릴게요.",
         }
 
@@ -210,6 +236,23 @@ def compute_recovery_signal(
                 f"{label} {trend['older']}→{trend['recent']}회 ({trend['direction']})"
             )
 
+    # 수면·활동 객관데이터(삼성헬스→Health Connect)가 들어오면 회복점수 재계산 + 교차검증.
+    # 미제공이면 위 recovery_score 결과 그대로 — 기존 동작 100% 보존(하위호환).
+    sleep_norm = sleep_to_score(sleep_score, sleep_hours)
+    activity_norm = activity_to_score(steps)
+    health_check: Optional[dict[str, Any]] = None
+    if sleep_norm is not None or activity_norm is not None:
+        index = blend_recovery_score(
+            avg, completed_missions, consistency, sleep_norm, activity_norm
+        )
+        if sleep_norm is not None:
+            evidence.append(f"수면점수 {round(sleep_norm)}/100")
+        if activity_norm is not None:
+            evidence.append(f"활동 {round(activity_norm)}/100")
+        health_check = cross_check(sleep_norm, avg)
+        if health_check["note"]:
+            evidence.append(f"⚠ {health_check['note']}")
+
     reason = {
         SIGNAL_RECOVERING: "감정이 오르고 있어요. 일상으로 돌아가는 신호입니다.",
         SIGNAL_STABLE: "큰 변화 없이 안정적으로 지내고 있어요.",
@@ -218,7 +261,7 @@ def compute_recovery_signal(
 
     return {
         "signal": signal,
-        "recovery_index": index,  # 0~100, RECOVERY_GATE 40/35/25 (recovery_score)
+        "recovery_index": index,  # 0~100. 기본 40/35/25, 헬스 제공 시 35/25/15/15/10
         "emotion": {
             "older_avg": round(older, 1),
             "recent_avg": round(recent, 1),
@@ -229,6 +272,12 @@ def compute_recovery_signal(
         "checkin_consistency": consistency,
         "access_trend": access,
         "play_trend": play,
+        "sleep_score": sleep_norm,
+        "activity_score": activity_norm,
+        "cross_check": health_check,
+        "scoring": (
+            "blend" if health_check is not None else "base"
+        ),  # 어느 산식인지 명시
         "evidence": evidence,
         "reason": reason,
     }
