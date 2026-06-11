@@ -30,6 +30,8 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
+import threading
 from pathlib import Path
 
 # ---------- 설정 (환경 변수 → 기본값) ----------
@@ -39,6 +41,23 @@ CONDA_ENV = os.getenv("LIVEPORTRAIT_CONDA_ENV", "liveportrait")
 REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 # remote 모드: 터널된 GPU 서비스(server.py) 주소. 백엔드(NCP)가 이걸로 호출.
 REMOTE_URL = os.getenv("LIVEPORTRAIT_REMOTE_URL", "").rstrip("/")
+
+# conda run 래퍼 대신 직접 python.exe 경로 — 좀비 프로세스 방지 (소람 2026-06-11)
+# Windows 기본: D:\conda_envs\{CONDA_ENV}\python.exe
+# 경로가 다르면 LIVEPORTRAIT_PYTHON 환경변수로 지정
+_default_lp_python = (
+    str(Path("D:/conda_envs") / CONDA_ENV / "python.exe")
+    if sys.platform == "win32"
+    else "python"
+)
+LP_PYTHON = os.getenv("LIVEPORTRAIT_PYTHON", _default_lp_python)
+
+# 동시 추론 최대 개수 (기본 1 — 무거운 추론 동시 적재 방지)
+_MAX_CONCURRENT = int(os.getenv("LIVEPORTRAIT_MAX_CONCURRENT", "1"))
+_gen_semaphore = threading.Semaphore(_MAX_CONCURRENT)
+
+# 추론 타임아웃 (초)
+_INFERENCE_TIMEOUT = int(os.getenv("LIVEPORTRAIT_TIMEOUT", "300"))
 
 # ① GIF용 드라이빙: 눈·고개 움직임만 (잔잔, 입모양 없음) — d9 확정 2026-06-11
 # LIVEPORTRAIT_DRIVING_GIF 로 경로 지정. 없으면 d9.mp4 기본값.
@@ -305,7 +324,13 @@ def _generate_remote(source: Path, output_dir: Path) -> Path:
 
 
 def _generate_local(source: Path, driving: Path, output_dir: Path) -> Path:
-    """로컬 GPU(외부 LivePortrait animals 모드)로 생성."""
+    """로컬 GPU(외부 LivePortrait animals 모드)로 생성.
+
+    개선 (2026-06-11 소람 리포트 반영):
+    - conda run 래퍼 제거 → python.exe 직접 호출 (좀비 프로세스 방지, UnicodeError 회피)
+    - Semaphore로 동시 추론 제한 (기본 1개 — RAM 보호)
+    - Popen + communicate(timeout) + 명시적 wait() — 타임아웃 시 고아 방지
+    """
     if not LP_HOME.exists():
         raise LivePortraitError(
             f"LivePortrait 설치본을 찾을 수 없음: {LP_HOME}\n"
@@ -318,7 +343,7 @@ def _generate_local(source: Path, driving: Path, output_dir: Path) -> Path:
     # animals 모드는 stitching 미학습 → --no_flag_stitching 필수
     # driving_multiplier로 모션 강도 억제 (입 움직임 줄여 "말하는 영상" 방지)
     cmd = [
-        "conda", "run", "-n", CONDA_ENV, "python", "inference_animals.py",
+        LP_PYTHON, "inference_animals.py",
         "-s", str(source.resolve()),
         "-d", str(driving.resolve()),
         "-o", str(out_abs),
@@ -326,11 +351,32 @@ def _generate_local(source: Path, driving: Path, output_dir: Path) -> Path:
         "--driving_multiplier", str(DRIVING_MULTIPLIER),
     ]
 
-    result = subprocess.run(
-        cmd, cwd=str(LP_HOME), capture_output=True, text=True, encoding="utf-8", errors="ignore"
-    )
-    if result.returncode != 0:
-        raise LivePortraitError(f"LivePortrait 실행 실패:\n{result.stderr[-2000:]}")
+    with _gen_semaphore:  # 동시 추론 최대 _MAX_CONCURRENT개로 제한
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(LP_HOME),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="ignore",
+        )
+        try:
+            _, stderr = proc.communicate(timeout=_INFERENCE_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()  # 고아 프로세스 방지 — kill 후 반드시 wait
+            raise LivePortraitError(
+                f"LivePortrait 추론 타임아웃 ({_INFERENCE_TIMEOUT}초 초과)"
+            )
+        finally:
+            # 정상 종료·예외 모두에서 프로세스 확실히 회수
+            if proc.poll() is None:
+                proc.kill()
+            proc.wait()
+
+    if proc.returncode != 0:
+        raise LivePortraitError(f"LivePortrait 실행 실패:\n{stderr[-2000:]}")
 
     # 출력 파일명: {source_stem}--{driving_stem}.mp4
     expected = out_abs / f"{source.stem}--{driving.stem}.mp4"
