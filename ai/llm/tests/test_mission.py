@@ -207,3 +207,47 @@ def test_rag_difficulty_follows_emotion_score(monkeypatch):
             if "difficulty" in cond
         ]
         assert diffs == [expected]
+
+
+# --- 5. 수면 질 modifier (5단계 → 난이도 ±1티어, dead-zone 3축약) ----------- #
+
+
+def test_sleep_poor_lowers_difficulty():
+    """수면 나쁨(1·2) → 난이도 한 단계 내림."""
+    assert mission_mod._apply_sleep("small", 1) == "gentle"
+    assert mission_mod._apply_sleep("small", 2) == "gentle"
+    assert mission_mod._apply_sleep("active", 2) == "small"
+
+
+def test_sleep_good_raises_difficulty():
+    """수면 좋음(4·5) → 난이도 한 단계 올림."""
+    assert mission_mod._apply_sleep("small", 4) == "active"
+    assert mission_mod._apply_sleep("small", 5) == "active"
+    assert mission_mod._apply_sleep("gentle", 5) == "small"
+
+
+def test_sleep_fair_keeps_difficulty():
+    """수면 보통(3) → 그대로."""
+    assert mission_mod._apply_sleep("small", 3) == "small"
+
+
+def test_sleep_none_is_graceful():
+    """수면 미입력(None) → 그대로(graceful)."""
+    assert mission_mod._apply_sleep("small", None) == "small"
+
+
+def test_sleep_clamps_at_bounds():
+    """경계: gentle 아래·active 위로는 안 넘어감."""
+    assert mission_mod._apply_sleep("gentle", 1) == "gentle"
+    assert mission_mod._apply_sleep("active", 5) == "active"
+
+
+def test_sleep_quality_feeds_recommend_difficulty(monkeypatch):
+    """recommend(sleep_quality=…)가 난이도(=RAG 필터)에 반영된다."""
+    captured = _capture_rag_where(monkeypatch)
+    recommend(emotion_score=5, sleep_quality=1, count=2)  # small → 나쁨 → gentle
+    diffs = [c["difficulty"] for c in captured["where"]["$and"] if "difficulty" in c]
+    assert diffs == ["gentle"]
+    recommend(emotion_score=5, sleep_quality=5, count=2)  # small → 좋음 → active
+    diffs = [c["difficulty"] for c in captured["where"]["$and"] if "difficulty" in c]
+    assert diffs == ["active"]

@@ -276,6 +276,33 @@ def _apply_trend(difficulty: str, recovery_trend: Optional[str]) -> str:
     return _DIFFICULTY_ORDER[idx]
 
 
+def _apply_sleep(difficulty: str, sleep_quality: Optional[int]) -> str:
+    """수면 질(5단계)로 난이도를 한 단계 보정합니다.
+
+    수면은 회복 점수엔 **안 들어가고**(논문 근거는 '연관'까지), '그날 컨디션' 신호로
+    추천 미션 난이도만 살짝 조절합니다([[project_sleep_signal_decision]]).
+    5단계 입력을 3축약(dead-zone)으로 매핑:
+
+    - 1·2 (나쁨) → 한 단계 내림(더 작고 부담 없는 미션)
+    - 3   (보통) → 그대로
+    - 4·5 (좋음) → 한 단계 올림(조금 더 활동적인 미션)
+
+    None 이거나 난이도 키가 이상하면 그대로 둡니다(graceful). 저장·표시는 5단계 그대로
+    쓰고, 여기(미션 난이도)에서만 3축약합니다.
+    """
+    if sleep_quality is None:
+        return difficulty
+    try:
+        idx = _DIFFICULTY_ORDER.index(difficulty)
+    except ValueError:
+        return difficulty
+    if sleep_quality <= 2:
+        idx = max(idx - 1, 0)
+    elif sleep_quality >= 4:
+        idx = min(idx + 1, len(_DIFFICULTY_ORDER) - 1)
+    return _DIFFICULTY_ORDER[idx]
+
+
 def _is_safe(mission: dict) -> bool:
     """미션 문구에 금지 표현(부활 등)이 없는지."""
     text = (mission.get("title", "") + mission.get("description", "")).replace(" ", "")
@@ -361,6 +388,7 @@ def recommend(
     history: Optional[list[str]] = None,
     *,
     recovery_trend: Optional[str] = None,
+    sleep_quality: Optional[int] = None,
     generate: Optional[GenerateFn] = None,
     count: int = 3,
 ) -> list[dict]:
@@ -373,6 +401,8 @@ def recommend(
         recovery_trend: 최근 7회 추이(백엔드 get_recovery 의 trend: "회복 중"·"유지 중"
             ·"주의 필요"·"데이터 없음"). 점수 기반 난이도를 한 단계 보정합니다.
             없으면 점수만 사용(graceful).
+        sleep_quality: 그날 수면 질(5단계, 1~5). 난이도를 3축약으로 보정(1·2↓ / 3 유지
+            / 4·5↑). 회복 점수엔 안 들어감 — 미션 강도 조절용. None 이면 미적용.
         generate: LLM 호출 함수(provider.generate). None 이면 규칙 기반만 사용.
         count: 추천 개수.
 
@@ -380,7 +410,9 @@ def recommend(
         ``[{title, description, category, rationale}, ...]`` (최대 count 개).
         ``rationale`` 은 카테고리별 회복 근거 한 줄(prompts.mission.CATEGORY_RATIONALE).
     """
-    difficulty = _apply_trend(_difficulty(emotion_score), recovery_trend)
+    difficulty = _apply_sleep(
+        _apply_trend(_difficulty(emotion_score), recovery_trend), sleep_quality
+    )
     recent: set[str] = set(history or [])
     score = emotion_score if emotion_score is not None else 5
 
