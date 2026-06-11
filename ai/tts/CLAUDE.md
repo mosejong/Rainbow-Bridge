@@ -21,6 +21,12 @@
 ## 3. 톤 매핑
 
 - 메시지 톤(반소람 ③)과 **1:1 매핑 테이블** — 반소람과 합의해 고정.
+- 현재 톤(`TtsTone`, [tts.py](tts.py)): `warm`·`calm`·`hopeful`·`soft`·`male`·`narration`.
+- **톤은 발화 속도·피치(`_TONE_MAP`)만 바꿈.** 목소리(성별)는 `_TONE_VOICE`로 따로 매핑.
+  - `male`·`narration` → 남성 목소리(`male_c`=ko-KR-Neural2-C).
+  - 그 외 톤은 매핑 없음 → 기본 목소리(`_VOICE_NAME`, 여성) 유지(하위호환).
+  - ⚠️ 과거 버그: tone만 바꾸고 voice를 안 주면 `_resolve_voice`가 무조건 여성으로 폴백 → `_TONE_VOICE` + `_resolve_voice(voice, tone)`로 해결(2026-06-11).
+  - 호출부에서 `voice`를 명시하면 그게 톤 기본보다 우선.
 
 ---
 

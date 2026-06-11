@@ -71,6 +71,8 @@ class TtsTone(str, Enum):
     CALM = "calm"  # 담담함 — 평이하게
     HOPEFUL = "hopeful"  # 희망 — 약간 밝고 보통 속도
     SOFT = "soft"  # 나직이 — 가장 부드럽고 낮게(프론트 '부드럽게' 대응)
+    MALE = "male"  # 남성 낭독 — 기본 목소리를 남성으로
+    NARRATION = "narration"  # 담담한 내레이션 — 남성, 평이한 속도
 
 
 @dataclass(frozen=True)
@@ -85,23 +87,35 @@ _TONE_MAP: Final[dict[TtsTone, _VoiceParams]] = {
     TtsTone.CALM: _VoiceParams(speaking_rate=0.95, pitch=0.0),
     TtsTone.HOPEFUL: _VoiceParams(speaking_rate=1.0, pitch=1.0),
     TtsTone.SOFT: _VoiceParams(speaking_rate=0.88, pitch=-2.0),
+    TtsTone.MALE: _VoiceParams(speaking_rate=0.95, pitch=-2.0),
+    TtsTone.NARRATION: _VoiceParams(speaking_rate=0.97, pitch=0.0),
 }
 
 
-def _resolve_voice(voice: Optional[str]) -> str:
+# 톤별 기본 목소리 — voice 미지정 시 톤에 맞는 성별/결 선택.
+# (이게 없으면 voice=None일 때 무조건 _VOICE_NAME(여성)으로 떨어지는 버그)
+# 여기 없는 톤은 _VOICE_NAME(여성 기본) 유지 → 기존 동작/테스트 하위호환.
+_TONE_VOICE: Final[dict[TtsTone, str]] = {
+    TtsTone.MALE: "male_c",
+    TtsTone.NARRATION: "male_c",
+}
+
+
+def _resolve_voice(voice: Optional[str], tone: TtsTone = TtsTone.WARM) -> str:
     """목소리 키(또는 None)를 실제 Google voice 이름으로 변환.
 
-    None → 현재 기본값(`_VOICE_NAME`). 알려진 키 → 해당 voice 이름.
-    미지원 키 → ValueError(호출부에서 폴백/안내 처리).
+    None → 톤별 기본 목소리(`_TONE_VOICE`), 없으면 현재 기본값(`_VOICE_NAME`).
+    알려진 키 → 해당 voice 이름. 미지원 키 → ValueError(호출부에서 폴백/안내 처리).
     """
     if voice is None:
-        return _VOICE_NAME
+        return _VOICES.get(_TONE_VOICE.get(tone, ""), _VOICE_NAME)
     try:
         return _VOICES[voice]
     except KeyError as e:
         raise ValueError(
             f"지원하지 않는 목소리: {voice!r}. 가능: {', '.join(_VOICES)}"
         ) from e
+
 
 _SENTENCE_SPLIT_RE: Final[re.Pattern[str]] = re.compile(r"(?<=[.!?。…\n])\s+")
 
@@ -189,7 +203,7 @@ def synthesize(
         raise ValueError("합성할 텍스트가 비어 있습니다.")
 
     params = _TONE_MAP[tone]
-    voice_name = _resolve_voice(voice)
+    voice_name = _resolve_voice(voice, tone)
     chunks = _split_text(text)
 
     os.makedirs(_OUTPUT_DIR, exist_ok=True)
