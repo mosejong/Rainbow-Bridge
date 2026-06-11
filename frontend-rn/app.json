@@ -30,8 +30,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#F2EEE5"
       },
-      "package": "com.rainbowbridge.app",
-      "usesCleartextTraffic": true
+      "package": "com.rainbowbridge.app"
     },
     "web": {
       "bundler": "metro",
