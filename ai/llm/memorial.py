@@ -225,8 +225,9 @@ def generate_message(
     )
     messages = memorial_prompt.build_messages(**prompt_kwargs)
     prompt = f"{messages[0]['content']}\n\n{messages[1]['content']}"
-    # L1(우려)·L2(경고) — 정보·대화보다 공감을 먼저 하도록 지침 추가.
-    if action in (CrisisAction.GENERATE_WITH_SUPPORT, CrisisAction.HOTLINE):
+    # L1(우려)·L2(경고)는 공감 우선. 추가로 자책감이 감지되면(등급 무관) 공감 톤만
+    # 얹는다 — 복지자원·1393 은 붙이지 않음(자책감은 펫로스 애도에 흔해 과민 안내 방지).
+    if action in (CrisisAction.GENERATE_WITH_SUPPORT, CrisisAction.HOTLINE) or crisis.guilt:
         prompt += EMPATHY_FOCUS_NOTE
 
     # (4)+(5) 호출 후 가드 검사, 위반 시 재생성.
