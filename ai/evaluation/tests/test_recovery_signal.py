@@ -71,14 +71,26 @@ def test_health_args_omitted_is_backward_compatible():
     assert base["scoring"] == "base"  # 어느 산식 썼는지 명시
 
 
-def test_health_args_switch_index_and_flag_mismatch():
-    # 감정 높은데 수면 나쁨 → 점수에 수면 반영 + 교차검증 불일치 플래그.
+def test_sleep_flagged_but_not_scored():
+    # 결정문서 §2: 수면은 점수서 제외 → 교차검증·표시만. 수면만으론 산식 안 바뀜(base).
     rows = _checkins([8, 8, 8, 8, 8, 8])
     out = compute_recovery_signal(rows, sleep_score=30)
     assert out["sleep_score"] == 30
-    assert out["cross_check"]["mismatch"] is True
+    assert out["cross_check"]["mismatch"] is True  # 수면 나쁨 vs 기분 좋음
+    assert out["scoring"] == "base"  # 수면만으론 blend 전환 안 됨
+    assert any("점수 미반영" in e for e in out["evidence"])
+    # 수면이 점수에 안 들어갔는지: 수면 없이 낸 점수와 동일해야 함.
+    base = compute_recovery_signal(rows)
+    assert out["recovery_index"] == base["recovery_index"]
+
+
+def test_activity_switches_to_blend():
+    # 활동(걸음)은 점수 항 → scoring blend 로 전환.
+    rows = _checkins([8, 8, 8, 8, 8, 8])
+    out = compute_recovery_signal(rows, steps=8000)
+    assert out["activity_score"] == 100
     assert out["scoring"] == "blend"
-    assert any("수면점수" in e for e in out["evidence"])
+    assert any("활동" in e for e in out["evidence"])
 
 
 def test_unordered_checkins_sorted_by_date():

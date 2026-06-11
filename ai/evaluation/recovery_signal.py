@@ -158,9 +158,10 @@ def compute_recovery_signal(
         ``{signal, recovery_index, emotion, mission_completion_rate, checkin_consistency,
         access_trend, play_trend, sleep_score, activity_score, cross_check, evidence, reason}``.
         ``recovery_index`` 는 기본 RECOVERY_GATE 40/35/25 산식(`recovery_score`)이지만,
-        **수면·활동 객관데이터가 들어오면** 35/25/15/15/10 가중치를 들어온 항목끼리
+        **활동(걸음) 객관데이터가 들어오면** 40/35/25 + 활동10 가중치를 들어온 항목끼리
         재정규화한 산식(`blend_recovery_score`)으로 교체된다(빠진 외부신호는 분모서 제외 —
-        데이터 없다고 페널티 없음). 스케일 동일 0~100. 소비자는 ``cross_check`` 유무로 구분.
+        데이터 없다고 페널티 없음). 스케일 동일 0~100. 소비자는 ``scoring`` 값으로 구분.
+        **수면은 점수서 제외**(결정문서 §2) — `sleep_score`·`cross_check` 로 표시·교차검증만.
         ``evidence`` 는 그대로 보여줄 수 있는 근거 문장 목록.
     """
     rows = list(emotion_checkins)  # generator 두 번 순회(점수·꾸준함) 대비 materialize.
@@ -236,19 +237,19 @@ def compute_recovery_signal(
                 f"{label} {trend['older']}→{trend['recent']}회 ({trend['direction']})"
             )
 
-    # 수면·활동 객관데이터(삼성헬스→Health Connect)가 들어오면 회복점수 재계산 + 교차검증.
-    # 미제공이면 위 recovery_score 결과 그대로 — 기존 동작 100% 보존(하위호환).
+    # 객관데이터(삼성헬스→Health Connect) 반영. 수면은 점수서 제외(결정문서 §2) →
+    # 활동(걸음)만 점수 항으로 blend 교체. 수면은 교차검증·표시로만. 미제공이면
+    # 위 recovery_score 결과 그대로 — 기존 동작 100% 보존(하위호환).
     sleep_norm = sleep_to_score(sleep_score, sleep_hours)
     activity_norm = activity_to_score(steps)
     health_check: Optional[dict[str, Any]] = None
-    if sleep_norm is not None or activity_norm is not None:
+    if activity_norm is not None:  # 활동만 점수 항
         index = blend_recovery_score(
-            avg, completed_missions, consistency, sleep_norm, activity_norm
+            avg, completed_missions, consistency, activity_norm
         )
-        if sleep_norm is not None:
-            evidence.append(f"수면점수 {round(sleep_norm)}/100")
-        if activity_norm is not None:
-            evidence.append(f"활동 {round(activity_norm)}/100")
+        evidence.append(f"활동 {round(activity_norm)}/100")
+    if sleep_norm is not None:  # 수면 — 점수 미반영, 교차검증·표시만
+        evidence.append(f"수면점수 {round(sleep_norm)}/100 (참고 — 점수 미반영)")
         health_check = cross_check(sleep_norm, avg)
         if health_check["note"]:
             evidence.append(f"⚠ {health_check['note']}")
@@ -261,7 +262,7 @@ def compute_recovery_signal(
 
     return {
         "signal": signal,
-        "recovery_index": index,  # 0~100. 기본 40/35/25, 헬스 제공 시 35/25/15/15/10
+        "recovery_index": index,  # 0~100. 기본 40/35/25, 활동 제공 시 +활동10(수면 제외)
         "emotion": {
             "older_avg": round(older, 1),
             "recent_avg": round(recent, 1),
@@ -278,8 +279,8 @@ def compute_recovery_signal(
         "activity_score": activity_norm,
         "cross_check": health_check,
         "scoring": (
-            "blend" if health_check is not None else "base"
-        ),  # 어느 산식인지 명시
+            "blend" if activity_norm is not None else "base"
+        ),  # 어느 산식인지 명시(활동 반영 여부)
         "evidence": evidence,
         "reason": reason,
     }

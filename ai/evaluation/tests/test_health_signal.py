@@ -31,20 +31,33 @@ def test_activity_score_normalization():
 
 
 def test_blend_full_is_100():
-    assert blend_recovery_score(10, 25, 100, 100, 100) == 100  # 모든 항 만점
+    # 시그니처: (감정, 미션, 꾸준, 활동) — 수면은 점수 항 아님(결정문서 §2).
+    # 미션 만점 = 천장 35개(결정문서 §1 정본 캡).
+    assert blend_recovery_score(10, 35, 100, 100) == 100  # 모든 항 만점
 
 
 def test_blend_renormalizes_missing_external_no_penalty():
-    # 옵션 A: 외부신호(수면·활동) 빠지면 분모서 제외 → 없다고 안 깎임.
-    # 핵심 만점 + 활동만 만점(수면 없음) → 100 (수면 없다고 페널티 X).
-    assert blend_recovery_score(10, 25, 100, None, 100) == 100
+    # 옵션 A: 외부신호(활동) 빠지면 분모서 제외 → 없다고 안 깎임.
+    # 핵심 만점 + 활동 만점 → 100.
+    assert blend_recovery_score(10, 35, 100, 100) == 100
     # 외부신호 전무라도 핵심(감정·미션·꾸준) 만점이면 100.
-    assert blend_recovery_score(10, 25, 100, None, None) == 100
+    assert blend_recovery_score(10, 35, 100, None) == 100
 
 
 def test_blend_core_always_counts():
-    # 미션·꾸준 0이면 핵심 분모(35+25+15=75)에 0 기여 → 감정만점 35/75 ≈ 47.
-    assert blend_recovery_score(10, 0, None) == 47
+    # 미션·꾸준 0이면 핵심 분모(40+35+25=100)에 0 기여 → 감정만점 40/100 = 40.
+    assert blend_recovery_score(10, 0, None) == 40
+
+
+def test_blend_equals_base_when_no_activity():
+    # 🔴회귀 가드(reviewer 발견): 활동 없으면 blend == base 산식이어야 함.
+    # 미션 캡 35로 통일했으므로 미션 항 환산이 base(미션당 1점)와 동일.
+    from ..recovery_signal import recovery_score
+
+    for emo, miss, cons in [(10, 35, 100), (5.5, 10, 50), (7, 20, 70), (3, 5, 30)]:
+        assert blend_recovery_score(emo, miss, cons, None) == recovery_score(
+            emo, miss, cons
+        ), (emo, miss, cons)
 
 
 def test_cross_check_sensor_bad_self_good():

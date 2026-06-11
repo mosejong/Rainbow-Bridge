@@ -27,7 +27,12 @@ def _iso(s: str) -> datetime:
 
 
 def total_steps(steps_result: Optional[dict[str, Any]]) -> Optional[int]:
-    """Steps readRecords 결과 → 걸음 합계. 레코드 없으면 None."""
+    """Steps readRecords 결과 → 걸음 합계. 레코드 없으면 None.
+
+    ⚠️ 결과 안 레코드를 **무조건 전부 합산**한다 → 호출부는 **단일 일(하루) 범위로
+    질의한 결과**만 넘겨야 한다. 여러 날을 한 번에 질의하면 며칠치가 합산돼
+    `activity_to_score` 가 과대평가된다(타임존·날짜 버킷팅은 호출부 책임).
+    """
     if not steps_result:
         return None
     records = steps_result.get("records", [])
@@ -43,7 +48,11 @@ def total_steps(steps_result: Optional[dict[str, Any]]) -> Optional[int]:
 
 
 def total_sleep_hours(sleep_result: Optional[dict[str, Any]]) -> Optional[float]:
-    """SleepSession readRecords 결과 → 수면시간 합계(시간). 레코드 없으면 None."""
+    """SleepSession readRecords 결과 → 수면시간 합계(시간). 레코드 없으면 None.
+
+    ⚠️ 레코드를 **무조건 전부 합산**한다 → 호출부는 **단일 밤(하룻밤) 범위로 질의한
+    결과**만 넘겨야 한다. 여러 밤을 한 번에 질의하면 합산돼 수면시간이 과대평가된다.
+    """
     if not sleep_result:
         return None
     records = sleep_result.get("records", [])
