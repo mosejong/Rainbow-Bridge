@@ -1,0 +1,227 @@
+"""⑧-확장: 수면·활동 객관데이터 → 회복점수 반영 (프로토타입).
+
+⑧ 평가 확장: 삼성헬스(→Health Connect 경유)에서 받은 **수면·활동 객관데이터**를
+회복점수에 더하고, 주관 감정 체크인과 **교차검증**한다.
+
+설계: [recovery_signal.py](recovery_signal.py) 와 동일하게 **순수 함수** — 데이터 소스
+(삼성헬스/더미/수동입력)와 분리. 입력만 넣으면 점수가 나온다. 그래서 GPU/DB/실연동
+없이도 더미로 바로 테스트된다. (삼성헬스 실연동은 개발 빌드에서 같은 입력에 꽂으면 끝)
+
+⚠️ 기존 `recovery_score()` 함수 자체는 **안 건드린다.** `compute_recovery_signal()` 이
+**활동(걸음) 객관데이터가 들어올 때만** `blend_recovery_score`(40/35/25 + 활동10)로 교체
+호출한다(미제공 시 기존 40/35/25 산식 그대로 — 하위호환). **수면은 회복점수서 제외**
+(결정문서 회복점수_미션_결정_260611.md §2) — 점수 항이 아니라 교차검증·리포트 표시로만
+쓴다. 가중치는 설계 판단이라 자유 조정.
+
+가중치·임계값은 논문이 정해주는 값이 아니라 **설계 판단**(주석에 표시). 숫자는 자유롭게 조정.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Optional
+
+# ── 가중치 — 핵심 3항은 결정문서 §1 정본(40/35/25) 유지, 활동은 객관 add-on. ──
+# 수면은 회복점수서 제외(결정문서 §2): 점수 항 아님 → 교차검증·리포트 표시로만.
+W_EMOTION = 40.0  # 주관 감정 평균
+W_MISSION = 35.0  # 미션 누적(천장)
+W_CONSISTENCY = 25.0  # 체크인 꾸준함
+W_ACTIVITY = 10.0  # 활동 객관(걸음) — 설계 add-on. 들어올 때만 분모 포함(옵션 A).
+# 미션 만점 기준(개수). 결정문서 §1 정본 천장 35 와 일치 → base(recovery_score)와
+# blend 의 미션 환산이 동일(미션당 1점). 캡이 다르면 base→blend 전환 시 활동과
+# 무관하게 점수가 튀어 "핵심 40/35/25 불변"이 깨짐(reviewer 2026-06-11 발견).
+_MISSION_CAP = 35.0
+
+# ── 교차검증 임계값(설계 판단) ──
+_SLEEP_BAD = 40.0  # 수면점수 이 미만이면 '나쁨'
+_SLEEP_GOOD = 70.0  # 이 이상이면 '좋음'
+_EMOTION_GOOD = 6.0  # 감정 평균(1~10) 이 이상이면 '좋음'
+_EMOTION_BAD = 4.0  # 이 이하면 '나쁨'
+
+# ── 활동량 정규화 기준(설계 판단) ──
+_STEPS_TARGET = 8000  # 이 걸음수를 100점으로
+
+
+def sleep_to_score(
+    sleep_score: Optional[float] = None, sleep_hours: Optional[float] = None
+) -> Optional[float]:
+    """수면 → 0~100 점수.
+
+    - 삼성헬스 **수면점수(0~100)** 가 있으면 그대로 사용(가장 정확).
+    - 없고 **수면시간** 만 있으면 7~9시간을 최적(100)으로 보고 환산.
+    - 둘 다 없으면 None(graceful — 점수에서 수면 항 0 취급).
+    """
+    if sleep_score is not None:
+        return max(0.0, min(100.0, float(sleep_score)))
+    if sleep_hours is not None:
+        h = float(sleep_hours)
+        # 8h 중심, ±1h 까지 만점, 멀어질수록 감점(설계 판단).
+        if 7.0 <= h <= 9.0:
+            return 100.0
+        gap = 7.0 - h if h < 7.0 else h - 9.0
+        return max(0.0, 100.0 - gap * 20.0)  # 1시간 벗어날 때마다 20점
+    return None
+
+
+def activity_to_score(steps: Optional[int] = None) -> Optional[float]:
+    """활동(걸음수) → 0~100 점수. 목표 걸음(_STEPS_TARGET)을 100으로 선형 환산.
+
+    ⚠️ steps=0 은 "실제 0걸음"으로 보고 0점 반환(None 아님). "측정 안 됨"은 None 으로
+    구분해 호출부에서 넘긴다(어댑터 `total_steps` 는 레코드 없으면 None).
+    """
+    if steps is None:
+        return None
+    return max(0.0, min(100.0, float(steps) / _STEPS_TARGET * 100.0))
+
+
+def blend_recovery_score(
+    emotion_avg: float,
+    completed_missions: int = 0,
+    consistency_pct: Optional[float] = None,
+    activity_score: Optional[float] = None,
+) -> int:
+    """회복점수(0~100) — 감정·미션·꾸준함(핵심 40/35/25) + **활동** 가중합.
+
+    ⚠️ 수면은 점수 항이 아니다(결정문서 §2 "수면 회복점수서 제외"). 수면 신호는
+    `cross_check`·리포트 표시에서만 쓴다.
+
+    옵션 A(재정규화): 빠진 **외부 신호(활동)** 는 분모에서 제외한다 → 데이터가 없다고
+    점수가 깎이지 않는다. 핵심 항(감정·미션·꾸준함)은 항상 분모에 포함. 각 항은
+    0~1 비율 × 가중치, 최종 = 포함된 가중치 합으로 나눠 0~100 정규화.
+    """
+    parts: list[tuple[float, float]] = [
+        (max(0.0, min(1.0, (emotion_avg - 1) / 9)), W_EMOTION),
+        (min(float(completed_missions), _MISSION_CAP) / _MISSION_CAP, W_MISSION),
+        (max(0.0, min(1.0, (consistency_pct or 0.0) / 100)), W_CONSISTENCY),
+    ]
+    if activity_score is not None:  # 외부 신호 — 있을 때만 분모에 포함
+        parts.append((max(0.0, min(1.0, activity_score / 100)), W_ACTIVITY))
+    total_w = sum(w for _, w in parts)
+    if total_w == 0:
+        return 0
+    return max(0, min(100, round(sum(frac * w for frac, w in parts) / total_w * 100)))
+
+
+def cross_check(
+    sleep_score: Optional[float], emotion_avg: Optional[float]
+) -> dict[str, Any]:
+    """객관(수면) vs 주관(감정) 교차검증. 점수는 안 깎고 **플래그+근거문장**만.
+
+    "센서는 나쁘다는데 본인은 괜찮다더라"(주관·객관 불일치) 케이스를 잡는다.
+
+    ⚠️ `note` 는 **사별 보호자에게 그대로 보일 수 있는** 문장(evidence 합류)이라
+    비낙인·따뜻한 톤으로 쓴다. 임상 해석("숨기는 중"·"추가 관찰")은 `status` 코드로만
+    남기고(수의사 콘솔용), 보호자 노출 문장에는 넣지 않는다.
+    """
+    if sleep_score is None or emotion_avg is None:
+        return {"status": "unknown", "mismatch": False, "note": None}
+
+    sleep_bad = sleep_score < _SLEEP_BAD
+    sleep_good = sleep_score >= _SLEEP_GOOD
+    emo_good = emotion_avg >= _EMOTION_GOOD
+    emo_bad = emotion_avg <= _EMOTION_BAD
+
+    if sleep_bad and emo_good:
+        return {
+            "status": "mismatch_high_risk",
+            "mismatch": True,
+            "note": "센서 기록상 수면이 부족했던 것 같아요. 오늘은 자신을 조금 더 아껴주세요.",
+        }
+    if sleep_good and emo_bad:
+        return {
+            "status": "mismatch",
+            "mismatch": True,
+            "note": "수면은 괜찮았는데 마음이 무거운 날이네요. 그런 날도 있어요, 천천히 가요.",
+        }
+    if sleep_bad and emo_bad:
+        return {
+            "status": "agree_low",
+            "mismatch": False,
+            "note": "몸도 마음도 지친 날이에요. 무리하지 말고 충분히 쉬어주세요.",
+        }
+    return {"status": "agree_ok", "mismatch": False, "note": None}
+
+
+def health_signal(
+    emotion_avg: float,
+    *,
+    completed_missions: int = 0,
+    consistency_pct: Optional[float] = None,
+    sleep_score: Optional[float] = None,
+    sleep_hours: Optional[float] = None,
+    steps: Optional[int] = None,
+) -> dict[str, Any]:
+    """수면·활동까지 묶은 회복 신호 한 방. 화면/발표에 그대로 쓸 dict 반환."""
+    s_score = sleep_to_score(sleep_score, sleep_hours)
+    a_score = activity_to_score(steps)
+    # 수면은 점수서 제외(결정문서 §2) → blend엔 활동만. 수면은 cross_check·표시로만.
+    index = blend_recovery_score(
+        emotion_avg, completed_missions, consistency_pct, a_score
+    )
+    check = cross_check(s_score, emotion_avg)
+
+    evidence: list[str] = [f"감정 평균 {round(emotion_avg, 1)}/10"]
+    if s_score is not None:
+        evidence.append(f"수면점수 {round(s_score)}/100 (참고 — 점수 미반영)")
+    if a_score is not None:
+        evidence.append(f"활동 {round(a_score)}/100 ({steps}걸음)")
+    if check["note"]:
+        evidence.append(f"⚠ {check['note']}")
+
+    return {
+        "recovery_index": index,
+        "sleep_score": s_score,
+        "activity_score": a_score,
+        "cross_check": check,
+        "evidence": evidence,
+    }
+
+
+if __name__ == "__main__":
+    import sys
+
+    # Windows 기본 콘솔(cp949)에서 ⚠ 등 유니코드 출력 크래시 방지.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
+    # 더미 시나리오 — 삼성헬스 없이 로직 검증.
+    scenarios = [
+        (
+            "좋음 일치",
+            dict(
+                emotion_avg=8,
+                completed_missions=10,
+                consistency_pct=80,
+                sleep_score=82,
+                steps=9000,
+            ),
+        ),
+        (
+            "나쁨 일치",
+            dict(
+                emotion_avg=3,
+                completed_missions=2,
+                consistency_pct=30,
+                sleep_score=35,
+                steps=1500,
+            ),
+        ),
+        (
+            "센서 나쁨·본인 좋다",
+            dict(
+                emotion_avg=8,
+                completed_missions=5,
+                consistency_pct=50,
+                sleep_score=32,
+                steps=2000,
+            ),
+        ),
+        ("수면시간만 있음", dict(emotion_avg=6, sleep_hours=5.5, steps=6000)),
+    ]
+    for name, kw in scenarios:
+        out = health_signal(**kw)
+        print(f"\n[{name}]  회복점수 = {out['recovery_index']}")
+        print(f"  교차검증: {out['cross_check']['status']}")
+        for e in out["evidence"]:
+            print(f"  - {e}")
