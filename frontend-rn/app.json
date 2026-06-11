@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "rainbowbridge",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
     "runtimeVersion": {
       "policy": "sdkVersion"
     },
