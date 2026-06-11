@@ -69,13 +69,14 @@ export default function AppLayout() {
       <Stack.Screen name="timeline"      options={{ title: '추모 타임라인' }} />
       <Stack.Screen name="report"        options={{ title: '회복 리포트' }} />
       <Stack.Screen name="emotion"       options={{ title: '감정 체크인' }} />
-      <Stack.Screen name="message"       options={{ title: '추모 메시지', headerShown: false }} />
+      <Stack.Screen name="message"       options={{ title: '추모 메시지', headerShown: false, contentStyle: { backgroundColor: '#12101A' } }} />
       <Stack.Screen name="tts"           options={{ title: 'TTS 음성' }} />
       <Stack.Screen name="bucketlist"    options={{ title: '버킷리스트' }} />
       <Stack.Screen name="diary"         options={{ title: '일기 & 추억 메모' }} />
       <Stack.Screen name="memories"      options={{ title: '추억 입력' }} />
       <Stack.Screen name="memories_diary" options={{ title: '추억 메모' }} />
       <Stack.Screen name="photos"        options={{ title: '사진 기록' }} />
+      <Stack.Screen name="media"         options={{ title: '추모 영상 만들기' }} />
     </Stack>
   );
 }

@@ -25,6 +25,23 @@ def test_insufficient_data():
     assert out["recovery_index"] is None
 
 
+def test_insufficient_surfaces_health_input_not_discarded():
+    # 체크인 부족이라 점수는 못 내지만, 들어온 수면·걸음은 버리지 않고 노출(조용히 None 금지).
+    out = compute_recovery_signal(_checkins([4, 5]), sleep_score=80, steps=8000)
+    assert out["signal"] == SIGNAL_INSUFFICIENT
+    assert out["recovery_index"] is None
+    assert out["sleep_score"] == 80
+    assert out["activity_score"] == 100
+    assert any("점수엔 반영하지 못해요" in e for e in out["evidence"])
+
+
+def test_insufficient_no_health_keeps_none():
+    # 헬스 미제공이면 기존대로 None(하위호환).
+    out = compute_recovery_signal(_checkins([4, 5]))
+    assert out["sleep_score"] is None
+    assert out["activity_score"] is None
+
+
 def test_recovering_when_scores_rise():
     out = compute_recovery_signal(_checkins([3, 3, 4, 7, 8, 8]))
     assert out["signal"] == SIGNAL_RECOVERING
@@ -40,6 +57,40 @@ def test_at_risk_when_scores_fall():
 def test_stable_when_flat():
     out = compute_recovery_signal(_checkins([5, 5, 5, 5, 5]))
     assert out["signal"] == SIGNAL_STABLE
+
+
+def test_health_args_omitted_is_backward_compatible():
+    # 수면·활동 미제공 시 — 기존과 동일 동작(하위호환). 새 키는 None.
+    rows = _checkins([5, 6, 6, 7, 7, 8])
+    base = compute_recovery_signal(rows)
+    explicit_none = compute_recovery_signal(rows, sleep_score=None, steps=None)
+    assert base["recovery_index"] == explicit_none["recovery_index"]
+    assert base["sleep_score"] is None
+    assert base["activity_score"] is None
+    assert base["cross_check"] is None
+    assert base["scoring"] == "base"  # 어느 산식 썼는지 명시
+
+
+def test_sleep_flagged_but_not_scored():
+    # 결정문서 §2: 수면은 점수서 제외 → 교차검증·표시만. 수면만으론 산식 안 바뀜(base).
+    rows = _checkins([8, 8, 8, 8, 8, 8])
+    out = compute_recovery_signal(rows, sleep_score=30)
+    assert out["sleep_score"] == 30
+    assert out["cross_check"]["mismatch"] is True  # 수면 나쁨 vs 기분 좋음
+    assert out["scoring"] == "base"  # 수면만으론 blend 전환 안 됨
+    assert any("점수 미반영" in e for e in out["evidence"])
+    # 수면이 점수에 안 들어갔는지: 수면 없이 낸 점수와 동일해야 함.
+    base = compute_recovery_signal(rows)
+    assert out["recovery_index"] == base["recovery_index"]
+
+
+def test_activity_switches_to_blend():
+    # 활동(걸음)은 점수 항 → scoring blend 로 전환.
+    rows = _checkins([8, 8, 8, 8, 8, 8])
+    out = compute_recovery_signal(rows, steps=8000)
+    assert out["activity_score"] == 100
+    assert out["scoring"] == "blend"
+    assert any("활동" in e for e in out["evidence"])
 
 
 def test_unordered_checkins_sorted_by_date():
@@ -59,7 +110,8 @@ def test_unordered_checkins_sorted_by_date():
 def test_mission_completion_rate():
     missions = [{"done": True}, {"done": True}, {"done": False}, {"done": False}]
     out = compute_recovery_signal(_checkins([5, 5, 6, 6]), missions)
-    assert out["mission_completion_rate"] == 2
+    # 완료율(0~1) — 키 이름·report 최상위와 일치. 완료개수는 evidence 문장으로 노출.
+    assert out["mission_completion_rate"] == 0.5  # 2/4 완료
     assert any("미션 누적 2개 완료" in e for e in out["evidence"])
 
 
@@ -78,7 +130,9 @@ def test_graceful_without_engagement_or_missions():
     assert out["signal"] in {SIGNAL_RECOVERING, SIGNAL_STABLE}
     assert out["access_trend"] is None
     assert out["play_trend"] is None
-    assert out["mission_completion_rate"] == 0
+    assert (
+        out["mission_completion_rate"] is None
+    )  # 미션 없음 → None(개수 0 아님, 최상위 관례와 일치)
 
 
 # --- 회복 점수 (RECOVERY_GATE 40/35/25) ------------------------------------- #

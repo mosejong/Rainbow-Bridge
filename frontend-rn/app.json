@@ -8,6 +8,9 @@
     "scheme": "rainbowbridge",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
@@ -15,14 +18,20 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.rainbowbridge.app"
+      "bundleIdentifier": "com.rainbowbridge.app",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#F2EEE5"
       },
-      "package": "com.rainbowbridge.app"
+      "package": "com.rainbowbridge.app",
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",
@@ -32,7 +41,8 @@
     "plugins": [
       "expo-router",
       "expo-av",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-font"
     ]
   }
 }

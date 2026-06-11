@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -62,6 +62,25 @@ function ResourceCard({ resource }) {
       {resource.contact && <Text style={styles.rcContact}>{resource.contact}</Text>}
       {resource.description && <Text style={styles.rcDesc}>{resource.description}</Text>}
     </View>
+  );
+}
+
+function MsgStar({ top, left, size, duration, delay }) {
+  const opacity = useRef(new Animated.Value(0.1)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: duration / 2, delay, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.1, duration: duration / 2, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  return (
+    <Animated.View style={{
+      position: 'absolute', top, left,
+      width: size, height: size, borderRadius: size / 2,
+      backgroundColor: '#fff', opacity, zIndex: 1,
+    }} />
   );
 }
 
@@ -195,6 +214,31 @@ export default function MessageScreen() {
   const timersRef = useRef([]);
   const parsedRef = useRef([]);
 
+  // ✉️ 흔들림 애니메이션
+  const paperFloat = useRef(new Animated.Value(0)).current;
+  const stars = useRef(
+    Array.from({ length: 16 }).map(() => ({
+      top: Math.random() * 600 + 20,
+      left: Math.random() * 340 + 10,
+      size: Math.random() * 1.8 + 1.2,
+      duration: (Math.random() * 2 + 2.2) * 1000,
+      delay: Math.random() * 3000,
+    }))
+  ).current;
+
+  // ✉️ 편지 단계에서만 흔들림 루프
+  useEffect(() => {
+    if (phase !== 'letter') return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(paperFloat, { toValue: 1, duration: 1300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(paperFloat, { toValue: 0, duration: 1300, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [phase]);
+
   useEffect(() => {
     AsyncStorage.getItem('pet_name').then((v) => v && setPetName(v));
     AsyncStorage.getItem('pet_species').then((v) => v && setPetSpecies(v));
@@ -237,10 +281,12 @@ export default function MessageScreen() {
     const petNameLocal = await AsyncStorage.getItem('pet_name') || '소중한 친구';
     try {
       const existing = await getLatestMessage(petId);
+      if (!existing || existing.source === 'unavailable') throw new Error('unavailable');
       await saveMessage(existing);
     } catch {
       try {
         const data = await generateMessage({ pet_id: petId });
+        if (!data || data.source === 'unavailable') throw new Error('unavailable');
         await saveMessage(data);
       } catch {
         await saveMessage(makeFallbackMessage(petNameLocal));
@@ -263,18 +309,18 @@ export default function MessageScreen() {
     Animated.sequence([
       Animated.parallel([
         Animated.timing(flapAnim, {
-          toValue: 1, duration: 450, useNativeDriver: true,
+          toValue: 1, duration: 450, easing: Easing.inOut(Easing.ease), useNativeDriver: true,
         }),
       ]),
       Animated.parallel([
         Animated.timing(envelopeAnim, {
-          toValue: 0, duration: 350, useNativeDriver: true,
+          toValue: 0, duration: 350, easing: Easing.in(Easing.ease), useNativeDriver: true,
         }),
         Animated.timing(paperOpacity, {
-          toValue: 1, duration: 500, useNativeDriver: true,
+          toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true,
         }),
         Animated.timing(paperTranslate, {
-          toValue: 0, duration: 500, useNativeDriver: true,
+          toValue: 0, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true,
         }),
       ]),
     ]).start(() => {
@@ -370,15 +416,20 @@ export default function MessageScreen() {
     // TTS — 콘텐츠 등장 직후 재생
     try {
       const petId = await AsyncStorage.getItem('pet_id');
+      if (!petId || !msgData.content) throw new Error('pet_id 또는 content 없음');
       const ttsData = await generateTts({ pet_id: petId, text: msgData.content, tone: msgData.tone || 'narration' });
-      if (ttsData?.audio_url) {
-        const { sound } = await Audio.Sound.createAsync({ uri: ttsData.audio_url }, { volume: 1.0 });
-        ttsRef.current = sound;
-        timersRef.current.push(setTimeout(() => {
-          sound.playAsync().catch(() => {});
-        }, 700));
-      }
-    } catch {}
+      if (!ttsData?.audio_url) throw new Error('audio_url 없음');
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: ttsData.audio_url },
+        { volume: 1.0, shouldPlay: false },
+      );
+      ttsRef.current = sound;
+      timersRef.current.push(setTimeout(() => {
+        sound.playAsync().catch((e) => console.warn('[TTS] playAsync 실패:', e));
+      }, 800));
+    } catch (e) {
+      console.warn('[TTS] 생성 실패:', e?.message ?? e);
+    }
 
     timersRef.current.push(setTimeout(() => setDone(true), 1200));
   }
@@ -426,7 +477,7 @@ export default function MessageScreen() {
   }
 
   return (
-    <LinearGradient colors={['#12101A', '#1E1528', '#12101A']} style={styles.safe}>
+    <LinearGradient colors={['#2a3445', '#2c2742', '#241e32']} style={styles.safe}>
       <SafeAreaView style={styles.safeInner}>
         {/* 헤더 — 홈·로그아웃 */}
         <View style={styles.msgHeader}>
@@ -439,6 +490,9 @@ export default function MessageScreen() {
         </View>
 
         <SafetyModal isOpen={safetyOpen} onClose={() => setSafetyOpen(false)} />
+
+        {/* 배경 별 반짝임 */}
+        {stars.map((st, i) => <MsgStar key={i} {...st} />)}
 
         {/* 영상 풀스크린 모달 */}
         <Modal
@@ -511,7 +565,7 @@ export default function MessageScreen() {
 
               {/* 봉투 바디 */}
               <View style={styles.envelopeBody}>
-                <Text style={styles.envelopeSeal}>{icon}</Text>
+                <Text style={styles.envelopeSeal}>✉️</Text>
                 <Text style={[styles.envelopeName, isFirst && styles.envelopeNameFirst]}>
                   · {petName} ·
                 </Text>
@@ -535,17 +589,31 @@ export default function MessageScreen() {
 
         {/* ── 편지지 단계 ── */}
         {(phase === 'envelope' || phase === 'letter') && message && message.source !== 'unavailable' && (
-          <Animated.View style={[
-            styles.paperWrap,
-            { opacity: paperOpacity, transform: [{ translateY: paperTranslate }] },
-            phase === 'envelope' && styles.paperHidden,
-          ]}>
+          <Animated.View
+            pointerEvents={phase === 'envelope' ? 'none' : 'auto'}
+            style={[
+              styles.paperWrap,
+              { opacity: paperOpacity, transform: [{ translateY: paperTranslate }] },
+              phase === 'envelope' && styles.paperHidden,
+            ]}>
             <ScrollView
               style={styles.paperScroll}
               contentContainerStyle={styles.paperScrollContent}
               showsVerticalScrollIndicator={false}
               scrollEnabled={phase === 'letter'}
             >
+              {/* 편지 단계 — ✉️ 제목 헤더 */}
+              {phase === 'letter' && (
+                <View style={styles.letterTitleWrap}>
+                  <Animated.Text style={[styles.letterIcon, { transform: [
+                    { translateY: paperFloat.interpolate({ inputRange: [0, 1], outputRange: [-3, 3] }) },
+                    { rotate: paperFloat.interpolate({ inputRange: [0, 1], outputRange: ['-3deg', '3deg'] }) },
+                  ]}]}>✉️</Animated.Text>
+                  <Text style={styles.letterTitle}>{petName}가 편지를 남겼어요</Text>
+                  <Text style={styles.letterSub}>{petName}가 하고 싶었던 말을 전해드릴게요.</Text>
+                </View>
+              )}
+
               <View style={[styles.paper, isFirst && styles.paperFirst]}>
                 {/* 편지지 상단 */}
                 <View style={styles.paperHeader}>
@@ -576,6 +644,11 @@ export default function MessageScreen() {
                   </ScrollView>
                 </Animated.View>
 
+                {/* 편지 끝 AI 안내 */}
+                <View style={styles.aiFooter}>
+                  <View style={styles.aiFooterLine} />
+                  <Text style={styles.aiFooterText}>AI가 생성한 메시지입니다</Text>
+                </View>
               </View>
 
               {/* 윤리 고지 — 편지 카드 밖, 버튼 위에 분리 배치 */}
@@ -927,6 +1000,15 @@ const styles = StyleSheet.create({
 
   error: { color: COLORS.danger, fontSize: 14, textAlign: 'center', marginBottom: 16 },
   unavailable: { fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 20, lineHeight: 24 },
+  aiFooter: { alignItems: 'center', marginTop: 20, gap: 8 },
+  aiFooterLine: { width: 48, height: 1, backgroundColor: '#D4C0A0' },
+  aiFooterText: { fontSize: 11, color: '#B0987A', textAlign: 'center', letterSpacing: 0.5 },
+
+  // ── 편지 단계 제목 헤더 ──
+  letterTitleWrap: { alignItems: 'center', paddingBottom: 4, gap: 4 },
+  letterIcon: { fontSize: 40, textAlign: 'center', marginBottom: 6 },
+  letterTitle: { fontSize: 21, fontWeight: '700', color: '#fff', textAlign: 'center' },
+  letterSub: { fontSize: 12.5, color: 'rgba(255,255,255,0.55)', textAlign: 'center', lineHeight: 20 },
 });
 
 // ── 게이트 화면 전용 스타일 ──

@@ -48,8 +48,8 @@ _FORBIDDEN: tuple[str, ...] = ("부활", "환생", "되살", "다시살아")
 _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
     "gentle": (
         ("물 한 잔 마시기", "천천히 물 한 잔을 마시며 숨을 고르세요.", "rest"),
-        ("창문 열고 바람 쐬기", "잠시 창문을 열어 바깥 공기를 느껴보세요.", "rest"),
-        ("창가에서 볕 쬐기", "창가에 앉아 잠시 들어오는 볕을 느껴보세요.", "rest"),
+        ("가슴에 손 얹고 다독이기", "가슴에 손을 얹고 천천히 숨을 쉬며 스스로 다독여보세요.", "rest"),
+        ("창가에 앉아 있기", "창가에 앉아 잠시 바깥을 바라보며 숨을 고르세요.", "rest"),
         ("좋아하는 음악 한 곡", "마음이 편해지는 음악을 한 곡 들어보세요.", "rest"),
         (
             "사진 한 장 바라보기",
@@ -76,9 +76,9 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
             "rest",
         ),
         (
-            "아이 사진에 인사",
-            "아이 사진을 보며 마음속으로 짧게 인사를 건네보세요.",
-            "remembrance",
+            "나에게 한마디 건네기",
+            "'오늘도 잘 견뎠어'처럼 건네고 싶은 말을 나에게 들려주세요.",
+            "rest",
         ),
         (
             "좋아했던 물건 바라보기",
@@ -86,8 +86,8 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
             "remembrance",
         ),
         (
-            "가족에게 짧은 메시지",
-            "가족에게 이모티콘 하나라도 보내보세요.",
+            "가까운 사람에게 짧은 메시지",
+            "가까운 사람에게 이모티콘 하나라도 보내보세요.",
             "connection",
         ),
         ("오늘 먹은 것 적기", "오늘 무엇을 먹었는지 한 줄로 적어보세요.", "record"),
@@ -106,10 +106,10 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
             "마음에 닿는 짧은 글 하나를 천천히 읽어보세요.",
             "rest",
         ),
-        ("창밖 하늘 보기", "창밖 하늘을 1분만 올려다보세요.", "rest"),
+        ("창밖 바라보기", "창밖 바깥 풍경을 1분만 바라보세요.", "rest"),
     ),
     "small": (
-        ("집 앞 5분 산책", "집 근처를 5분만 천천히 걸어보세요.", "activity"),
+        ("집 앞 5분 산책", "날씨가 괜찮으면 집 근처를 5분만 천천히 걸어보세요.", "activity"),
         ("간단한 집안일 하나", "설거지나 빨래 하나만 가볍게 해보세요.", "activity"),
         ("추억 한 가지 적기", "함께한 기억 하나를 짧게 적어보세요.", "record"),
         (
@@ -119,7 +119,7 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
         ),
         (
             "안부 한 줄 보내기",
-            "가족이나 친구에게 짧게 안부를 전해보세요.",
+            "편한 사람에게 짧게 안부를 전해보세요.",
             "connection",
         ),
         (
@@ -142,7 +142,7 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
         (
             "음악 들으며 정리",
             "음악을 들으며 책상 한쪽을 가볍게 정리해보세요.",
-            "activity",
+            "rest",
         ),
         (
             "오늘 본 좋은 것 적기",
@@ -150,8 +150,8 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
             "record",
         ),
         (
-            "가족과 짧은 통화",
-            "가족에게 전화해 5분만 이야기를 나눠보세요.",
+            "편한 사람과 짧은 통화",
+            "편한 사람에게 전화해 5분만 이야기를 나눠보세요.",
             "connection",
         ),
         (
@@ -159,7 +159,7 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
             "간단히 만들 수 있는 좋아하는 간식을 차려보세요.",
             "rest",
         ),
-        ("동네 한 바퀴 걷기", "동네를 천천히 한 바퀴 걸어보세요.", "activity"),
+        ("해준 것 하나 적기", "그날의 아이에게 해준 것 하나를 떠올려 적어보세요.", "record"),
         (
             "함께 듣던 노래 듣기",
             "아이와 함께 듣던, 또는 떠오르는 노래를 들어보세요.",
@@ -167,7 +167,7 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
         ),
         ("오늘 기분 색으로", "지금 기분을 색 하나로 떠올려 적어보세요.", "record"),
         ("편한 영상 하나 보기", "마음이 편해지는 영상 하나를 짧게 보세요.", "rest"),
-        ("화분에 물 주기", "집에 있는 식물에 물을 한 번 주어보세요.", "activity"),
+        ("화분에 물 주기", "집에 있는 식물에 물을 한 번 주어보세요.", "rest"),
         (
             "가까운 사람에게 사진",
             "아이 사진 한 장을 가까운 사람에게 보내보세요.",
@@ -175,7 +175,7 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
         ),
     ),
     "active": (
-        ("산책길 다시 걷기", "둘이 함께 걷던 길을 천천히 걸어보세요.", "remembrance"),
+        ("산책길 다시 걷기", "날씨 좋은 날, 둘이 함께 걷던 길을 천천히 걸어보세요.", "remembrance"),
         ("친구와 짧은 통화", "편한 사람과 잠시 통화해보세요.", "connection"),
         ("추억 사진 정리하기", "함께한 사진을 모아 앨범으로 정리해보세요.", "record"),
         ("가까운 곳 다녀오기", "가보고 싶던 가까운 곳에 잠시 들러보세요.", "activity"),
@@ -185,19 +185,19 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
             "activity",
         ),
         ("편지 한 통 쓰기", "반려동물에게 전하고 싶은 말을 편지로 써보세요.", "record"),
-        ("새로운 산책 코스", "한 번도 안 가본 길을 30분 걸어보세요.", "activity"),
+        ("새로운 산책 코스", "날씨 좋은 날, 한 번도 안 가본 길을 천천히 걸어보세요.", "activity"),
         ("맛있는 식사 차리기", "스스로를 위해 좋아하는 음식을 차려보세요.", "activity"),
-        ("가족 모임 제안하기", "가족이나 친한 친구와 만남을 잡아보세요.", "connection"),
+        ("가까운 사람과 만남 잡기", "가까운 사람과 만날 약속을 잡아보세요.", "connection"),
         ("추억 영상 만들기", "함께한 사진들로 짧은 슬라이드를 만들어보세요.", "record"),
         (
-            "좋아하는 카페 가기",
-            "가보고 싶던 카페에 들러 잠시 시간을 보내보세요.",
-            "activity",
+            "나에게 위로 편지",
+            "힘들 때, 친구를 위로하듯 나에게 짧은 편지를 써보세요.",
+            "record",
         ),
-        ("친구와 식사 약속", "편한 친구와 만나 식사 약속을 잡아보세요.", "connection"),
+        ("편한 사람과 식사 약속", "편한 사람과 만나 식사 약속을 잡아보세요.", "connection"),
         (
             "아이 이야기 들려주기",
-            "가까운 사람에게 아이와의 추억을 이야기해보세요.",
+            "이야기를 들어줄 만한 사람에게 아이와의 추억을 들려주세요.",
             "connection",
         ),
         ("좋아하는 공간 가보기", "가보고 싶던 전시나 공간에 다녀와보세요.", "activity"),
@@ -207,9 +207,9 @@ _RULE_POOL: dict[str, tuple[tuple[str, str, str], ...]] = {
             "activity",
         ),
         (
-            "동물 나눔 알아보기",
-            "유기동물 봉사처럼 마음이 가는 나눔을 찾아보세요.",
-            "connection",
+            "좋았던 하루 떠올리기",
+            "아이와 함께한 좋았던 하루를 천천히 떠올려보세요.",
+            "remembrance",
         ),
         (
             "기억하는 날 표시하기",
@@ -273,6 +273,33 @@ def _apply_trend(difficulty: str, recovery_trend: Optional[str]) -> str:
         idx = min(idx + 1, len(_DIFFICULTY_ORDER) - 1)
     elif key == "주의필요":
         idx = max(idx - 1, 0)
+    return _DIFFICULTY_ORDER[idx]
+
+
+def _apply_sleep(difficulty: str, sleep_quality: Optional[int]) -> str:
+    """수면 질(5단계)로 난이도를 한 단계 보정합니다.
+
+    수면은 회복 점수엔 **안 들어가고**(논문 근거는 '연관'까지), '그날 컨디션' 신호로
+    추천 미션 난이도만 살짝 조절합니다([[project_sleep_signal_decision]]).
+    5단계 입력을 3축약(dead-zone)으로 매핑:
+
+    - 1·2 (나쁨) → 한 단계 내림(더 작고 부담 없는 미션)
+    - 3   (보통) → 그대로
+    - 4·5 (좋음) → 한 단계 올림(조금 더 활동적인 미션)
+
+    None 이거나 난이도 키가 이상하면 그대로 둡니다(graceful). 저장·표시는 5단계 그대로
+    쓰고, 여기(미션 난이도)에서만 3축약합니다.
+    """
+    if sleep_quality is None:
+        return difficulty
+    try:
+        idx = _DIFFICULTY_ORDER.index(difficulty)
+    except ValueError:
+        return difficulty
+    if sleep_quality <= 2:
+        idx = max(idx - 1, 0)
+    elif sleep_quality >= 4:
+        idx = min(idx + 1, len(_DIFFICULTY_ORDER) - 1)
     return _DIFFICULTY_ORDER[idx]
 
 
@@ -361,6 +388,7 @@ def recommend(
     history: Optional[list[str]] = None,
     *,
     recovery_trend: Optional[str] = None,
+    sleep_quality: Optional[int] = None,
     generate: Optional[GenerateFn] = None,
     count: int = 3,
 ) -> list[dict]:
@@ -373,6 +401,8 @@ def recommend(
         recovery_trend: 최근 7회 추이(백엔드 get_recovery 의 trend: "회복 중"·"유지 중"
             ·"주의 필요"·"데이터 없음"). 점수 기반 난이도를 한 단계 보정합니다.
             없으면 점수만 사용(graceful).
+        sleep_quality: 그날 수면 질(5단계, 1~5). 난이도를 3축약으로 보정(1·2↓ / 3 유지
+            / 4·5↑). 회복 점수엔 안 들어감 — 미션 강도 조절용. None 이면 미적용.
         generate: LLM 호출 함수(provider.generate). None 이면 규칙 기반만 사용.
         count: 추천 개수.
 
@@ -380,7 +410,9 @@ def recommend(
         ``[{title, description, category, rationale}, ...]`` (최대 count 개).
         ``rationale`` 은 카테고리별 회복 근거 한 줄(prompts.mission.CATEGORY_RATIONALE).
     """
-    difficulty = _apply_trend(_difficulty(emotion_score), recovery_trend)
+    difficulty = _apply_sleep(
+        _apply_trend(_difficulty(emotion_score), recovery_trend), sleep_quality
+    )
     recent: set[str] = set(history or [])
     score = emotion_score if emotion_score is not None else 5
 

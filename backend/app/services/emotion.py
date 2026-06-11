@@ -1,3 +1,5 @@
+from ai.evaluation.recovery_signal import recovery_score
+from app.services.mission import get_completed_mission_count
 from datetime import datetime, timezone
 import app.core.ai_path  # noqa: F401  프로젝트 루트를 sys.path에 추가
 from ai.llm.safety import assess_crisis
@@ -78,8 +80,14 @@ async def get_recovery(pet_id: str) -> RecoveryResponse:
     else:
         trend = "유지 중"
 
-    # 회복률: 평균 점수를 10점 만점 기준 %
-    recovery_pct = round(avg * 10)
+        # 회복 점수 — 감정40 / 미션누적35(sticky) / 꾸준함25
+    completed_missions = await get_completed_mission_count(pet_id)
+    consistency_pct = round(len(records) / 14 * 100)
+    recovery_pct = recovery_score(
+        emotion_avg=avg,
+        completed_missions=completed_missions,
+        consistency_pct=consistency_pct,
+    )
 
     # 창(window) 내 최대 risk — 직전 L3 위기가 있었으면 여전히 잠금 유지
     max_risk = max(r.get("risk_level", 0) for r in records)
