@@ -78,7 +78,7 @@ class _VoiceParams:
 _TONE_MAP: Final[dict[TtsTone, _VoiceParams]] = {
     TtsTone.FEMALE: _VoiceParams(speaking_rate=0.92, pitch=-1.0),
     TtsTone.MALE: _VoiceParams(speaking_rate=0.93, pitch=-2.0),
-    TtsTone.NARRATION: _VoiceParams(speaking_rate=0.90, pitch=-0.5),
+    TtsTone.NARRATION: _VoiceParams(speaking_rate=0.90, pitch=0.5),
 }
 
 # 톤별 고정 목소리
