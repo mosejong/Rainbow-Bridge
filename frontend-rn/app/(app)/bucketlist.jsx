@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, KeyboardAvoidingView, Platform, StatusBar,
+  StyleSheet, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -54,6 +54,7 @@ export default function BucketlistScreen() {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   }
 
+  const scrollRef = useRef(null);
   const doneCount = items.filter(i => i.checked).length;
   const inputPlaceholder = PLACEHOLDERS[items.length % PLACEHOLDERS.length];
 
@@ -65,12 +66,15 @@ export default function BucketlistScreen() {
     >
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
         >
           <ScrollView
+            ref={scrollRef}
             contentContainerStyle={styles.scroll}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={true}
+            onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
           >
             <Text style={styles.logo}>🌈 레인보우 브릿지</Text>
             <Text style={styles.subtitle}>소중한 가족을 기억해요</Text>
@@ -134,6 +138,7 @@ export default function BucketlistScreen() {
               placeholderTextColor="#A89FBC"
               onSubmitEditing={addItem}
               returnKeyType="done"
+              onFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300)}
             />
             <TouchableOpacity style={styles.addBtn} onPress={addItem} activeOpacity={0.8}>
               <LinearGradient

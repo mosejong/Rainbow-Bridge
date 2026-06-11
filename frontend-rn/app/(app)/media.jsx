@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Text, StyleSheet, ScrollView, TouchableOpacity, Image, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Video, ResizeMode } from 'expo-av';
@@ -109,9 +109,12 @@ export default function MediaScreen() {
         </Text>
 
         <Card style={styles.uploadCard}>
-          <TouchableOpacity onPress={pickImage} style={styles.uploadArea} activeOpacity={0.8}>
+          <TouchableOpacity onPress={pickImage} style={[styles.uploadArea, imageUri && styles.uploadAreaSelected]} activeOpacity={0.8}>
             {imageUri ? (
-              <Text style={styles.uploadDone}>✅ 사진이 선택되었어요{'\n'}다시 선택하려면 탭하세요</Text>
+              <View style={styles.previewWrap}>
+                <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="cover" />
+                <Text style={styles.uploadDone}>다시 선택하려면 탭하세요</Text>
+              </View>
             ) : (
               <>
                 <Text style={styles.uploadIcon}>📷</Text>
@@ -171,10 +174,13 @@ const styles = StyleSheet.create({
     borderRadius: 14, paddingVertical: 36, alignItems: 'center', gap: 8,
     backgroundColor: '#F5FBFA',
   },
+  uploadAreaSelected: { paddingVertical: 16 },
   uploadIcon: { fontSize: 40 },
   uploadLabel: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
   uploadHint: { fontSize: 13, color: COLORS.textSecondary },
-  uploadDone: { fontSize: 14, color: COLORS.textPrimary, textAlign: 'center', lineHeight: 22 },
+  uploadDone: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', marginTop: 8 },
+  previewWrap: { width: '100%', alignItems: 'center', gap: 8 },
+  previewImage: { width: '100%', height: 220, borderRadius: 10 },
   error: { color: COLORS.danger, fontSize: 13, textAlign: 'center', marginBottom: 12 },
   btn: { marginBottom: 16 },
   resultCard: { backgroundColor: '#F0F8F6', borderColor: COLORS.secondary, borderWidth: 1 },
