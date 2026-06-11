@@ -70,7 +70,11 @@ async def generate_tts(data: TtsCreate) -> TtsResponse:
         try:
             result = await _qwen3_remote(data, tts_server_url)
         except (httpx.HTTPError, OSError) as exc:
-            logger.warning("Qwen3 remote TTS 실패(%s) → Google 폴백 사용", exc)
+            logger.warning(
+                "Qwen3 remote TTS 실패(status=%s, detail=%s) → Google 폴백 사용",
+                getattr(exc, "response", None) and exc.response.status_code,
+                exc,
+            )
             result = await _google_tts_fallback(data)
     else:
         result = await _google_tts_fallback(data)
