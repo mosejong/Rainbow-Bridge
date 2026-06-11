@@ -67,19 +67,20 @@ _VOICES: dict[str, dict] = {
     ),
     # audio (12).wav — woman, 성인 여성 차분 (#5) — 3인칭 나레이션 전용
     # pace="slow"도 빨라서 atempo=0.9 후처리로 10% 감속 (PROTOTYPE_VOICE.md #5 참고)
+    # bright/clarity 낮추고 고역 EQ 추가 → 밝기 감소 + 숨소리 억제
     "woman": dict(
         gender="woman",
         age="child",   # build_instruct에서 성인 앵커 사용 (age 무시됨)
         warmth=1,
-        bright=1,
+        bright=0,
         pitch="low",
         emotion="calm",
-        clarity=1,
+        clarity=0,
         pace="slow",
-        temp=0.5,
+        temp=0.3,
         seed=21424,
-        eq_db=0,
-        eq_fc=0,
+        eq_db=9.0,
+        eq_fc=4000.0,
         atempo=0.9,
     ),
 }
