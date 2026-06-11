@@ -63,8 +63,8 @@ _CHARS_PER_SEC: Final[float] = 5.0
 class TtsTone(str, Enum):
     """TTS 톤 — 반려동물 성별·화자 기준 3종."""
 
-    FEMALE = "female"      # 1인칭 여성
-    MALE = "male"          # 1인칭 남성
+    FEMALE = "female"  # 1인칭 여성
+    MALE = "male"  # 1인칭 남성
     NARRATION = "narration"  # 3인칭 나레이션 (여성)
 
 
@@ -83,8 +83,8 @@ _TONE_MAP: Final[dict[TtsTone, _VoiceParams]] = {
 
 # 톤별 고정 목소리
 _TONE_VOICE: Final[dict[TtsTone, str]] = {
-    TtsTone.FEMALE: "female_a",    # ko-KR-Neural2-A
-    TtsTone.MALE: "male_c",        # ko-KR-Neural2-C
+    TtsTone.FEMALE: "female_a",  # ko-KR-Neural2-A
+    TtsTone.MALE: "male_c",  # ko-KR-Neural2-C
     TtsTone.NARRATION: "female_b",  # ko-KR-Neural2-B — 1인칭 여성과 구별
 }
 
