@@ -105,32 +105,23 @@ def _consistency(
 
 def recovery_score(
     emotion_avg: float,
-    completion_rate: Optional[float] = None,
+    completed_missions: int = 0,
     consistency_pct: Optional[float] = None,
 ) -> int:
-    """회복 점수(0~100) — RECOVERY_GATE 설계 **감정40 / 미션완료35 / 꾸준함25**.
-
-    순수 함수. **risk_level≥2 중단**과 **기록 없을 때 50점 중립**은 게이트 호출부
-    (모세종 `services/recovery.py`)가 감싸 처리합니다. 여기선 점수 산식만 책임집니다.
+    """회복 점수(0~100) — 감정40 / 미션누적35(sticky, 천장35) / 꾸준함25.
 
     Args:
-        emotion_avg: 감정 점수 평균(1~10). `(avg-1)/9*100` 로 0~100 정규화(범위 밖은 클램프).
-        completion_rate: 미션 완료율(0~1). **미션 추천 전이면 None → 감정 평균만으로 계산**
-            (RECOVERY_GATE 초기값 규칙). 미션 받고 전부 실패(0.0)면 35%가 0 → 점수 낮아짐.
-            ⚠️ 그래서 None(미추천)이 0.0(전부 실패)보다 높을 수 있음 — 의도된 순서(데이터
-            없음=중립 vs 낮은 참여). 사용자가 미션 추천 여부를 못 고르므로 악용 불가.
-        consistency_pct: 체크인 꾸준함(0~100, `_consistency`). 없으면 0 취급. None 분기에선 미사용.
-
-    Returns:
-        0~100 정수 회복 점수(클램프 보장).
+        emotion_avg: 감정 점수 평균(1~10). `(avg-1)/9*100` 로 0~100 정규화.
+        completed_missions: 완료한 미션 수(누적, sticky — 안 떨어짐). 천장 35점.
+        consistency_pct: 체크인한 날 / 14 × 25. 없으면 0 취급.
     """
     e = max(0.0, min(100.0, (emotion_avg - 1) / 9 * 100))
-    if completion_rate is None:
-        # 미션 추천 전: RECOVERY_GATE 설계대로 '감정 평균만으로' 계산.
-        return max(0, min(100, round(e)))
-    c = max(0.0, min(100.0, consistency_pct if consistency_pct is not None else 0.0))
-    m = max(0.0, min(100.0, completion_rate * 100))
-    return max(0, min(100, round(0.40 * e + 0.35 * m + 0.25 * c)))
+    m = min(35.0, float(completed_missions))  # 1미션=1점, 천장 35
+    c = max(
+        0.0,
+        min(25.0, (consistency_pct / 100 * 25) if consistency_pct is not None else 0.0),
+    )
+    return max(0, min(100, round(0.40 * e + m + c)))
 
 
 def compute_recovery_signal(
@@ -190,18 +181,19 @@ def compute_recovery_signal(
     else:
         emo_dir, signal = "유지", SIGNAL_STABLE
 
-    completion = _completion_rate(missions)
+    completed_missions = sum(1 for m in missions if m.get("done"))
     consistency = _consistency(rows, as_of)
     access = _freq_trend(access_counts)
     play = _freq_trend(play_counts)
 
     # 회복 점수 — RECOVERY_GATE 40/35/25 산식(감정·미션완료·꾸준함). 단순 avg*10 대체.
-    index = recovery_score(avg, completion, consistency)
-
+    index = recovery_score(avg, completed_missions, consistency)
     # 근거 문장 — 발표/화면에 그대로 노출.
     evidence = [f"감정 점수 {round(older, 1)} → {round(recent, 1)} ({emo_dir})"]
-    if completion is not None:
-        evidence.append(f"미션 완료율 {round(completion * 100)}%")
+    if completed_missions > 0:
+        evidence.append(
+            f"미션 누적 {completed_missions}개 완료 ({min(completed_missions, 35)}점)"
+        )
     if consistency is not None:
         evidence.append(
             f"체크인 꾸준함 {round(consistency)}% (최근 {_CONSISTENCY_WINDOW}일)"
@@ -233,7 +225,7 @@ def compute_recovery_signal(
             "delta": round(delta, 1),
             "direction": emo_dir,
         },
-        "mission_completion_rate": completion,
+        "mission_completion_rate": completed_missions,
         "checkin_consistency": consistency,
         "access_trend": access,
         "play_trend": play,
