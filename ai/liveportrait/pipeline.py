@@ -193,10 +193,48 @@ def generate_gif(
     """사진 → 추모 GIF 생성 (d9 잔잔한 드라이빙). 결과 GIF 경로 반환.
 
     치료적 목적의 첫 번째 LP 단계 — 입모양 없이 눈·고개 움직임만.
+    remote 모드에서는 GPU 서버의 /generate/gif 엔드포인트 호출 (d9 고정).
     """
+    source_image = Path(source_image)
+    output_dir = Path(output_dir)
+
+    if MODE == "remote":
+        return _generate_remote_gif(source_image, output_dir)
+
     mp4_path = generate_video(source_image, driving_video=DRIVING_GIF, output_dir=output_dir)
-    gif_path = video_to_gif(mp4_path, output_path=Path(output_dir) / f"{Path(source_image).stem}.gif")
+    gif_path = video_to_gif(mp4_path, output_path=output_dir / f"{source_image.stem}.gif")
     return gif_path
+
+
+def _generate_remote_gif(source: Path, output_dir: Path) -> Path:
+    """터널된 GPU 서비스의 /generate/gif 호출 — d9 드라이빙으로 GIF 생성."""
+    if not REMOTE_URL:
+        raise LivePortraitError(
+            "LIVEPORTRAIT_REMOTE_URL 이 설정되지 않았습니다 (remote 모드)."
+        )
+    try:
+        import requests
+    except ImportError as e:
+        raise LivePortraitError("requests 패키지 미설치: pip install requests") from e
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    out_path = output_dir / f"{source.stem}--remote.gif"
+
+    try:
+        with open(source, "rb") as img:
+            resp = requests.post(
+                f"{REMOTE_URL}/generate/gif",
+                files={"source": (source.name, img, "application/octet-stream")},
+                timeout=300,
+            )
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        raise LivePortraitError(f"원격 GPU 서비스(gif) 호출 실패: {e}") from e
+
+    if not resp.content:
+        raise LivePortraitError("원격 GPU 서비스가 빈 응답을 반환했습니다.")
+    out_path.write_bytes(resp.content)
+    return out_path
 
 
 def generate_video(
