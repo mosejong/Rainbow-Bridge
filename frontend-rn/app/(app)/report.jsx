@@ -1,25 +1,100 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Polyline, Circle } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Card from '../../components/Card';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { getReport } from '../../api/report';
 import { mockReport } from '../../api/mock';
 import { COLORS } from '../../constants/colors';
+import { doLogout } from './_layout';
+
+const CHART_W = Dimensions.get('window').width - 80;
+const CHART_H = 90;
+
+function formatLabel(raw) {
+  if (!raw) return '';
+  if (raw.includes('T')) return raw.slice(5, 10).replace('-', '/');
+  return raw;
+}
+
+function ComboChart({ data, valueKey, color, maxOverride }) {
+  if (!data || data.length === 0) return null;
+  const values = data.map((d) => d[valueKey] ?? 0);
+  const maxVal = maxOverride ?? Math.max(...values, 1);
+  const barW = Math.floor((CHART_W - (data.length - 1) * 4) / data.length);
+
+  const points = data.map((d, i) => {
+    const x = i * (barW + 4) + barW / 2;
+    const y = CHART_H - Math.max(4, ((d[valueKey] ?? 0) / maxVal) * (CHART_H - 12));
+    return { x, y };
+  });
+  const polyPoints = points.map((p) => `${p.x},${p.y}`).join(' ');
+
+  return (
+    <View style={{ height: CHART_H + 28 }}>
+      {/* 막대 그래프 */}
+      <View style={[StyleSheet.absoluteFill, { flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: CHART_H }]}>
+        {data.map((d, i) => (
+          <View key={i} style={{ width: barW, alignItems: 'center', justifyContent: 'flex-end', height: CHART_H }}>
+            <View
+              style={{
+                width: barW * 0.65,
+                height: Math.max(4, ((d[valueKey] ?? 0) / maxVal) * (CHART_H - 12)),
+                backgroundColor: color + '55',
+                borderRadius: 3,
+              }}
+            />
+          </View>
+        ))}
+      </View>
+
+      {/* 꺾은선 그래프 (SVG) */}
+      <Svg width={CHART_W} height={CHART_H} style={StyleSheet.absoluteFill}>
+        <Polyline
+          points={polyPoints}
+          fill="none"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        {points.map((p, i) => (
+          <Circle key={i} cx={p.x} cy={p.y} r={3} fill={color} />
+        ))}
+      </Svg>
+
+      {/* X축 레이블 */}
+      <View style={{ flexDirection: 'row', gap: 4, marginTop: CHART_H + 4 }}>
+        {data.map((d, i) => (
+          <View key={i} style={{ width: barW, alignItems: 'center' }}>
+            <Text style={styles.barLabel}>{formatLabel(d.created_at)}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
 
 export default function ReportScreen() {
+  const router = useRouter();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [petName, setPetName] = useState('소중한 친구');
 
-  useEffect(() => {
-    AsyncStorage.getItem('pet_name').then((v) => v && setPetName(v));
-    fetchReport();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      AsyncStorage.getItem('pet_name').then((v) => v && setPetName(v));
+      fetchReport();
+    }, [])
+  );
 
   async function fetchReport() {
+    setLoading(true);
     try {
       const petId = await AsyncStorage.getItem('pet_id');
       const data = await getReport(petId);
@@ -42,11 +117,28 @@ export default function ReportScreen() {
   }
 
   const trend = report?.emotion_trend ?? [];
-  const maxScore = Math.max(...trend.map((t) => t.score), 10);
+  const sleepTrend = report?.sleep_trend ?? [];
+  const missionRate = Math.round((report?.mission_completion_rate ?? 0) * 100);
 
   return (
     <LinearGradient colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={styles.gradient}>
     <SafeAreaView style={styles.safe}>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn} activeOpacity={0.7}>
+          <Text style={styles.headerBack}>← 뒤로</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>회복 리포트</Text>
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => router.replace('/(app)/home')} style={styles.headerBtn} activeOpacity={0.7}>
+            <Text style={styles.headerHome}>홈</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={doLogout} style={styles.headerBtn} activeOpacity={0.7}>
+            <Text style={styles.headerLogout}>로그아웃</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>회복 리포트</Text>
         <Text style={styles.subtitle}>{petName}를 기억하며 함께한 시간이에요.</Text>
@@ -72,23 +164,12 @@ export default function ReportScreen() {
           </View>
         </Card>
 
-        {/* 감정 변화 그래프 (간이 막대) */}
+        {/* 감정 변화 — 막대 + 꺾은선 */}
         {trend.length > 0 ? (
           <Card style={styles.card}>
             <Text style={styles.sectionTitle}>💭 감정 변화</Text>
-            <View style={styles.chartRow}>
-              {trend.map((t, i) => (
-                <View key={i} style={styles.bar}>
-                  <View
-                    style={[
-                      styles.barFill,
-                      { height: Math.max(4, (t.score / maxScore) * 80) },
-                    ]}
-                  />
-                  <Text style={styles.barLabel}>{t.created_at}</Text>
-                </View>
-              ))}
-            </View>
+            <Text style={styles.chartHint}>막대: 강도  ·  선: 추세</Text>
+            <ComboChart data={trend} valueKey="score" color="#C4A8D8" maxOverride={10} />
           </Card>
         ) : null}
 
@@ -97,17 +178,21 @@ export default function ReportScreen() {
           <Text style={styles.sectionTitle}>🌱 미션 완료율</Text>
           <View style={styles.completionRow}>
             <View style={styles.completionTrack}>
-              <View
-                style={[
-                  styles.completionFill,
-                  { width: `${Math.round((report?.mission_completion_rate ?? 0) * 100)}%` },
-                ]}
-              />
+              <View style={[styles.completionFill, { width: `${missionRate}%` }]} />
             </View>
-            <Text style={styles.completionPct}>
-              {Math.round((report?.mission_completion_rate ?? 0) * 100)}%
-            </Text>
+            <Text style={styles.completionPct}>{missionRate}%</Text>
           </View>
+        </Card>
+
+        {/* 수면 변화 — 막대 + 꺾은선 */}
+        <Card style={styles.card}>
+          <Text style={styles.sectionTitle}>🌙 수면 변화</Text>
+          <Text style={styles.chartHint}>막대: 수면 시간  ·  선: 추세 (단위: 시간)</Text>
+          {sleepTrend.length > 0 ? (
+            <ComboChart data={sleepTrend} valueKey="hours" color="#7BC8A4" maxOverride={12} />
+          ) : (
+            <Text style={styles.noData}>수면 데이터가 아직 없어요.</Text>
+          )}
         </Card>
       </ScrollView>
     </SafeAreaView>
@@ -118,25 +203,36 @@ export default function ReportScreen() {
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
   safe: { flex: 1 },
-  scroll: { paddingHorizontal: 20, paddingVertical: 32 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5DCF0',
+  },
+  headerBtn: { paddingHorizontal: 4, paddingVertical: 4 },
+  headerBack: { fontSize: 14, color: '#8A7D9E' },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: '#5B4E75' },
+  headerRight: { flexDirection: 'row', gap: 12 },
+  headerHome: { fontSize: 14, fontWeight: '700', color: '#C4A8D8' },
+  headerLogout: { fontSize: 14, fontWeight: '700', color: '#E57373' },
+  scroll: { paddingHorizontal: 20, paddingVertical: 24 },
   title: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', marginBottom: 6 },
   subtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 28 },
   card: { marginBottom: 16 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 16 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 6 },
+  chartHint: { fontSize: 11, color: COLORS.textSecondary, marginBottom: 14 },
   statsRow: { flexDirection: 'row', alignItems: 'center' },
   statBox: { flex: 1, alignItems: 'center' },
   statNumber: { fontSize: 26, fontWeight: '700', color: COLORS.cta },
   statLabel: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
   statDivider: { width: 1, height: 40, backgroundColor: COLORS.divider },
-  chartRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, height: 100, paddingTop: 10 },
-  bar: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
-  barFill: {
-    width: '70%', backgroundColor: COLORS.secondary,
-    borderRadius: 3, minHeight: 4,
-  },
-  barLabel: { fontSize: 9, color: COLORS.textLight, marginTop: 4, textAlign: 'center' },
+  barLabel: { fontSize: 9, color: COLORS.textLight, textAlign: 'center' },
   completionRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   completionTrack: { flex: 1, height: 10, backgroundColor: '#EDE5DF', borderRadius: 5, overflow: 'hidden' },
   completionFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 5 },
   completionPct: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary, minWidth: 40, textAlign: 'right' },
+  noData: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 20 },
 });

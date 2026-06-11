@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,8 +10,12 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import { getMissions, completeMission } from '../../api/missions';
 import { mockMissions } from '../../api/mock';
 import { COLORS } from '../../constants/colors';
+import { doLogout } from './_layout';
+
+const COMPLETED_KEY = 'mission_completed_ids';
 
 export default function MissionScreen() {
+  const router = useRouter();
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(null);
@@ -25,25 +30,46 @@ export default function MissionScreen() {
     try {
       const petId = await AsyncStorage.getItem('pet_id');
       const data = await getMissions({ pet_id: petId });
-      setMissions(data);
+
+      // 저장된 완료 ID 불러와서 병합 (오프라인 체크 유지)
+      const saved = await AsyncStorage.getItem(COMPLETED_KEY);
+      const savedIds = saved ? JSON.parse(saved) : [];
+      const merged = data.map((m) => ({
+        ...m,
+        completed: m.completed || savedIds.includes(m.id),
+      }));
+      setMissions(merged);
     } catch {
-      setMissions(mockMissions);
+      const saved = await AsyncStorage.getItem(COMPLETED_KEY);
+      const savedIds = saved ? JSON.parse(saved) : [];
+      const merged = mockMissions.map((m) => ({
+        ...m,
+        completed: m.completed || savedIds.includes(m.id),
+      }));
+      setMissions(merged);
     } finally {
       setLoading(false);
     }
+  }
+
+  async function persistCompleted(updatedList) {
+    const ids = updatedList.filter((m) => m.completed).map((m) => m.id);
+    await AsyncStorage.setItem(COMPLETED_KEY, JSON.stringify(ids));
   }
 
   async function handleComplete(missionId) {
     setCompleting(missionId);
     try {
       const updated = await completeMission({ mission_id: missionId });
-      setMissions((prev) =>
-        prev.map((m) => (m.id === missionId ? updated : m))
-      );
+      const next = missions.map((m) => (m.id === missionId ? updated : m));
+      setMissions(next);
+      await persistCompleted(next);
     } catch {
-      setMissions((prev) =>
-        prev.map((m) => (m.id === missionId ? { ...m, completed: true } : m))
+      const next = missions.map((m) =>
+        m.id === missionId ? { ...m, completed: true } : m
       );
+      setMissions(next);
+      await persistCompleted(next);
     } finally {
       setCompleting(null);
     }
@@ -64,8 +90,23 @@ export default function MissionScreen() {
   return (
     <LinearGradient colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={styles.gradient}>
     <SafeAreaView style={styles.safe}>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn} activeOpacity={0.7}>
+          <Text style={styles.headerBack}>← 뒤로</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>오늘의 미션</Text>
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => router.replace('/(app)/home')} style={styles.headerBtn} activeOpacity={0.7}>
+            <Text style={styles.headerHome}>홈</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={doLogout} style={styles.headerBtn} activeOpacity={0.7}>
+            <Text style={styles.headerLogout}>로그아웃</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>오늘의 미션</Text>
         <Text style={styles.subtitle}>{petName}와(과) 함께했던 일상으로 천천히 돌아가요.</Text>
 
         {/* 완료율 바 */}
@@ -128,8 +169,23 @@ export default function MissionScreen() {
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
   safe: { flex: 1 },
-  scroll: { paddingHorizontal: 20, paddingVertical: 32 },
-  title: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', marginBottom: 6 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5DCF0',
+    backgroundColor: 'transparent',
+  },
+  headerBtn: { paddingHorizontal: 4, paddingVertical: 4 },
+  headerBack: { fontSize: 14, color: '#8A7D9E' },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: '#5B4E75' },
+  headerRight: { flexDirection: 'row', gap: 12 },
+  headerHome: { fontSize: 14, fontWeight: '700', color: '#C4A8D8' },
+  headerLogout: { fontSize: 14, fontWeight: '700', color: '#E57373' },
+  scroll: { paddingHorizontal: 20, paddingVertical: 24 },
   subtitle: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 24 },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 },
   progressTrack: { flex: 1, height: 6, backgroundColor: '#EDE5DF', borderRadius: 3, overflow: 'hidden' },
