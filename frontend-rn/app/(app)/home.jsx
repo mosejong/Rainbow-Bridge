@@ -251,7 +251,7 @@ export default function HomeScreen() {
               <Text style={styles.petSub}>
                 {memorialMode && daysAfter !== null
                   ? `이별 후 D+${daysAfter}`
-                  : `${guardianTitle || callerName || '보호자'}님과 함께하는 공간이에요`}
+                  : `${callerName || '보호자'}님과 함께하는 공간이에요`}
               </Text>
             </View>
           </View>
