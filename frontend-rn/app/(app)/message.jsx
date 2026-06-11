@@ -237,10 +237,12 @@ export default function MessageScreen() {
     const petNameLocal = await AsyncStorage.getItem('pet_name') || '소중한 친구';
     try {
       const existing = await getLatestMessage(petId);
+      if (!existing || existing.source === 'unavailable') throw new Error('unavailable');
       await saveMessage(existing);
     } catch {
       try {
         const data = await generateMessage({ pet_id: petId });
+        if (!data || data.source === 'unavailable') throw new Error('unavailable');
         await saveMessage(data);
       } catch {
         await saveMessage(makeFallbackMessage(petNameLocal));
@@ -535,11 +537,13 @@ export default function MessageScreen() {
 
         {/* ── 편지지 단계 ── */}
         {(phase === 'envelope' || phase === 'letter') && message && message.source !== 'unavailable' && (
-          <Animated.View style={[
-            styles.paperWrap,
-            { opacity: paperOpacity, transform: [{ translateY: paperTranslate }] },
-            phase === 'envelope' && styles.paperHidden,
-          ]}>
+          <Animated.View
+            pointerEvents={phase === 'envelope' ? 'none' : 'auto'}
+            style={[
+              styles.paperWrap,
+              { opacity: paperOpacity, transform: [{ translateY: paperTranslate }] },
+              phase === 'envelope' && styles.paperHidden,
+            ]}>
             <ScrollView
               style={styles.paperScroll}
               contentContainerStyle={styles.paperScrollContent}
