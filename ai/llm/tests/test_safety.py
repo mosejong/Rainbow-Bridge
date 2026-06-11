@@ -113,3 +113,34 @@ def test_assess_crisis_returns_crisis_result():
     result = assess_crisis("봄이 곁으로 따라가고 싶어요")
     assert result.risk_level >= RiskLevel.L2_WARNING
     assert result.as_dict()["hotline"] == CRISIS_HOTLINE
+
+
+# --- 자책감(guilt) → 조합 상향 + 공감 톤 플래그 --------------------------- #
+
+
+def test_guilt_with_passive_escalates_to_l2():
+    """자책감 + 수동적 위기신호(L1) → L2 로 상향(조합 룰), 1393 필수."""
+    result = detect_crisis("사는 의미가 없어요. 다 내 탓이에요.")
+    assert result.guilt is True
+    assert result.risk_level == RiskLevel.L2_WARNING
+    assert result.hotline_required is True
+
+
+def test_guilt_alone_stays_l0():
+    """자책감만(일반 애도)으론 등급을 올리지 않는다 — 오탐 방지(공감 톤은 memorial 몫)."""
+    result = detect_crisis("미안해 봄아. 내가 더 잘했어야 했는데, 다 내 탓이야.")
+    assert result.guilt is True
+    assert result.risk_level == RiskLevel.L0_NORMAL
+
+
+def test_guilt_does_not_lower_means_l3():
+    """means(구체적 수단)는 자책감과 무관하게 L3 유지(상한 L2가 끌어내리지 않음)."""
+    result = detect_crisis("다 내 탓이야. 유서도 써뒀어.")
+    assert result.risk_level == RiskLevel.L3_EMERGENCY
+
+
+def test_normal_grief_has_no_guilt_flag():
+    """자책 표현이 없는 일반 애도는 guilt=False, L0."""
+    result = detect_crisis("봄이가 무지개다리를 건넜어요. 너무 보고 싶어요.")
+    assert result.guilt is False
+    assert result.risk_level == RiskLevel.L0_NORMAL

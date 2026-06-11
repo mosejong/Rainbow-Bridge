@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum, IntEnum
 from typing import Final, Optional, Protocol
 
@@ -463,6 +463,26 @@ _INTENSITY_MARKERS: Final[tuple[str, ...]] = (
     "더이상",
 )
 
+# 자책감(죄책감) 표현 — 강도형만(공백 제거 기준). "미안해" 같은 약한·보편적
+# 표현은 일부러 제외(펫로스 애도에 흔해 오탐). 회복 점수엔 안 들어가고, ⑦ 위기
+# 판단(조합 상향)과 ③ 메시지 공감 톤에만 씁니다.
+#   - 단독으론 등급을 올리지 않음(_apply_guilt_escalation). 본인 위기 신호(L1)와
+#     겹칠 때만 한 단계 ↑. 근거: 자책감은 약한 위험인자(OR≈1.31)지 방아쇠 아님.
+_GUILT_MARKERS: Final[tuple[str, ...]] = (
+    "내탓",  # 내 탓이야 / 다 내 탓 / 내 탓인 것 같아
+    "내잘못",  # 내 잘못이야
+    "내책임",  # 내 책임이야
+    "나때문에",  # 나 때문에 (떠났다/아팠다)
+    "내가죽인",
+    "내가죽게",
+    "내가죽였",
+    "지켜주지못",  # 지켜주지 못해서
+    "지켜주지도못",
+    "구해주지못",
+    "내가더잘했어야",
+    "나를용서",  # 나를 용서할 수 없어
+)
+
 _WHITESPACE_RE: Final[re.Pattern[str]] = re.compile(r"\s+")
 
 
@@ -485,6 +505,7 @@ class CrisisResult:
     reason: str
     score: int = 0  # 맥락 보정 후 위험 점수(투명성·튜닝용)
     context_markers: list[str] = field(default_factory=list)  # 감지된 시제·강도 표시어
+    guilt: bool = False  # 자책감 표현 감지 여부(공감 톤·조합 상향용, 점수 무관)
 
     def as_dict(self) -> dict:
         return {
@@ -499,6 +520,7 @@ class CrisisResult:
             "hotline": CRISIS_HOTLINE if self.hotline_required else None,
             "score": self.score,
             "context_markers": self.context_markers,
+            "guilt": self.guilt,
             "reason": self.reason,
         }
 
@@ -525,6 +547,25 @@ def _score_to_level(score: int, has_means: bool) -> RiskLevel:
     return RiskLevel.L0_NORMAL
 
 
+def _apply_guilt_escalation(result: CrisisResult) -> CrisisResult:
+    """자책감 + 본인 위기 신호(L1) → 한 단계 상향(L2). 상한 L2.
+
+    자책감은 약한 위험인자(OR≈1.31)라 **단독으로는 올리지 않습니다**(오탐 방지).
+    본인(self) 위기 신호가 L1 일 때만 증폭합니다. means(L3)·L2 는 그대로, L0(자책감
+    만)도 그대로. memorial 의 '공감 톤'은 등급과 별개로 guilt 플래그로 처리합니다.
+    """
+    if not (result.guilt and result.subject == Subject.SELF):
+        return result
+    if result.risk_level != RiskLevel.L1_CONCERN:
+        return result
+    return replace(
+        result,
+        risk_level=RiskLevel.L2_WARNING,
+        hotline_required=True,
+        reason=result.reason + " / 자책감 동반 → L2 상향",
+    )
+
+
 def detect_crisis(text: str, context: Optional[dict] = None) -> CrisisResult:
     """규칙 레이어(L0) 위기 감지 — 맥락 점수 방식.
 
@@ -547,6 +588,7 @@ def detect_crisis(text: str, context: Optional[dict] = None) -> CrisisResult:
     del context  # 규칙 레이어 미사용 (시그니처 호환 목적)
 
     normalized = _normalize(text)
+    guilt = any(m in normalized for m in _GUILT_MARKERS)
 
     matched: list[CrisisSignal] = []
     for pattern, category, level in _SIGNAL_TABLE:
@@ -573,6 +615,7 @@ def detect_crisis(text: str, context: Optional[dict] = None) -> CrisisResult:
             signals=[],
             hotline_required=False,
             reason=reason,
+            guilt=guilt,
         )
 
     # --- 기본 점수: 매칭된 신호 중 가장 높은 범주 점수 ---
@@ -621,14 +664,17 @@ def detect_crisis(text: str, context: Optional[dict] = None) -> CrisisResult:
     if markers:
         reason += f" / 맥락: {', '.join(markers)}"
 
-    return CrisisResult(
-        risk_level=level,
-        subject=Subject.SELF,
-        signals=matched,
-        hotline_required=level >= HOTLINE_REQUIRED_FROM,
-        reason=reason,
-        score=score,
-        context_markers=markers,
+    return _apply_guilt_escalation(
+        CrisisResult(
+            risk_level=level,
+            subject=Subject.SELF,
+            signals=matched,
+            hotline_required=level >= HOTLINE_REQUIRED_FROM,
+            reason=reason,
+            score=score,
+            context_markers=markers,
+            guilt=guilt,
+        )
     )
 
 
@@ -740,12 +786,15 @@ def assess_crisis(
         f"융합(L0={rule.risk_level.name}, L1={verdict.risk_level.name}) "
         f"→ {fused.name}; L1근거: {verdict.reason}"
     )
-    return CrisisResult(
-        risk_level=fused,
-        subject=subject,
-        signals=rule.signals,
-        hotline_required=fused >= HOTLINE_REQUIRED_FROM,
-        reason=reason,
-        score=rule.score,
-        context_markers=rule.context_markers,
+    return _apply_guilt_escalation(
+        CrisisResult(
+            risk_level=fused,
+            subject=subject,
+            signals=rule.signals,
+            hotline_required=fused >= HOTLINE_REQUIRED_FROM,
+            reason=reason,
+            score=rule.score,
+            context_markers=rule.context_markers,
+            guilt=rule.guilt,
+        )
     )
