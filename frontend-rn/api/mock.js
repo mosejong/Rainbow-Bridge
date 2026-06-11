@@ -49,4 +49,11 @@ export const mockReport = {
   ],
   mission_completion_rate: 0.6,
   revisit: 5,
+  sleep_trend: [
+    { created_at: '06-01', hours: 6.5 },
+    { created_at: '06-02', hours: 5.0 },
+    { created_at: '06-03', hours: 7.0 },
+    { created_at: '06-04', hours: 6.0 },
+    { created_at: '06-05', hours: 7.5 },
+  ],
 };

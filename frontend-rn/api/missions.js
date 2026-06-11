@@ -6,6 +6,6 @@ export async function getMissions({ pet_id }) {
 }
 
 export async function completeMission({ mission_id }) {
-  const res = await api.patch(`/api/v1/missions/${mission_id}/complete`);
+  const res = await api.patch(`/api/v1/missions/${mission_id}/complete`, { completed: true });
   return res.data;
 }

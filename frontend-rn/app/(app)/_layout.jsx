@@ -12,7 +12,7 @@ export async function doLogout() {
       'pet_guardian_title', 'pet_gender', 'pet_start_date',
     ]);
   } catch {}
-  router.replace('/');
+  router.replace('/(auth)/login');
 }
 
 function HomeButton() {
