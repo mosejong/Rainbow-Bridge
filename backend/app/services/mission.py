@@ -142,7 +142,7 @@ async def get_mission_completed_days(pet_id: str, days: int = 14) -> int:
     )
     from datetime import timedelta
 
-    since = since - timedelta(days=days)
+    since = since - timedelta(days=days - 1)
 
     cursor = _collection().find(
         {
