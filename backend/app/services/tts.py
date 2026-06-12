@@ -129,7 +129,9 @@ async def _google_tts_fallback(data: TtsCreate) -> TtsResponse:
         filename = f"{data.pet_id}_{tone.value}_{abs(hash(data.text)) % 10_000_000}.mp3"
         result = await asyncio.to_thread(synthesize, data.text, tone, filename=filename)
     except (ImportError, DefaultCredentialsError):
-        logger.warning("Google TTS 불가(ImportError 또는 GCP 인증 없음) → gTTS 폴백 사용")
+        logger.warning(
+            "Google TTS 불가(ImportError 또는 GCP 인증 없음) → gTTS 폴백 사용"
+        )
         result = await asyncio.to_thread(_gtts_fallback, data.text, filename)
 
     return TtsResponse(
