@@ -94,6 +94,21 @@
 
 ---
 
+## 2026-06-12 (Day 12)
+
+| 이름 | 한 일 (요약) | 상세 |
+|------|------------|------|
+| 모세종 | TTS 무음 버그·LP GIF 비동기 job·Docker healthcheck·서버 안정화 | [→](members/모세종.md) |
+| 김윤한 | — | [→](members/김윤한.md) |
+| 반소람 | LP GIF 세마포어 타임아웃 조정·Cloudflare Tunnel 교체 | [→](members/반소람.md) |
+| 정환주 | TTS Cloudflare Tunnel 교체·Qwen3 API 검토 | [→](members/정환주.md) |
+| 민경이 | Expo SDK 54 업그레이드·추모영상 자동생성 연결·온보딩 디자인 머지 | [→](members/민경이.md) |
+| 장민수 | 온보딩 라우팅·UI 개선·윤리 동의 체크박스 추가, 사진 자동선택 파이프라인 분석 | [→](members/장민수.md#2026-06-12-day-12) |
+
+**팀 전체:** 주요 버그 전량 수정 완료(PR #244~#254). ngrok → Cloudflare Tunnel 전환. 사진 자동선택 → 추모영상 파이프라인 프론트 연결 완료.
+
+---
+
 ## 2026-06-01 (Day 1)
 
 | 이름 | 한 일 (요약) | 상세 |
