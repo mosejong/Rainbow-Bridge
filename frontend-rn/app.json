@@ -29,7 +29,11 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#F2EEE5"
       },
-      "package": "com.rainbowbridge.app"
+      "package": "com.rainbowbridge.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -41,6 +45,13 @@
       "expo-av",
       "@react-native-community/datetimepicker",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1ad8b58b-0827-4f57-9c12-ee85be4823d9"
+      }
+    },
+    "owner": "minkyeongyi"
   }
 }
