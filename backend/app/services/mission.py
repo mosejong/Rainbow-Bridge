@@ -133,3 +133,27 @@ async def complete_mission(mission_id: str) -> MissionResponse | None:
 async def get_completed_mission_count(pet_id: str) -> int:
     """pet_id 기준 완료된 미션 누적 수 반환 (sticky 점수용)."""
     return await _collection().count_documents({"pet_id": pet_id, "completed": True})
+
+
+async def get_mission_completed_days(pet_id: str, days: int = 14) -> int:
+    """최근 N일 중 미션을 완료한 날 수 반환 (꾸준함 점수용)."""
+    since = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    from datetime import timedelta
+
+    since = since - timedelta(days=days - 1)
+
+    cursor = _collection().find(
+        {
+            "pet_id": pet_id,
+            "completed": True,
+            "completed_at": {"$gte": since},
+        },
+        {"completed_at": 1},
+    )
+    dates = set()
+    async for doc in cursor:
+        if doc.get("completed_at"):
+            dates.add(doc["completed_at"].date())
+    return len(dates)
