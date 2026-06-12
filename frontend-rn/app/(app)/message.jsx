@@ -252,16 +252,22 @@ export default function MessageScreen() {
     return () => cleanup();
   }, []);
 
-  // 홈/뒤로가기로 화면 벗어날 때 BGM 정지
+  // 화면 벗어날 때 BGM/TTS 완전 해제
   useFocusEffect(
     useCallback(() => {
       return () => {
         if (bgmRef.current) {
           bgmRef.current.stopAsync().catch(() => {});
+          bgmRef.current.unloadAsync().catch(() => {});
+          bgmRef.current = null;
         }
         if (ttsRef.current) {
           ttsRef.current.stopAsync().catch(() => {});
+          ttsRef.current.unloadAsync().catch(() => {});
+          ttsRef.current = null;
         }
+        timersRef.current.forEach(clearTimeout);
+        timersRef.current = [];
       };
     }, [])
   );
@@ -502,7 +508,7 @@ export default function MessageScreen() {
       <SafeAreaView style={styles.safeInner}>
         {/* 헤더 — 홈·로그아웃 */}
         <View style={styles.msgHeader}>
-          <TouchableOpacity onPress={() => router.navigate('/(app)/home')} style={styles.msgHeaderBtn} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => router.replace('/(app)/home')} style={styles.msgHeaderBtn} activeOpacity={0.7}>
             <Text style={styles.msgHeaderHome}>홈</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={doLogout} style={styles.msgHeaderBtn} activeOpacity={0.7}>
