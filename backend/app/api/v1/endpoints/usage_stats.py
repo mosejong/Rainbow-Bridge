@@ -5,7 +5,7 @@ from typing import List
 from pydantic import BaseModel
 
 from app.core.security import get_current_user
-from app.db.mongodb import get_database
+from app.db.mongodb import mongodb
 
 router = APIRouter()
 
@@ -21,7 +21,6 @@ class UsageStatItem(BaseModel):
 async def save_usage_stats(
     items: List[UsageStatItem],
     current_user: dict = Depends(get_current_user),
-    db=Depends(get_database),
 ):
     user_id = str(current_user["_id"])
     operations = []
@@ -46,6 +45,6 @@ async def save_usage_stats(
         )
 
     if operations:
-        await db["usage_stats"].bulk_write(operations)
+        await mongodb.db["usage_stats"].bulk_write(operations)
 
     return {"status": "ok", "saved": len(operations)}
