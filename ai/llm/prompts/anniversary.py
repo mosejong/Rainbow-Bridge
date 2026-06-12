@@ -37,13 +37,21 @@ def _has_jongseong(text: str) -> bool:
     return False
 
 
-def apply_josa(text: str) -> str:
-    """본문 속 '앞글자+이/가' 형태의 조사를 받침 여부에 맞게 교정합니다."""
+def apply_josa(text: str, *, friendly: bool = False) -> str:
+    """본문 속 '앞글자+이/가' 형태의 조사를 받침 여부에 맞게 교정합니다.
+
+    - friendly=True: 받침 있는 이름에 애칭 '이'를 붙여 다정한 호칭으로 만듭니다
+      (푸딩 → 푸딩이가/푸딩이를/푸딩이와). 추모·기념일 메시지용.
+    - friendly=False(기본): 표준 조사만 고릅니다(푸딩 → 푸딩이/푸딩을/푸딩과).
+      장례 안내처럼 격식이 필요한 곳에서 사용합니다.
+    """
 
     def _repl(m: "re.Match[str]") -> str:
         prev, pair = m.group(1), m.group(2)
         jong, no_jong = pair.split("/")
-        return prev + (jong if _has_jongseong(prev) else no_jong)
+        if _has_jongseong(prev):
+            return prev + ("이" + no_jong if friendly else jong)
+        return prev + no_jong
 
     return _JOSA_RE.sub(_repl, text)
 
@@ -160,7 +168,9 @@ def build_messages(
     milestone_label = MILESTONE_LABELS.get(days_since, f"{days_since}일")
     raw_focus = MILESTONE_FOCUS.get(days_since, "")
     milestone_focus = (
-        apply_josa(raw_focus.format(name=name or "반려동물")) if raw_focus else ""
+        apply_josa(raw_focus.format(name=name or "반려동물"), friendly=True)
+        if raw_focus
+        else ""
     )
 
     user_content = _USER_TEMPLATE.format(

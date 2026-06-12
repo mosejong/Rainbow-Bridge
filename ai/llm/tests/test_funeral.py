@@ -187,7 +187,8 @@ def test_note_guidance_still_uses_template():
     )
     assert PET["name"] in result["guidance"]
     assert result["guidance"] == apply_josa(
-        funeral_prompt.STEP_TEMPLATES["immediate"].format(name=PET["name"])
+        funeral_prompt.STEP_TEMPLATES["immediate"].format(name=PET["name"]),
+        friendly=True,
     )
 
 
@@ -196,11 +197,11 @@ def test_template_josa_matches_batchim():
     def fake_generate(prompt, *, max_tokens=350, temperature=0.5, json_mode=False):
         return ""
 
-    # "콩" — 받침 있음 → 과/을/이
+    # "콩" — 받침 있음 → 친근형(애칭 '이' + 와/를/가): 콩이와의 / 콩이를
     g = generate_funeral_guidance("immediate", {"name": "콩", "species": "강아지"},
                                   generate=fake_generate)["guidance"]
-    assert "콩과의" in g and "콩을" in g
-    assert "콩와의" not in g and "콩를" not in g and "콩/" not in g
+    assert "콩이와의" in g and "콩이를" in g
+    assert "콩과의" not in g and "콩를" not in g and "콩/" not in g
 
     # "코코" — 받침 없음 → 와/를/가
     g2 = generate_funeral_guidance("venue", {"name": "코코", "species": "강아지"},

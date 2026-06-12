@@ -163,17 +163,21 @@ def _has_batchim(word: str) -> bool:
     return (ord(last) - 0xAC00) % 28 != 0
 
 
-def _josa(word: str, pair: str) -> str:
+def _josa(word: str, pair: str, *, friendly: bool = False) -> str:
     """word 뒤에 받침 여부로 고른 조사를 붙여 'word+조사'로 반환.
 
     Args:
         word: 조사를 붙일 단어(이름·호칭 등).
         pair: 받침 있을 때+없을 때 조사 2글자. 예) "은는" → 받침○ "은", 받침✕ "는".
             "이가"(이/가), "을를", "과와" 등.
+        friendly: True면 받침 있는 반려동물 이름에 애칭 '이'를 붙여 다정하게
+            ("구름" → "구름이가"/"구름이는"). 보호자 호칭(○○님)엔 쓰지 마세요.
 
-    예) _josa("구름", "은는") → "구름은", _josa("뭉치", "은는") → "뭉치는".
+    예) _josa("구름", "은는") → "구름은", _josa("구름", "은는", friendly=True) → "구름이는".
     """
-    return f"{word}{pair[0] if _has_batchim(word) else pair[1]}"
+    if _has_batchim(word):
+        return f"{word}이{pair[1]}" if friendly else f"{word}{pair[0]}"
+    return f"{word}{pair[1]}"
 
 
 def _format_memories(memories: Optional[list]) -> str:
@@ -288,8 +292,8 @@ def build_user_prompt(
     )
     return template.format(
         name=name,
-        name_subj=_josa(name, "은는"),  # 받침에 맞춰 "구름은"/"뭉치는"
-        name_ga=_josa(name, "이가"),  # 받침에 맞춰 "구름이"/"뭉치가"
+        name_subj=_josa(name, "은는", friendly=True),  # 친근형 "구름이는"/"뭉치는"
+        name_ga=_josa(name, "이가", friendly=True),  # 친근형 "구름이가"/"뭉치가"
         species=species,
         period=period,
         caller=caller,

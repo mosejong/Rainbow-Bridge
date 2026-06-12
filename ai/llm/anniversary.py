@@ -109,7 +109,7 @@ def generate_anniversary_care(
     if not note:
         template = anniversary_prompt.MILESTONE_TEMPLATES.get(days_since, "")
         message = anniversary_prompt.apply_josa(
-            template.format(name=pet.get("name") or "반려동물")
+            template.format(name=pet.get("name") or "반려동물"), friendly=True
         )
         return {
             "message": message,
