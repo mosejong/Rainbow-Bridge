@@ -95,7 +95,7 @@ async def _qwen3_remote(data: TtsCreate, server_url: str) -> TtsResponse:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / filename
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(
             f"{server_url.rstrip('/')}/synthesize",
             json={"text": data.text, "voice": voice},
