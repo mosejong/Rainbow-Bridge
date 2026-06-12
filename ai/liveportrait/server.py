@@ -27,6 +27,8 @@ import tempfile
 import uuid
 from pathlib import Path
 
+import asyncio
+
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from starlette.concurrency import run_in_threadpool
@@ -36,6 +38,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from pipeline import DRIVING_MULTIPLIER, LivePortraitError, generate_gif, generate_video  # noqa: E402
 
 app = FastAPI(title="LivePortrait 추론 서비스", version="1.0")
+
+# GPU 동시 추론 1건 제한 — RTX 3080 단일 GPU, 큐 쌓이면 300s 타임아웃 악순환 방지.
+_gpu_sem = asyncio.Semaphore(1)
 
 # 생성 결과 임시 저장 폴더 (GPU 서버 로컬).
 _WORK_DIR = Path(tempfile.gettempdir()) / "liveportrait_service"
@@ -78,6 +83,12 @@ async def generate(source: UploadFile = File(...)) -> FileResponse:
     src_path.write_bytes(contents)
 
     try:
+        await asyncio.wait_for(_gpu_sem.acquire(), timeout=10.0)
+    except asyncio.TimeoutError:
+        src_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=503, detail="GPU 처리 중입니다. 잠시 후 다시 시도하세요.")
+
+    try:
         # 블로킹(subprocess) 호출 → 스레드풀에서 실행해 이벤트 루프 안 막음.
         result_path = await run_in_threadpool(
             generate_video, src_path, output_dir=str(out_dir)
@@ -87,6 +98,7 @@ async def generate(source: UploadFile = File(...)) -> FileResponse:
     except LivePortraitError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
     finally:
+        _gpu_sem.release()
         src_path.unlink(missing_ok=True)  # 입력 사진은 바로 정리
 
     return FileResponse(
@@ -116,6 +128,12 @@ async def generate_memorial_gif(source: UploadFile = File(...)) -> FileResponse:
     src_path.write_bytes(contents)
 
     try:
+        await asyncio.wait_for(_gpu_sem.acquire(), timeout=10.0)
+    except asyncio.TimeoutError:
+        src_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=503, detail="GPU 처리 중입니다. 잠시 후 다시 시도하세요.")
+
+    try:
         result_path = await run_in_threadpool(
             generate_gif, src_path, str(out_dir)
         )
@@ -124,6 +142,7 @@ async def generate_memorial_gif(source: UploadFile = File(...)) -> FileResponse:
     except LivePortraitError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
     finally:
+        _gpu_sem.release()
         src_path.unlink(missing_ok=True)
 
     return FileResponse(
