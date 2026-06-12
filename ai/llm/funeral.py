@@ -16,6 +16,7 @@ from typing import Optional, Protocol
 
 from ai.rag.retrieve import retrieve as _rag_retrieve
 from .prompts import funeral as funeral_prompt
+from .prompts.anniversary import apply_josa
 from .provider import LLM_UNAVAILABLE_NOTICE, LLMError
 from .safety import (
     CrisisAction,
@@ -88,7 +89,8 @@ def generate_funeral_guidance(
 
     # (2) guidance 는 항상 STEP_TEMPLATES — note 유무와 무관하게 일관된 단계 안내.
     template = funeral_prompt.STEP_TEMPLATES.get(step, "")
-    guidance = template.format(name=pet.get("name", "반려동물"))
+    # 이름 받침에 맞춰 조사("과/와"·"을/를"·"이/가")를 하나로 교정.
+    guidance = apply_josa(template.format(name=pet.get("name", "반려동물")))
 
     # (3) note 없으면 템플릿만 반환 — Gemini 호출 없음.
     if not note:
