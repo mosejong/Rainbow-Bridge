@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import SafetyModal from '../../components/SafetyModal';
+import SafetyModal from '@/components/SafetyModal';
 
 function SectionCard({ emoji, title, accentColor, items }) {
   return (

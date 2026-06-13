@@ -7,8 +7,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { uploadMedia, deleteMedia } from '../../api/media';
-import { COLORS } from '../../constants/colors';
+import { uploadMedia, deleteMedia } from '@/api/media';
+import { COLORS } from '@/constants/colors';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 // 좌우 패딩 40 + 셀 사이 간격 8(4*2) = 48
@@ -92,6 +92,14 @@ export default function PhotosScreen() {
     );
     await persist(final);
     setUploading(false);
+
+    const failCount = uploadResults.filter((r) => r.status === 'rejected').length;
+    if (failCount > 0) {
+      Alert.alert(
+        '업로드 실패',
+        `${failCount}장 업로드에 실패했어요.\n서버 연결 상태를 확인하고 다시 시도해주세요.`
+      );
+    }
   }
 
   function confirmDelete(photo) {

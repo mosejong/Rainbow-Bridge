@@ -7,9 +7,9 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import Card from '../../components/Card';
-import { createPet } from '../../api/pets';
-import { COLORS } from '../../constants/colors';
+import Card from '@/components/Card';
+import { createPet } from '@/api/pets';
+import { COLORS } from '@/constants/colors';
 
 const INITIAL_ENTRIES = [
   { keyword: '', detail: '' },

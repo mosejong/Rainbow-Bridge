@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { fetchRecoveryGate } from '../../utils/recovery';
+import { fetchRecoveryGate } from '@/utils/recovery';
 
 // ── 큰 카드 (메인 기능) ──────────────────────────
 function BigCard({ emoji, title, desc, route, gradient, badge, disabled }) {
