@@ -202,6 +202,7 @@ export default function MessageScreen() {
   const [visibleCount, setVisibleCount] = useState(0);
   const [done, setDone] = useState(false);
   const [welfareExpanded, setWelfareExpanded] = useState(false);
+  const [envelopeOpened, setEnvelopeOpened] = useState(false);
 
   // 봉투 애니메이션
   const flapAnim = useRef(new Animated.Value(0)).current;
@@ -330,6 +331,8 @@ export default function MessageScreen() {
 
   // 봉투 열기 버튼
   function openEnvelope() {
+    if (envelopeOpened) return;
+    setEnvelopeOpened(true);
     Animated.sequence([
       Animated.parallel([
         Animated.timing(flapAnim, {
@@ -356,6 +359,7 @@ export default function MessageScreen() {
   async function regenerate() {
     cleanup();
     setDone(false);
+    setEnvelopeOpened(false);
     setVisibleCount(0);
     setLines([]);
     setWelfareExpanded(false);
@@ -390,6 +394,7 @@ export default function MessageScreen() {
   async function requestFirstPerson() {
     cleanup();
     setDone(false);
+    setEnvelopeOpened(false);
     setVisibleCount(0);
     setLines([]);
     setWelfareExpanded(false);
@@ -440,8 +445,12 @@ export default function MessageScreen() {
     // TTS — 콘텐츠 등장 직후 재생
     try {
       const petId = await AsyncStorage.getItem('pet_id');
+      const petGender = await AsyncStorage.getItem('pet_gender');
       if (!petId || !msgData.content) throw new Error('pet_id 또는 content 없음');
-      const ttsData = await generateTts({ pet_id: petId, text: msgData.content, tone: msgData.tone || 'narration' });
+      const tone = msgData.first_person
+        ? (petGender === '남아' ? 'male' : 'female')
+        : 'narration';
+      const ttsData = await generateTts({ pet_id: petId, text: msgData.content, tone });
       if (!ttsData?.audio_url) throw new Error('audio_url 없음');
       const audioUri = ttsData.audio_url.startsWith('http')
         ? ttsData.audio_url
@@ -473,7 +482,7 @@ export default function MessageScreen() {
   // ── 게이트 화면 렌더링 ──
   if (gateStatus === 'checking') {
     return (
-      <LinearGradient colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={styles.safe}>
+      <LinearGradient key="light" colors={['#F9DFE6', '#EBDDF5', '#F0F4F8', '#E4DAF5']} locations={[0, 0.35, 0.6, 1]} style={styles.safe}>
         <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <LoadingSpinner message="회복 상태를 확인하고 있어요..." />
         </SafeAreaView>
@@ -504,7 +513,7 @@ export default function MessageScreen() {
   }
 
   return (
-    <LinearGradient colors={['#2a3445', '#2c2742', '#241e32']} style={styles.safeGradient}>
+    <LinearGradient key="dark" colors={['#2a3445', '#2c2742', '#241e32']} style={styles.safeGradient}>
       <SafeAreaView style={styles.safeInner}>
         {/* 헤더 — 홈·로그아웃 */}
         <View style={styles.msgHeader}>

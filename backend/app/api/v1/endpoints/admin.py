@@ -3,8 +3,9 @@
 import json
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
+from app.core.config import settings
 from app.db.mongodb import mongodb
 from app.db.redis_client import get_redis
 
@@ -66,7 +67,12 @@ async def seed_gate_open(pet_id: str):
 
     - 14일치 감정 체크인(score=9, risk=0) MongoDB + Redis에 삽입
     - 35개 완료 미션 14일에 분산 삽입
+    - 프로덕션 환경에서는 403 반환
     """
+    if settings.APP_ENV == "production":
+        raise HTTPException(
+            status_code=403, detail="프로덕션 환경에서는 사용할 수 없습니다."
+        )
     today = datetime.now(timezone.utc).replace(
         hour=12, minute=0, second=0, microsecond=0
     )
