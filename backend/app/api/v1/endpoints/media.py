@@ -16,6 +16,7 @@ from app.core.deps import get_current_user
 from app.schemas.media import MediaStatusResponse, MediaUploadResponse
 from app.services.media import (
     create_asset,
+    delete_asset,
     get_asset,
     run_liveportrait,
     run_liveportrait_gif,
@@ -185,6 +186,14 @@ async def download_gif(asset_id: str, user: dict = Depends(get_current_user)):
         media_type="image/gif",
         filename=f"{asset_id}.gif",
     )
+
+
+@router.delete("/{asset_id}", status_code=204)
+async def delete_media(asset_id: str, user: dict = Depends(get_current_user)):
+    """사진 삭제 — MongoDB 문서 + 서버 파일 함께 제거."""
+    deleted = await delete_asset(asset_id, user_id=user["user_id"])
+    if not deleted:
+        raise HTTPException(status_code=404, detail="asset을 찾을 수 없습니다.")
 
 
 @router.post("/{asset_id}/play", status_code=200)

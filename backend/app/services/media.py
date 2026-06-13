@@ -388,6 +388,22 @@ async def select_best_pet_photo(pet_id: str) -> Path | None:
     return pick_best(paths)
 
 
+async def delete_asset(asset_id: str, user_id: int) -> bool:
+    """사진 asset 삭제 — MongoDB 문서 + 서버 물리 파일 함께 제거."""
+    oid = _to_object_id(asset_id)
+    if oid is None:
+        return False
+    doc = await _collection().find_one({"_id": oid, "user_id": user_id})
+    if not doc:
+        return False
+    source_url = doc.get("source_url")
+    if source_url:
+        source_path = Path(source_url.lstrip("/"))
+        source_path.unlink(missing_ok=True)
+    await _collection().delete_one({"_id": oid})
+    return True
+
+
 async def increment_play_count(asset_id: str) -> None:
     """영상 재생 시 play_count +1."""
     oid = _to_object_id(asset_id)
