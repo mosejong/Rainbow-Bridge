@@ -91,6 +91,10 @@ async def trigger_liveportrait_for_pet(pet_id: str) -> None:
 def _remote_generate_gif(source_path: str, output_dir: Path) -> Path:
     """GPU 서버 /generate/gif/async → 폴링 → 결과 저장."""
     api = settings.LIVEPORTRAIT_API_URL.rstrip("/")
+    if not api:
+        raise ValueError(
+            "LIVEPORTRAIT_API_URL 미설정 — remote 모드에서는 GPU 서버 URL이 필요합니다."
+        )
 
     with open(source_path, "rb") as f:
         resp = requests.post(
@@ -115,6 +119,10 @@ def _remote_generate_gif(source_path: str, output_dir: Path) -> Path:
 def _remote_generate_video(source_path: str, output_dir: Path) -> Path:
     """GPU 서버 /generate → MP4 다운로드."""
     api = settings.LIVEPORTRAIT_API_URL.rstrip("/")
+    if not api:
+        raise ValueError(
+            "LIVEPORTRAIT_API_URL 미설정 — remote 모드에서는 GPU 서버 URL이 필요합니다."
+        )
     with open(source_path, "rb") as f:
         resp = requests.post(f"{api}/generate", files={"source": f}, timeout=120)
     resp.raise_for_status()
