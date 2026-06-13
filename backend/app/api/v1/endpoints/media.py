@@ -8,6 +8,7 @@ from fastapi import (
     File,
     Form,
     HTTPException,
+    Query,
     UploadFile,
 )
 from fastapi.responses import FileResponse
@@ -131,6 +132,7 @@ async def download_media(
 async def generate_memorial_video(
     pet_id: str,
     background_tasks: BackgroundTasks,
+    driving_type: str = Query("voiced", pattern="^(gif|voiced)$"),
     user: dict = Depends(get_current_user),
 ):
     """저장된 사진 중 LivePortrait 적합도 최고 사진을 자동 선택해 추모 영상 생성.
@@ -149,12 +151,16 @@ async def generate_memorial_video(
         )
 
     asset_id = await create_asset(pet_id, str(best_photo), user_id=user["user_id"])
-    background_tasks.add_task(run_liveportrait, asset_id, str(best_photo), pet_id)
+    if driving_type == "gif":
+        background_tasks.add_task(run_liveportrait_gif, asset_id, str(best_photo), True)
+    else:
+        background_tasks.add_task(run_liveportrait, asset_id, str(best_photo), pet_id)
 
     return {
         "asset_id": asset_id,
         "message": "추모 영상 생성이 시작됐습니다.",
         "selected_photo": best_photo.name,
+        "driving_type": driving_type,
     }
 
 

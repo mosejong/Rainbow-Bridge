@@ -87,8 +87,12 @@ async def trigger_liveportrait_for_pet(pet_id: str) -> None:
         logger.warning("1인칭 LP 트리거 실패 pet_id=%s", pet_id, exc_info=True)
 
 
-async def run_liveportrait_gif(asset_id: str, source_path: str):
-    """백그라운드에서 GIF 생성 (d9 잔잔한 드라이빙). 실패 시 status=error."""
+async def run_liveportrait_gif(asset_id: str, source_path: str, set_status: bool = False):
+    """백그라운드에서 GIF 생성 (d9 잔잔한 드라이빙).
+
+    set_status=True: driving_type=gif 직접 호출 시 status를 done/error로 갱신.
+    set_status=False: voiced 완료 후 보조 생성 시 status 건드리지 않음.
+    """
     try:
         _VIDEO_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -102,12 +106,20 @@ async def run_liveportrait_gif(asset_id: str, source_path: str):
 
         gif_path = await asyncio.to_thread(generate_gif, source_path, str(_VIDEO_DIR))
 
+        update: dict = {"gif_url": f"/uploads/videos/{gif_path.name}"}
+        if set_status:
+            update["status"] = "done"
         await _collection().update_one(
             {"_id": ObjectId(asset_id)},
-            {"$set": {"gif_url": f"/uploads/videos/{gif_path.name}"}},
+            {"$set": update},
         )
     except Exception:
         logger.exception("GIF 생성 실패 asset_id=%s", asset_id)
+        if set_status:
+            await _collection().update_one(
+                {"_id": ObjectId(asset_id)},
+                {"$set": {"status": "error"}},
+            )
 
 
 async def run_liveportrait(asset_id: str, source_path: str, pet_id: str = ""):
