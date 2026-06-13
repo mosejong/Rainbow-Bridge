@@ -18,6 +18,7 @@ from app.services.media import (
     create_asset,
     get_asset,
     run_liveportrait,
+    run_liveportrait_gif,
     run_perso,
     increment_play_count,
     select_best_pet_photo,
