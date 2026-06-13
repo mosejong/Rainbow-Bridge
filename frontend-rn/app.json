@@ -10,6 +10,9 @@
     "runtimeVersion": {
       "policy": "sdkVersion"
     },
+    "updates": {
+      "url": "https://u.expo.dev/1ad8b58b-0827-4f57-9c12-ee85be4823d9"
+    },
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
