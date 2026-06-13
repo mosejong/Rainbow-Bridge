@@ -123,7 +123,7 @@ export default function MemoriesDiaryScreen() {
             ) : (
               <TouchableOpacity activeOpacity={0.8} style={styles.btnShadow} onPress={handleSubmit}>
                 <LinearGradient
-                  colors={['#DDEDEA', '#DAEAF6']}
+                  colors={['#E8DFF5', '#FCE1E4']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.btn}

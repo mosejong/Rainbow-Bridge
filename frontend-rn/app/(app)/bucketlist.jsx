@@ -104,36 +104,38 @@ export default function BucketlistScreen() {
               />
             </View>
 
-            {/* 항목 목록 */}
-            <View style={styles.listWrap}>
-              {items.map(item => (
-                <TouchableOpacity
-                  key={item.id}
-                  activeOpacity={0.75}
-                  onPress={() => toggle(item.id)}
-                  style={[styles.item, item.checked && styles.itemDone]}
-                >
-                  <View style={[styles.checkbox, item.checked && styles.checkboxChecked]}>
-                    {item.checked && <Text style={styles.checkmark}>✓</Text>}
-                  </View>
-                  <Text style={[styles.itemText, item.checked && styles.itemTextDone]}>
-                    {item.text}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {items.length === 0 && (
-              <View style={styles.emptyWrap}>
-                <Text style={styles.emptyIcon}>📋</Text>
-                <Text style={styles.emptyText}>아래 입력창에 함께 하고 싶은 것들을 적어보세요.</Text>
-                <Text style={styles.emptyHint}>예) 함께 산책하기 · 좋아하는 간식 먹기 · 사진 찍기</Text>
+            {/* 항목 목록 + 빈 상태 — 베이지 박스 */}
+            <View style={styles.contentBox}>
+              <View style={styles.listWrap}>
+                {items.map(item => (
+                  <TouchableOpacity
+                    key={item.id}
+                    activeOpacity={0.75}
+                    onPress={() => toggle(item.id)}
+                    style={[styles.item, item.checked && styles.itemDone]}
+                  >
+                    <View style={[styles.checkbox, item.checked && styles.checkboxChecked]}>
+                      {item.checked && <Text style={styles.checkmark}>✓</Text>}
+                    </View>
+                    <Text style={[styles.itemText, item.checked && styles.itemTextDone]}>
+                      {item.text}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-            )}
 
-            {doneCount === items.length && items.length > 0 && (
-              <Text style={styles.allDone}>🎉 모든 항목을 완료했어요!</Text>
-            )}
+              {items.length === 0 && (
+                <View style={styles.emptyWrap}>
+                  <Text style={styles.emptyIcon}>📋</Text>
+                  <Text style={styles.emptyText}>아래 입력창에 함께 하고 싶은 것들을 적어보세요.</Text>
+                  <Text style={styles.emptyHint}>예) 함께 산책하기 · 좋아하는 간식 먹기 · 사진 찍기</Text>
+                </View>
+              )}
+
+              {doneCount === items.length && items.length > 0 && (
+                <Text style={styles.allDone}>🎉 모든 항목을 완료했어요!</Text>
+              )}
+            </View>
           </ScrollView>
 
           {/* 입력창: ScrollView 밖, 키보드 높이만큼 위로 밀어올림 */}
@@ -150,7 +152,7 @@ export default function BucketlistScreen() {
             />
             <TouchableOpacity style={styles.addBtn} onPress={addItem} activeOpacity={0.8}>
               <LinearGradient
-                colors={['#DDEDEA', '#DAEAF6']}
+                colors={['#EDE5FA', '#E2D5F5']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.addBtnGrad}
@@ -201,7 +203,16 @@ const styles = StyleSheet.create({
   },
   progressFill: { height: '100%', backgroundColor: '#C4A8D8', borderRadius: 3 },
 
-  listWrap: { gap: 10, marginBottom: 20 },
+  contentBox: {
+    backgroundColor: '#FAF5EF',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    minHeight: 200,
+    borderWidth: 1,
+    borderColor: '#EDE8DF',
+  },
+  listWrap: { gap: 10, marginBottom: 8 },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
