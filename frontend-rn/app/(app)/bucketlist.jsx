@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, KeyboardAvoidingView, Platform,
+  StyleSheet, ScrollView, Keyboard, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS } from '../../constants/colors';
+import { COLORS } from '@/constants/colors';
 
 const STORAGE_KEY = 'bucketlist_items';
 const PLACEHOLDERS = ['예) 함께 산책하기', '예) 좋아하는 간식 먹기', '예) 사진 찍기'];
@@ -17,9 +17,21 @@ export default function BucketlistScreen() {
   const [items, setItems] = useState([]);
   const [newText, setNewText] = useState('');
   const [petName, setPetName] = useState('소중한 친구');
+  const [kbHeight, setKbHeight] = useState(0);
 
   useEffect(() => {
     load();
+  }, []);
+
+  useEffect(() => {
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvt, (e) => setKbHeight(e.endCoordinates.height));
+    const hideSub = Keyboard.addListener(hideEvt, () => setKbHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
   }, []);
 
   async function load() {
@@ -64,11 +76,7 @@ export default function BucketlistScreen() {
       locations={[0, 0.35, 0.6, 1]}
       style={styles.gradient}
     >
-      <SafeAreaView style={styles.safe}>
-        <KeyboardAvoidingView
-          behavior="padding"
-          style={{ flex: 1 }}
-        >
+        <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
           <ScrollView
             ref={scrollRef}
             contentContainerStyle={styles.scroll}
@@ -128,8 +136,8 @@ export default function BucketlistScreen() {
             )}
           </ScrollView>
 
-          {/* 입력창: ScrollView 밖, 키보드 위에 고정 */}
-          <View style={styles.addRow}>
+          {/* 입력창: ScrollView 밖, 키보드 높이만큼 위로 밀어올림 */}
+          <View style={[styles.addRow, { marginBottom: kbHeight }]}>
             <TextInput
               style={styles.addInput}
               value={newText}
@@ -151,8 +159,7 @@ export default function BucketlistScreen() {
               </LinearGradient>
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+        </SafeAreaView>
     </LinearGradient>
   );
 }

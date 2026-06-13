@@ -7,9 +7,9 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import Card from '../../components/Card';
-import { createPet } from '../../api/pets';
-import { COLORS } from '../../constants/colors';
+import Card from '@/components/Card';
+import { createPet } from '@/api/pets';
+import { COLORS } from '@/constants/colors';
 
 export default function MemoriesDiaryScreen() {
   const router = useRouter();
@@ -128,7 +128,7 @@ export default function MemoriesDiaryScreen() {
                   end={{ x: 1, y: 0 }}
                   style={styles.btn}
                 >
-                  <Text style={styles.btnText}>다음 — 감정 체크인</Text>
+                  <Text style={styles.btnText}>홈으로</Text>
                 </LinearGradient>
               </TouchableOpacity>
             )}
