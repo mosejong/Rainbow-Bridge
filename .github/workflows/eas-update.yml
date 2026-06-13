@@ -1,19 +1,20 @@
-name: EAS Build (Android + iOS)
+name: EAS Update (OTA)
 
-# package.json, app.json, 네이티브 파일 변경 시에만 전체 재빌드
+# JS/asset 변경 시 APK 재배포 없이 Android + iOS 동시 반영
 on:
   push:
     branches: [dev]
     paths:
-      - 'frontend-rn/package.json'
-      - 'frontend-rn/app.json'
-      - 'frontend-rn/eas.json'
-      - 'frontend-rn/ios/**'
-      - 'frontend-rn/android/**'
+      - 'frontend-rn/**'
+      - '!frontend-rn/package.json'
+      - '!frontend-rn/app.json'
+      - '!frontend-rn/eas.json'
+      - '!frontend-rn/ios/**'
+      - '!frontend-rn/android/**'
 
 jobs:
-  build:
-    name: EAS 전체 빌드 (Android + iOS)
+  update:
+    name: EAS OTA 업데이트 (Android + iOS)
     runs-on: ubuntu-latest
 
     steps:
@@ -32,8 +33,12 @@ jobs:
       - name: EAS CLI 설치
         run: npm install -g eas-cli
 
-      - name: EAS Build (Android + iOS)
+      - name: EAS Update
         working-directory: frontend-rn
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas build --platform all --profile preview --non-interactive --no-wait
+        run: |
+          eas update \
+            --channel preview \
+            --message "${{ github.event.head_commit.message }}" \
+            --non-interactive
