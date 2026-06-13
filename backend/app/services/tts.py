@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 from google.auth.exceptions import DefaultCredentialsError
 
 from app.schemas.tts import TtsCreate, TtsResponse
+from app.db.redis_client import get_redis
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,8 @@ async def generate_tts(data: TtsCreate) -> TtsResponse:
     미설정 시 Google TTS → gTTS 순으로 폴백.
     TTS 완료 후 pet의 최신 무음 영상에 자동으로 음성을 합칩니다.
     """
-    tts_server_url = os.environ.get("TTS_SERVER_URL", "").strip()
+    dyn = await get_redis().get("tts:server_url")
+    tts_server_url = (dyn or os.environ.get("TTS_SERVER_URL", "")).strip()
 
     if tts_server_url:
         # 터널 끊김·타임아웃·5xx 등 remote 실패 시 500 대신 Google 폴백으로 자동 전환.

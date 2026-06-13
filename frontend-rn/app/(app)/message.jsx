@@ -137,8 +137,8 @@ function GateLockedScreen({ petName, onGoCheckin, onGoMission, onGoHome, onLogou
 //       찌라시가 회복 동기를 만든다
 // ─────────────────────────────────────────────────────────────
 function GateTeaserScreen({ petName, score, onGoCheckin, onGoHome, onLogout }) {
-  const pct = Math.min(100, (score / 80) * 100);
-  const filledBlocks = Math.round(pct / 10);
+  const pct = Math.max(0, Math.min(99, ((score - 50) / 30) * 100));
+  const filledBlocks = Math.floor(pct / 10);
   const bar = '█'.repeat(filledBlocks) + '░'.repeat(10 - filledBlocks);
 
   return (
