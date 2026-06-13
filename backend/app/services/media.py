@@ -87,7 +87,9 @@ async def trigger_liveportrait_for_pet(pet_id: str) -> None:
         logger.warning("1인칭 LP 트리거 실패 pet_id=%s", pet_id, exc_info=True)
 
 
-async def run_liveportrait_gif(asset_id: str, source_path: str, set_status: bool = False):
+async def run_liveportrait_gif(
+    asset_id: str, source_path: str, set_status: bool = False
+):
     """백그라운드에서 GIF 생성 (d9 잔잔한 드라이빙).
 
     set_status=True: driving_type=gif 직접 호출 시 status를 done/error로 갱신.
