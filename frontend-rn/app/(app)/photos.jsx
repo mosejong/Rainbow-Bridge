@@ -255,14 +255,15 @@ const styles = StyleSheet.create({
 
   addBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#C4A8D8',
+    backgroundColor: '#E8DFF5',
     borderRadius: 14, paddingVertical: 14,
     marginBottom: 16,
-    shadowColor: '#C4A8D8', shadowOffset: { width: 0, height: 4 },
+    borderWidth: 3, borderColor: '#FFFFFF',
+    shadowColor: '#E8DFF5', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35, shadowRadius: 8, elevation: 4,
   },
-  addBtnPlus: { fontSize: 22, color: '#fff', fontWeight: '700' },
-  addBtnText: { fontSize: 15, color: '#fff', fontWeight: '700' },
+  addBtnPlus: { fontSize: 22, color: '#333333', fontWeight: '700' },
+  addBtnText: { fontSize: 15, color: '#333333', fontWeight: '700' },
 
   grid: { marginBottom: 4 },
   gridRow: { gap: 4, marginBottom: 4 },
