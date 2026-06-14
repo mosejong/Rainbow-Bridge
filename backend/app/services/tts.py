@@ -127,7 +127,25 @@ async def generate_tts(data: TtsCreate) -> TtsResponse:
     TTS_SERVER_URL 설정 시 Qwen3 GPU 서버(B안)로 호출.
     미설정 시 Google TTS → gTTS 순으로 폴백.
     TTS 완료 후 pet의 최신 무음 영상에 자동으로 음성을 합칩니다.
+
+    동일 (pet_id, text, tone) 조합은 기존 파일을 재사용합니다 (idempotent).
     """
+    voice_key = _map_tone_to_voice(data.tone)
+    text_hash = abs(hash(data.text)) % 10_000_000
+    out_dir = Path(os.environ.get("TTS_OUTPUT_DIR", "uploads/tts"))
+    # qwen3/wavespeed 파일명: {voice_key}, google fallback 파일명: {tone} — 둘 다 체크.
+    for stem in (
+        f"{data.pet_id}_{voice_key}_{text_hash}",
+        f"{data.pet_id}_{data.tone}_{text_hash}",
+    ):
+        for ext in ("mp3", "wav"):
+            cached = out_dir / f"{stem}.{ext}"
+            if cached.exists():
+                logger.info("TTS 캐시 hit: %s", cached.name)
+                return TtsResponse(
+                    audio_url=f"/uploads/tts/{cached.name}", duration=0, format=ext
+                )
+
     dyn = await get_redis().get("tts:server_url")
     tts_server_url = (dyn or os.environ.get("TTS_SERVER_URL", "")).strip()
 
