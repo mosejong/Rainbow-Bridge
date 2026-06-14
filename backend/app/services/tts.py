@@ -199,7 +199,7 @@ async def _qwen3_remote(data: TtsCreate, server_url: str) -> TtsResponse:
         job_id = submit.json()["job_id"]
 
         # 2) 상태 폴링(3초 간격, 최대 ~360초) — 긴 메시지 합성시간 수용
-        for _ in range(100):
+        for _ in range(120):
             await asyncio.sleep(3)
             st = await client.get(f"{base}/synthesize/status/{job_id}")
             st.raise_for_status()
@@ -274,7 +274,7 @@ async def _wavespeed_tts(data: TtsCreate, api_key: str) -> TtsResponse:
         poll_url = resp_data["urls"]["get"]
 
         # 2) 폴링 (3초 간격, 최대 5분)
-        for _ in range(100):
+        for _ in range(120):
             await asyncio.sleep(3)
             status_res = await client.get(poll_url, headers=headers)
             status_res.raise_for_status()
