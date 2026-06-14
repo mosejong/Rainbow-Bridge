@@ -1,8 +1,8 @@
-"""④ TTS 서비스 — Qwen3 GPU 서버(B안) 또는 Google Cloud TTS 폴백.
+"""④ TTS 서비스 — Qwen3 GPU 서버(B안) → WaveSpeedAI → Google Cloud TTS 폴백.
 
-구조(B안):
+구조:
     프론트 → POST /tts (NCP 백엔드) → HTTP → 정환주 GPU 서버 /synthesize → Qwen3
-TTS_SERVER_URL 미설정 시 Google TTS → gTTS 순으로 폴백.
+    GPU 서버 실패 시: WAVESPEED_API_KEY 있으면 WaveSpeedAI(Qwen3 동일 모델) → Google TTS → gTTS
 
 ⚠️ 윤리: 보호자 대상 낭독만. 반려동물 1인칭/목소리 흉내 ❌ (../CLAUDE.md §1).
 """
@@ -51,6 +51,14 @@ _TONE_TO_VOICE: dict[str, str] = {
 }
 _DEFAULT_VOICE = "woman"  # 3인칭 나레이션이 기본 (TtsTone.NARRATION과 일치)
 
+# WaveSpeedAI 음성 매핑 (Qwen3 동일 모델, 미국 호스팅)
+# girl→Cherry(어린 여성) / boy→Ethan(어린 남성) / woman→Serena(나레이션)
+_WAVESPEED_VOICE_MAP: dict[str, str] = {
+    "girl": "Cherry",
+    "boy": "Ethan",
+    "woman": "Serena",
+}
+
 
 def _map_tone_to_voice(tone: str) -> str:
     """프론트 tone 값을 Qwen3 AVAILABLE_VOICES 키로 변환."""
@@ -67,17 +75,21 @@ async def generate_tts(data: TtsCreate) -> TtsResponse:
     dyn = await get_redis().get("tts:server_url")
     tts_server_url = (dyn or os.environ.get("TTS_SERVER_URL", "")).strip()
 
+    wavespeed_key = os.environ.get("WAVESPEED_API_KEY", "").strip()
+
     if tts_server_url:
-        # 터널 끊김·타임아웃·5xx 등 remote 실패 시 500 대신 Google 폴백으로 자동 전환.
+        # 터널 끊김·타임아웃·5xx 등 remote 실패 시 WaveSpeedAI → Google 순으로 폴백.
         try:
             result = await _qwen3_remote(data, tts_server_url)
         except (httpx.HTTPError, OSError) as exc:
             logger.warning(
-                "Qwen3 remote TTS 실패(status=%s, detail=%s) → Google 폴백 사용",
+                "Qwen3 remote TTS 실패(status=%s, detail=%s) → WaveSpeedAI/Google 폴백",
                 getattr(exc, "response", None) and exc.response.status_code,
                 exc,
             )
-            result = await _google_tts_fallback(data)
+            result = await _wavespeed_or_google(data, wavespeed_key)
+    elif wavespeed_key:
+        result = await _wavespeed_tts(data, wavespeed_key)
     else:
         result = await _google_tts_fallback(data)
 
@@ -137,6 +149,69 @@ async def _qwen3_remote(data: TtsCreate, server_url: str) -> TtsResponse:
         duration=duration,
         format=fmt,
     )
+
+
+async def _wavespeed_or_google(data: TtsCreate, wavespeed_key: str) -> TtsResponse:
+    """WaveSpeedAI 시도 → 실패 시 Google 폴백."""
+    if wavespeed_key:
+        try:
+            return await _wavespeed_tts(data, wavespeed_key)
+        except Exception as exc:
+            logger.warning("WaveSpeedAI TTS 실패(%s) → Google 폴백", exc)
+    return await _google_tts_fallback(data)
+
+
+async def _wavespeed_tts(data: TtsCreate, api_key: str) -> TtsResponse:
+    """WaveSpeedAI Qwen3 TTS API 호출 (로컬 GPU 대체, 동일 모델).
+
+    girl/boy/woman 음성을 Cherry/Ethan/Serena로 매핑.
+    """
+    voice_key = _map_tone_to_voice(data.tone)
+    ws_voice = _WAVESPEED_VOICE_MAP.get(voice_key, "Serena")
+    filename = f"{data.pet_id}_{voice_key}_{abs(hash(data.text)) % 10_000_000}.mp3"
+    out_dir = Path(os.environ.get("TTS_OUTPUT_DIR", "uploads/tts"))
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        # 1) 제출
+        submit = await client.post(
+            "https://api.wavespeed.ai/api/v2/audio/speech",
+            headers=headers,
+            json={
+                "model": "wavespeed-ai/qwen3-tts",
+                "input": data.text,
+                "voice": ws_voice,
+                "language": "ko",
+            },
+        )
+        submit.raise_for_status()
+        prediction_id = submit.json()["id"]
+
+        # 2) 폴링 (3초 간격, 최대 5분)
+        for _ in range(100):
+            await asyncio.sleep(3)
+            status_res = await client.get(
+                f"https://api.wavespeed.ai/api/v2/predictions/{prediction_id}",
+                headers=headers,
+            )
+            status_res.raise_for_status()
+            body = status_res.json()
+            if body["status"] == "completed":
+                audio_url = body["outputs"][0]
+                break
+            if body["status"] == "failed":
+                raise httpx.HTTPError(f"WaveSpeed 합성 실패: {body.get('error')}")
+        else:
+            raise httpx.HTTPError("WaveSpeed 폴링 타임아웃(5분)")
+
+        # 3) 오디오 다운로드
+        audio_res = await client.get(audio_url)
+        audio_res.raise_for_status()
+        (out_dir / filename).write_bytes(audio_res.content)
+
+    logger.info("WaveSpeedAI TTS 완료: %s (%s)", filename, ws_voice)
+    return TtsResponse(audio_url=f"/uploads/tts/{filename}", duration=0, format="mp3")
 
 
 async def _google_tts_fallback(data: TtsCreate) -> TtsResponse:
