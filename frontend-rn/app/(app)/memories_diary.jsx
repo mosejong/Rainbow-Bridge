@@ -7,9 +7,10 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import Card from '../../components/Card';
-import { createPet } from '../../api/pets';
-import { COLORS } from '../../constants/colors';
+import Card from '@/components/Card';
+import { createPet } from '@/api/pets';
+import { COLORS } from '@/constants/colors';
+import { gwa } from '@/utils/josa';
 
 export default function MemoriesDiaryScreen() {
   const router = useRouter();
@@ -80,7 +81,7 @@ export default function MemoriesDiaryScreen() {
 
             <Text style={styles.cardTitle}>추억 기록</Text>
             <Text style={styles.cardDesc}>
-              {profile.name}와(과) 나눈 소중한 기억을 알려주세요.
+              {profile.name}{gwa(profile.name)} 나눈 소중한 기억을 알려주세요.
             </Text>
 
             <View style={styles.field}>
@@ -123,12 +124,12 @@ export default function MemoriesDiaryScreen() {
             ) : (
               <TouchableOpacity activeOpacity={0.8} style={styles.btnShadow} onPress={handleSubmit}>
                 <LinearGradient
-                  colors={['#DDEDEA', '#DAEAF6']}
+                  colors={['#E8DFF5', '#FCE1E4']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.btn}
                 >
-                  <Text style={styles.btnText}>다음 — 감정 체크인</Text>
+                  <Text style={styles.btnText}>홈으로</Text>
                 </LinearGradient>
               </TouchableOpacity>
             )}

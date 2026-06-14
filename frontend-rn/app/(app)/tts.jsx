@@ -5,13 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Card from '../../components/Card';
-import Button from '../../components/Button';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import { generateTts } from '../../api/tts';
-import { logPlay } from '../../api/playLogs';
-import { COLORS } from '../../constants/colors';
-import { fetchRecoveryGate } from '../../utils/recovery';
+import Card from '@/components/Card';
+import Button from '@/components/Button';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { generateTts } from '@/api/tts';
+import { logPlay } from '@/api/playLogs';
+import { COLORS } from '@/constants/colors';
+import { eulreul } from '@/utils/josa';
+import { fetchRecoveryGate } from '@/utils/recovery';
 
 const TONES = [
   { value: 'female', label: '여자 목소리', emoji: '🌸' },
@@ -62,14 +63,16 @@ export default function TtsScreen() {
     setError(null);
     try {
       const petId = await AsyncStorage.getItem('pet_id');
-      const res = await generateTts({ pet_id: petId, text: messageText, tone: selectedTone });
+      const petSpecies = await AsyncStorage.getItem('pet_species');
+      const res = await generateTts({ pet_id: petId, text: messageText, tone: selectedTone, species: petSpecies || '강아지' });
       if (!res.audio_url) throw new Error('audio_url 없음');
       const url = res.audio_url.startsWith('http')
         ? res.audio_url
         : `${API_BASE}${res.audio_url}`;
       setAudioUrl(url);
       await AsyncStorage.setItem('tts_done', '1');
-    } catch {
+    } catch (e) {
+      console.error('[TTS] 생성 실패:', e);
       setError('음성 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
@@ -87,17 +90,22 @@ export default function TtsScreen() {
         setPlaying(true);
       }
     } else {
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: audioUrl },
-        { shouldPlay: true }
-      );
-      soundRef.current = sound;
-      setPlaying(true);
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.didJustFinish) setPlaying(false);
-      });
-      const petId = await AsyncStorage.getItem('pet_id');
-      if (petId) logPlay({ pet_id: petId }).catch(() => {});
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: audioUrl },
+          { shouldPlay: true }
+        );
+        soundRef.current = sound;
+        setPlaying(true);
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.didJustFinish) setPlaying(false);
+        });
+        const petId = await AsyncStorage.getItem('pet_id');
+        if (petId) logPlay({ pet_id: petId }).catch(() => {});
+      } catch (e) {
+        console.error('[TTS] 재생 실패:', e, 'url:', audioUrl);
+        setError('음성 재생에 실패했어요. 다시 생성해보세요.');
+      }
     }
   }
 
@@ -160,7 +168,7 @@ export default function TtsScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>음성으로 듣기</Text>
-        <Text style={styles.subtitle}>{petName}를 위한 추모 메시지를 들어보세요.</Text>
+        <Text style={styles.subtitle}>{petName}{eulreul(petName)} 위한 추모 메시지를 들어보세요.</Text>
 
         {/* 톤 선택 */}
         <Card style={styles.toneCard}>

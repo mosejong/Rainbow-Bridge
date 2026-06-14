@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Card from '../../components/Card';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import { getTimeline } from '../../api/timeline';
-import { mockTimeline } from '../../api/mock';
-import { COLORS } from '../../constants/colors';
+import Card from '@/components/Card';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { getTimeline } from '@/api/timeline';
+import { mockTimeline } from '@/api/mock';
+import { COLORS } from '@/constants/colors';
+import { gwa } from '@/utils/josa';
 
 const TYPE_META = {
   emotion: { emoji: '💭', label: '감정 기록' },
@@ -58,7 +59,7 @@ export default function TimelineScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>추모 타임라인</Text>
-        <Text style={styles.subtitle}>{petName}와(과) 함께한 기억들이에요.</Text>
+        <Text style={styles.subtitle}>{petName}{gwa(petName)} 함께한 기억들이에요.</Text>
 
         {items.length === 0 ? (
           <Card style={styles.emptyCard}>

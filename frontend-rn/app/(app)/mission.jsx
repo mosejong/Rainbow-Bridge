@@ -4,12 +4,13 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Card from '../../components/Card';
-import Button from '../../components/Button';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import { getMissions, completeMission } from '../../api/missions';
-import { mockMissions } from '../../api/mock';
-import { COLORS } from '../../constants/colors';
+import Card from '@/components/Card';
+import Button from '@/components/Button';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { getMissions, completeMission } from '@/api/missions';
+import { mockMissions } from '@/api/mock';
+import { COLORS } from '@/constants/colors';
+import { gwa } from '@/utils/josa';
 import { doLogout } from './_layout';
 
 const COMPLETED_KEY = 'mission_completed_ids';
@@ -27,6 +28,14 @@ export default function MissionScreen() {
   }, []);
 
   async function fetchMissions() {
+    // 날짜가 바뀌었으면 완료 목록 초기화
+    const today = new Date().toDateString();
+    const savedDate = await AsyncStorage.getItem('mission_completed_date');
+    if (savedDate !== today) {
+      await AsyncStorage.removeItem(COMPLETED_KEY);
+      await AsyncStorage.setItem('mission_completed_date', today);
+    }
+
     try {
       const petId = await AsyncStorage.getItem('pet_id');
       const data = await getMissions({ pet_id: petId });
@@ -97,9 +106,6 @@ export default function MissionScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>오늘의 미션</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity onPress={() => router.replace('/(app)/home')} style={styles.headerBtn} activeOpacity={0.7}>
-            <Text style={styles.headerHome}>홈</Text>
-          </TouchableOpacity>
           <TouchableOpacity onPress={doLogout} style={styles.headerBtn} activeOpacity={0.7}>
             <Text style={styles.headerLogout}>로그아웃</Text>
           </TouchableOpacity>
@@ -107,7 +113,7 @@ export default function MissionScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.subtitle}>{petName}와(과) 함께했던 일상으로 천천히 돌아가요.</Text>
+        <Text style={styles.subtitle}>{petName}{gwa(petName)} 함께했던 일상으로 천천히 돌아가요.</Text>
 
         {/* 완료율 바 */}
         <View style={styles.progressRow}>

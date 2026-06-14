@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import { gwa } from '@/utils/josa';
 
 const STORAGE_KEY = 'diary_entries';
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -220,7 +221,7 @@ export default function DiaryScreen() {
             <Text style={styles.backText}>← 이전</Text>
           </TouchableOpacity>
 
-          <Text style={styles.title}>📔 {petName}와의 일기</Text>
+          <Text style={styles.title}>📔 {petName}{gwa(petName)}의 일기</Text>
           <Text style={styles.desc}>함께한 하루하루를 기록해요.</Text>
 
           {/* 글쓰기 박스 */}
@@ -236,7 +237,7 @@ export default function DiaryScreen() {
                 style={styles.writeInput}
                 value={content}
                 onChangeText={setContent}
-                placeholder={`${petName}와 있었던 일을 적어주세요.`}
+                placeholder={`${petName}${gwa(petName)} 있었던 일을 적어주세요.`}
                 placeholderTextColor="#A89FBC"
                 multiline
                 numberOfLines={5}
@@ -249,7 +250,7 @@ export default function DiaryScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={saveEntry} activeOpacity={0.8} style={styles.saveBtnWrap}>
                   <LinearGradient
-                    colors={['#DDEDEA', '#DAEAF6']}
+                    colors={['#E8DFF5', '#FCE1E4']}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={styles.saveBtn}
                   >
@@ -261,7 +262,7 @@ export default function DiaryScreen() {
           ) : (
             <TouchableOpacity style={styles.newEntryBtn} onPress={openNew} activeOpacity={0.8}>
               <LinearGradient
-                colors={['#DDEDEA', '#DAEAF6']}
+                colors={['#E8DFF5', '#FCE1E4']}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.newEntryGrad}
               >
@@ -358,7 +359,7 @@ const styles = StyleSheet.create({
     shadowColor: '#DAEAF6', shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4, shadowRadius: 10, elevation: 3, marginBottom: 24,
   },
-  newEntryGrad: { height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  newEntryGrad: { height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#D4C5F0' },
   newEntryText: { color: '#5B4E75', fontSize: 15, fontWeight: '700' },
 
   // 일기 목록
