@@ -51,28 +51,68 @@ _TONE_TO_VOICE: dict[str, str] = {
 }
 _DEFAULT_VOICE = "woman"  # 3인칭 나레이션이 기본 (TtsTone.NARRATION과 일치)
 
-# WaveSpeedAI 음성 매핑 + style_instruction (추모 감성 프롬프트)
+# WaveSpeedAI 음성 매핑 + style_instruction (voice_key × species 조합 감성 프롬프트)
 _WAVESPEED_VOICE_MAP: dict[str, str] = {
     "girl": "Vivian",
     "boy": "Eric",
     "woman": "Vivian",
 }
-_WAVESPEED_STYLE: dict[str, str] = {
-    "girl": (
-        "A soft, gentle voice of a young girl around 8-10 years old, speaking in Korean. "
-        "Warm, tender, and deeply loving — like a beloved pet saying a final farewell. "
-        "Slow and heartfelt, slightly emotional but ultimately comforting. Clear and airy tone."
-    ),
-    "boy": (
-        "A soft, gentle voice of a young boy around 8-10 years old, speaking in Korean. "
-        "Sincere, warm, and quietly brave — like a cherished pet expressing its deepest love before parting. "
-        "Slow and deliberate, melancholic but reassuring. Clear and pure tone."
-    ),
-    "woman": (
-        "A warm, calm adult female voice speaking Korean, like a trusted friend offering comfort during grief. "
-        "Soft and deeply empathetic. Slow with gentle pauses. "
-        "Like a quiet hand on the shoulder — compassionate, grounded, and healing."
-    ),
+_WAVESPEED_STYLE: dict[str, dict[str, str]] = {
+    "girl": {
+        "강아지": (
+            "A soft, gentle voice of a young girl around 8-10 years old, speaking in Korean. "
+            "Warm, bright, and deeply loyal — like a beloved dog saying goodbye with a wagging heart. "
+            "Pure unconditional love in every word. Slow and heartfelt, "
+            "slightly emotional but ultimately comforting and cheerful. Clear and airy tone."
+        ),
+        "고양이": (
+            "A soft, gentle voice of a young girl around 8-10 years old, speaking in Korean. "
+            "Quiet, graceful, and deeply tender — like a beloved cat expressing its hidden affection for the last time. "
+            "Warm beneath the calm. Slow and deliberate, "
+            "slightly melancholic but ultimately peaceful. Clear and silky tone."
+        ),
+        "기타": (
+            "A soft, gentle voice of a young girl around 8-10 years old, speaking in Korean. "
+            "Warm, tender, and deeply loving — like a beloved pet saying a final farewell. "
+            "Slow and heartfelt, slightly emotional but ultimately comforting. Clear and airy tone."
+        ),
+    },
+    "boy": {
+        "강아지": (
+            "A soft, gentle voice of a young boy around 8-10 years old, speaking in Korean. "
+            "Sincere, brave, and unconditionally loyal — like a cherished dog expressing deepest love before parting. "
+            "Energetic spirit softened by emotion, melancholic but reassuring. "
+            "Slow and deliberate with quiet strength. Clear and pure tone."
+        ),
+        "고양이": (
+            "A soft, gentle voice of a young boy around 8-10 years old, speaking in Korean. "
+            "Quiet, dignified, and deeply affectionate — like a beloved cat who rarely showed love but felt it completely. "
+            "Reserved yet sincere, with subtle warmth in every pause. Slow and thoughtful, "
+            "melancholic but serene. Clear and calm tone."
+        ),
+        "기타": (
+            "A soft, gentle voice of a young boy around 8-10 years old, speaking in Korean. "
+            "Sincere, warm, and quietly brave — like a cherished pet expressing its deepest love before parting. "
+            "Slow and deliberate, melancholic but reassuring. Clear and pure tone."
+        ),
+    },
+    "woman": {
+        "강아지": (
+            "A warm, calm adult female voice speaking Korean, like a trusted friend offering comfort during grief. "
+            "Soft and deeply empathetic, carrying the spirit of a loyal dog's unconditional love. "
+            "Slow with gentle pauses. Compassionate, grounded, and healing."
+        ),
+        "고양이": (
+            "A warm, calm adult female voice speaking Korean, like a trusted friend offering comfort during grief. "
+            "Soft and deeply empathetic, carrying the quiet elegance of a cat's mysterious affection. "
+            "Slow with gentle pauses. Compassionate, grounded, and healing."
+        ),
+        "기타": (
+            "A warm, calm adult female voice speaking Korean, like a trusted friend offering comfort during grief. "
+            "Soft and deeply empathetic. Slow with gentle pauses. "
+            "Like a quiet hand on the shoulder — compassionate, grounded, and healing."
+        ),
+    },
 }
 
 
@@ -186,7 +226,14 @@ async def _wavespeed_tts(data: TtsCreate, api_key: str) -> TtsResponse:
     """
     voice_key = _map_tone_to_voice(data.tone)
     ws_voice = _WAVESPEED_VOICE_MAP.get(voice_key, "Vivian")
-    style = _WAVESPEED_STYLE.get(voice_key, _WAVESPEED_STYLE["woman"])
+    species = (
+        (data.species or "강아지")
+        if data.species in ("강아지", "고양이", "기타")
+        else "기타"
+    )
+    style = _WAVESPEED_STYLE.get(voice_key, _WAVESPEED_STYLE["woman"]).get(
+        species, _WAVESPEED_STYLE["woman"]["기타"]
+    )
     filename = f"{data.pet_id}_{voice_key}_{abs(hash(data.text)) % 10_000_000}.mp3"
     out_dir = Path(os.environ.get("TTS_OUTPUT_DIR", "uploads/tts"))
     out_dir.mkdir(parents=True, exist_ok=True)
