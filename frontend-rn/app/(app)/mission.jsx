@@ -27,6 +27,14 @@ export default function MissionScreen() {
   }, []);
 
   async function fetchMissions() {
+    // 날짜가 바뀌었으면 완료 목록 초기화
+    const today = new Date().toDateString();
+    const savedDate = await AsyncStorage.getItem('mission_completed_date');
+    if (savedDate !== today) {
+      await AsyncStorage.removeItem(COMPLETED_KEY);
+      await AsyncStorage.setItem('mission_completed_date', today);
+    }
+
     try {
       const petId = await AsyncStorage.getItem('pet_id');
       const data = await getMissions({ pet_id: petId });
