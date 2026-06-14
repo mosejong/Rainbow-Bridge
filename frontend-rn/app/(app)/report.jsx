@@ -11,6 +11,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { getReport } from '@/api/report';
 import { mockReport } from '@/api/mock';
 import { COLORS } from '@/constants/colors';
+import { eulreul } from '@/utils/josa';
 import { doLogout } from './_layout';
 import { hasPermission, openPermissionSettings, collectTodayReport } from '../../modules/usage-stats/src';
 
@@ -150,7 +151,7 @@ export default function ReportScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>회복 리포트</Text>
-        <Text style={styles.subtitle}>{petName}를 기억하며 함께한 시간이에요.</Text>
+        <Text style={styles.subtitle}>{petName}{eulreul(petName)} 기억하며 함께한 시간이에요.</Text>
 
         {/* 앱 사용 기록 — 권한 없으면 안내 카드 */}
         {permissionGranted === false ? (

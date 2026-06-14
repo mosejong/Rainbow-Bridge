@@ -10,6 +10,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { getMissions, completeMission } from '@/api/missions';
 import { mockMissions } from '@/api/mock';
 import { COLORS } from '@/constants/colors';
+import { gwa } from '@/utils/josa';
 import { doLogout } from './_layout';
 
 const COMPLETED_KEY = 'mission_completed_ids';
@@ -112,7 +113,7 @@ export default function MissionScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.subtitle}>{petName}와(과) 함께했던 일상으로 천천히 돌아가요.</Text>
+        <Text style={styles.subtitle}>{petName}{gwa(petName)} 함께했던 일상으로 천천히 돌아가요.</Text>
 
         {/* 완료율 바 */}
         <View style={styles.progressRow}>
