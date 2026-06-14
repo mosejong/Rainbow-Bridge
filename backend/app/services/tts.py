@@ -51,12 +51,28 @@ _TONE_TO_VOICE: dict[str, str] = {
 }
 _DEFAULT_VOICE = "woman"  # 3인칭 나레이션이 기본 (TtsTone.NARRATION과 일치)
 
-# WaveSpeedAI 음성 매핑 (Qwen3 동일 모델, 미국 호스팅)
-# girl→Cherry(어린 여성) / boy→Ethan(어린 남성) / woman→Serena(나레이션)
+# WaveSpeedAI 음성 매핑 + style_instruction (추모 감성 프롬프트)
 _WAVESPEED_VOICE_MAP: dict[str, str] = {
-    "girl": "Cherry",
-    "boy": "Ethan",
-    "woman": "Serena",
+    "girl": "Vivian",
+    "boy": "Eric",
+    "woman": "Vivian",
+}
+_WAVESPEED_STYLE: dict[str, str] = {
+    "girl": (
+        "A soft, gentle voice of a young girl around 8-10 years old, speaking in Korean. "
+        "Warm, tender, and deeply loving — like a beloved pet saying a final farewell. "
+        "Slow and heartfelt, slightly emotional but ultimately comforting. Clear and airy tone."
+    ),
+    "boy": (
+        "A soft, gentle voice of a young boy around 8-10 years old, speaking in Korean. "
+        "Sincere, warm, and quietly brave — like a cherished pet expressing its deepest love before parting. "
+        "Slow and deliberate, melancholic but reassuring. Clear and pure tone."
+    ),
+    "woman": (
+        "A warm, calm adult female voice speaking Korean, like a trusted friend offering comfort during grief. "
+        "Soft and deeply empathetic. Slow with gentle pauses. "
+        "Like a quiet hand on the shoulder — compassionate, grounded, and healing."
+    ),
 }
 
 
@@ -164,10 +180,13 @@ async def _wavespeed_or_google(data: TtsCreate, wavespeed_key: str) -> TtsRespon
 async def _wavespeed_tts(data: TtsCreate, api_key: str) -> TtsResponse:
     """WaveSpeedAI Qwen3 TTS API 호출 (로컬 GPU 대체, 동일 모델).
 
-    girl/boy/woman 음성을 Cherry/Ethan/Serena로 매핑.
+    엔드포인트: POST /api/v3/wavespeed-ai/qwen3-tts/text-to-speech
+    응답: data.id → 폴링 → data.outputs[0] (오디오 URL)
+    style_instruction으로 tone별 감성 프롬프트 전달.
     """
     voice_key = _map_tone_to_voice(data.tone)
-    ws_voice = _WAVESPEED_VOICE_MAP.get(voice_key, "Serena")
+    ws_voice = _WAVESPEED_VOICE_MAP.get(voice_key, "Vivian")
+    style = _WAVESPEED_STYLE.get(voice_key, _WAVESPEED_STYLE["woman"])
     filename = f"{data.pet_id}_{voice_key}_{abs(hash(data.text)) % 10_000_000}.mp3"
     out_dir = Path(os.environ.get("TTS_OUTPUT_DIR", "uploads/tts"))
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -176,27 +195,25 @@ async def _wavespeed_tts(data: TtsCreate, api_key: str) -> TtsResponse:
     async with httpx.AsyncClient(timeout=30.0) as client:
         # 1) 제출
         submit = await client.post(
-            "https://api.wavespeed.ai/api/v2/audio/speech",
+            "https://api.wavespeed.ai/api/v3/wavespeed-ai/qwen3-tts/text-to-speech",
             headers=headers,
             json={
-                "model": "wavespeed-ai/qwen3-tts",
-                "input": data.text,
+                "text": data.text,
                 "voice": ws_voice,
-                "language": "ko",
+                "language": "auto",
+                "style_instruction": style,
             },
         )
         submit.raise_for_status()
-        prediction_id = submit.json()["id"]
+        resp_data = submit.json()["data"]
+        poll_url = resp_data["urls"]["get"]
 
         # 2) 폴링 (3초 간격, 최대 5분)
         for _ in range(100):
             await asyncio.sleep(3)
-            status_res = await client.get(
-                f"https://api.wavespeed.ai/api/v2/predictions/{prediction_id}",
-                headers=headers,
-            )
+            status_res = await client.get(poll_url, headers=headers)
             status_res.raise_for_status()
-            body = status_res.json()
+            body = status_res.json()["data"]
             if body["status"] == "completed":
                 audio_url = body["outputs"][0]
                 break
