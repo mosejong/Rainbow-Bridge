@@ -119,33 +119,21 @@ Google Cloud TTS 기본 톤으로는 감정선 부재 문제 → LLM 히든 워�
 
 ## 🗺️ 시스템 아키텍처
 
-```
-              [ 보호자 (React Native + Expo) ]
-                            │ HTTPS
-                            ▼
-             ┌──────────────────────────────┐
-             │  rainbow-bridge.duckdns.org  │
-             │  nginx + Let's Encrypt SSL   │
-             └──────────────┬───────────────┘
-                            │ /api/ 프록시
-                            ▼
-       ┌──────────────────────────────────────────┐
-       │         Backend (FastAPI, Docker)         │
-       │   api/ → services/ → schemas/ → db/       │
-       └───┬──────────────┬──────────────┬─────────┘
-           │              │              │
-    ┌──────┴─────┐  ┌─────┴──────┐  ┌───┴──────────────────┐
-    │  MongoDB   │  │ SQLite RDB │  │    외부 AI API         │
-    │ (Docker)   │  │ (users 인증)│  │  Gemini API (LLM)     │
-    │  Redis     │  └────────────┘  │  WaveSpeedAI TTS      │
-    └────────────┘                  │  Google Cloud TTS      │
-                                    └───────────┬────────────┘
-                                                │
-                               ┌────────────────┴───────────────┐
-                               │         AI / 멀티모달           │
-                               │  ChromaDB (RAG)                │
-                               │  LivePortrait (GPU, Cloudflare) │
-                               └────────────────────────────────┘
+```mermaid
+graph TD
+    A["📱 보호자 앱<br/>(React Native + Expo)"] -->|HTTPS| B
+
+    B["🌐 NCP Cloud Server<br/>nginx + Let's Encrypt"]
+    B -->|/api/ 프록시| C
+
+    C["⚙️ Backend<br/>(FastAPI + Docker)<br/>api → services → schemas → db"]
+
+    C --> D["🍃 MongoDB<br/>(감정·미션·미디어)"]
+    C --> E["🗄️ SQLite<br/>(사용자 인증)"]
+    C --> F["⚡ Redis<br/>(체크인 캐시)"]
+    C --> G["🤖 외부 AI API<br/>Gemini · WaveSpeedAI<br/>Google Cloud TTS"]
+    C --> H["📚 ChromaDB<br/>(RAG 4 컬렉션)"]
+    C -->|Cloudflare Tunnel| I["🎬 GPU 서버<br/>LivePortrait<br/>(RTX 5060)"]
 ```
 
 ---
@@ -214,15 +202,17 @@ docker compose ps
 docker exec rainbow_backend python scripts/seed_scenario.py
 ```
 
-| 계정 | 시나리오 | 비밀번호 |
-|------|----------|----------|
-| demo00@demo.com | locked — 이별 4일차, 회복 전 비교용 | js1234 |
-| demo01@demo.com | teaser — 회복 진행 중, 삼성헬스 리포트 | js1234 |
-| demo02@demo.com | open — 3인칭 편지·GIF 해금 | js1234 |
-| demo03@demo.com | open — 슬라이드쇼 영상 해금 | js1234 |
-| demo04@demo.com | open — 1인칭 편지 + LP 발화 영상 | js1234 |
-| demo05@demo.com | teaser — 20일차 회복, 비교용 | js1234 |
-| super@super.com | **전체 기능 해금** — 녹화 데모용 (score 94) | 123456 |
+| 계정 | 시나리오 |
+|------|----------|
+| demo00@demo.com | locked — 이별 4일차, 회복 전 비교용 |
+| demo01@demo.com | teaser — 회복 진행 중, 삼성헬스 리포트 |
+| demo02@demo.com | open — 3인칭 편지·GIF 해금 |
+| demo03@demo.com | open — 슬라이드쇼 영상 해금 |
+| demo04@demo.com | open — 1인칭 편지 + LP 발화 영상 |
+| demo05@demo.com | teaser — 20일차 회복, 비교용 |
+| super@super.com | **전체 기능 해금** — 데모용 (score 94) |
+
+> 비밀번호는 시드 스크립트(`scripts/seed_scenario.py`) 실행 후 확인하세요.
 
 ### 5. 프론트엔드 (로컬 개발)
 
@@ -258,7 +248,7 @@ cd backend && ruff check . --fix && black . && pytest -q
 
 ```
 rainbow-bridge/
-├── backend/                  # FastAPI 백엔드 (모세종, 김윤한)
+├── backend/                  # FastAPI 백엔드
 │   ├── app/
 │   │   ├── api/              # 라우터 (엔드포인트)
 │   │   ├── services/         # 비즈니스 로직
@@ -267,14 +257,14 @@ rainbow-bridge/
 │   │   └── db/               # DB 연결 (MongoDB, Redis, SQLite)
 │   ├── scripts/              # 시드·운영 스크립트
 │   └── tests/                # pytest 테스트
-├── frontend-rn/              # React Native + Expo 앱 (민경이) ← 현행
+├── frontend-rn/              # React Native + Expo 앱
 │   ├── app/                  # 화면 (Expo Router)
 │   ├── api/                  # 백엔드 API 호출
 │   └── components/           # 공통 컴포넌트
-├── ai/                       # AI 엔진 (반소람, 정환주)
+├── ai/                       # AI 엔진
 │   ├── llm/                  # 추모 메시지·위기 감지·케어 모듈
 │   ├── tts/                  # 음성 합성 (WaveSpeed·Qwen3·Google)
-│   ├── liveportrait/         # 사진→영상 파이프라인 (장민수)
+│   ├── liveportrait/         # 사진→영상 파이프라인
 │   └── evaluation/           # 평가 리포트·회복 지수 산출
 ├── docs/                     # 📚 문서
 │   ├── ARCHITECTURE.md       # 시스템 구조
@@ -282,11 +272,8 @@ rainbow-bridge/
 │   ├── RECOVERY_SCORE_DESIGN.md  # 회복 지수 설계
 │   ├── SERVICE_FRAME.md      # 서비스 범위·기능 틀
 │   ├── ETHICS_추모표현_가이드.md   # 추모 표현 허용/금지 경계
-│   ├── CONTRIBUTING.md       # 협업 규칙
-│   ├── GIT_GUIDE.md          # Git 사용법
-│   ├── SETUP.md              # 개발 환경 셋업
 │   ├── scrum/                # 스크럼 회의록
-│   └── devlog/               # 개발일지 (통합 + 팀원별)
+│   └── devlog/               # 개발일지
 ├── docker-compose.yml        # 통합 실행 설정
 └── .env.example              # 환경 변수 템플릿
 ```
@@ -362,7 +349,6 @@ rainbow-bridge/
 
 ## 📜 안내
 
-- 교육 과정 팀 프로젝트입니다.
-- 위기 상황 안내 번호(**1393**)는 임의로 변경하지 마세요.
 - AI 생성 콘텐츠는 "AI가 보호자가 전해준 추억을 바탕으로 재해석한 내용"임을 명시합니다.
+- 위기 감정 안내 번호 **1393**은 임의로 변경하지 마세요.
 - 상세 윤리 기준: [docs/ETHICS_추모표현_가이드.md](docs/ETHICS_추모표현_가이드.md)
