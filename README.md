@@ -2,7 +2,7 @@
 
 > 반려동물의 시한부 선고부터 이별·회복까지, **보호자 곁에서 함께하는 AI 케어 서비스**
 
-[![Status](https://img.shields.io/badge/status-prototype_완성-brightgreen)]()
+[![Status](https://img.shields.io/badge/status-발표_완료-lightgrey)]()
 [![Period](https://img.shields.io/badge/기간-2026.06.01~06.19-blue)]()
 [![Commits](https://img.shields.io/badge/commits-1439-yellow)]()
 [![PRs](https://img.shields.io/badge/PRs-365-orange)]()
@@ -240,7 +240,7 @@ uvicorn app.main:app --reload   # http://localhost:8000/docs
 cd backend && ruff check . --fix && black . && pytest -q
 ```
 
-> 실서버: **https://rainbow-bridge.duckdns.org**
+> ⚠️ 프로토타입 발표(2026-06-19) 종료 후 서버 운영이 중단되었습니다. 로컬 실행 방법은 위 가이드를 참고하세요.
 
 ---
 
@@ -338,8 +338,8 @@ rainbow-bridge/
 
 | 항목 | 링크 |
 |------|------|
-| 실서버 (앱) | https://rainbow-bridge.duckdns.org |
-| API 문서 (Swagger) | https://rainbow-bridge.duckdns.org/api/docs |
+| ~~실서버 (앱)~~ | ~~https://rainbow-bridge.duckdns.org~~ (서버 종료) |
+| ~~API 문서 (Swagger)~~ | ~~https://rainbow-bridge.duckdns.org/api/docs~~ (서버 종료) |
 | 회복 지수 설계 | [docs/RECOVERY_SCORE_DESIGN.md](docs/RECOVERY_SCORE_DESIGN.md) |
 | 서비스 범위 기획 | [docs/SERVICE_FRAME.md](docs/SERVICE_FRAME.md) |
 | 윤리 가이드라인 | [docs/ETHICS_추모표현_가이드.md](docs/ETHICS_추모표현_가이드.md) |
