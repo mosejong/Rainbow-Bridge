@@ -31,10 +31,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS (프론트 로컬 개발용 — 운영 시 도메인 제한)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

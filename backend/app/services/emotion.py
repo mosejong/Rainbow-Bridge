@@ -14,7 +14,6 @@ from app.services.health_lifestyle import get_lifestyle_pct
 CRISIS_HOTLINE = "1393"
 
 # ── 회복 게이트 임계값 ──────────────────────────────────────────
-# 미션 난이도 확정 후 조정하세요 (모세종 담당)
 _GATE_MIN_CHECKINS = 3  # 최소 체크인 횟수
 _GATE_MIN_AVG_SCORE = 5.0  # 평균 감정 점수 하한 (1~10)
 _GATE_MAX_RISK = 1  # 허용 최대 risk_level (2 이상이면 잠금 유지)
