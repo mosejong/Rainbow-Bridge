@@ -46,6 +46,8 @@
 
 ## 내 기여
 
+> 개인 기여 범위는 [CONTRIBUTION.md](CONTRIBUTION.md)에 역할·의사결정·성과 기준으로 따로 정리했습니다.
+
 ### PM / 팀장
 
 - 6인 팀 역할 분담 및 개발 우선순위 조정
@@ -208,6 +210,7 @@ rainbow-bridge/
 
 | 문서 | 설명 |
 |---|---|
+| [CONTRIBUTION.md](CONTRIBUTION.md) | 모세종 개인 기여 정리 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 시스템 구조 |
 | [docs/PROGRESS.md](docs/PROGRESS.md) | 프로토타입 진행도 |
 | [docs/RECOVERY_SCORE_DESIGN.md](docs/RECOVERY_SCORE_DESIGN.md) | 회복 지수 설계 |
