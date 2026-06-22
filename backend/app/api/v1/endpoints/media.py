@@ -21,7 +21,6 @@ from app.services.media import (
     get_latest_done_asset,
     run_liveportrait,
     run_liveportrait_gif,
-    run_perso,
     increment_play_count,
     select_best_pet_photo,
 )
@@ -69,29 +68,6 @@ async def get_media_status(asset_id: str, user: dict = Depends(get_current_user)
     if not asset:
         raise HTTPException(status_code=404, detail="asset을 찾을 수 없습니다.")
     return MediaStatusResponse(**asset)
-
-
-@router.post("/{asset_id}/perso", status_code=202)
-async def request_perso(
-    asset_id: str,
-    background_tasks: BackgroundTasks,
-    user: dict = Depends(get_current_user),
-):
-    """PERSO 다국어 더빙 비동기 요청. voiced_url 영상을 PERSO에 전송."""
-    asset = await get_asset(asset_id, user_id=user["user_id"])
-    if not asset:
-        raise HTTPException(status_code=404, detail="asset을 찾을 수 없습니다.")
-    if not asset.get("voiced_url"):
-        raise HTTPException(
-            status_code=400, detail="영상+음성 합치기가 완료되지 않았습니다."
-        )
-
-    background_tasks.add_task(run_perso, asset_id)
-    return {
-        "message": "PERSO 더빙 요청이 접수됐습니다.",
-        "asset_id": asset_id,
-        "status": "pending",
-    }
 
 
 @router.get("/{asset_id}/download")

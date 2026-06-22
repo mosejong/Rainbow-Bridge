@@ -17,9 +17,8 @@ class Settings(BaseSettings):
     MONGO_URI: str = "mongodb://localhost:27017"
     MONGO_DB_NAME: str = "rainbow_bridge"
 
-    # PERSO API (평가/시연)
-    PERSO_API_KEY: str = ""
-    PERSO_API_BASE_URL: str = ""
+    # CORS
+    CORS_ORIGINS: list[str] = ["*"]
 
     # 로컬 LLM (개발) — AI 담당이 .env에 채움
     LLM_PROVIDER: str = ""

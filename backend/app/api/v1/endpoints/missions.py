@@ -47,7 +47,6 @@ async def skip_mission_endpoint(
     return MissionSkipResponse(skipped_mission=skipped, replacement=replacement)
 
 
-# TODO: 반소람님 AI recommend() 연결 후 교체
 _RECOMMEND_POOL = [
     MissionItem(
         title="오늘 5분 산책하기",

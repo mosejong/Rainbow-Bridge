@@ -2,7 +2,7 @@
 
 > 반려동물의 시한부 선고부터 이별·회복까지, **보호자 곁에서 함께하는 AI 케어 서비스**
 
-[![Status](https://img.shields.io/badge/status-prototype_완성-brightgreen)]()
+[![Status](https://img.shields.io/badge/status-발표_완료-lightgrey)]()
 [![Period](https://img.shields.io/badge/기간-2026.06.01~06.19-blue)]()
 [![Commits](https://img.shields.io/badge/commits-1439-yellow)]()
 [![PRs](https://img.shields.io/badge/PRs-365-orange)]()
@@ -13,10 +13,11 @@
 
 ## 📌 서비스 개요
 
-수의사로부터 **시한부 선고**를 받은 순간부터 — 남은 시간 동안의 추억 기록, 장례 안내, 그리고 펫로스 회복까지 보호자 곁에서 연속적으로 돌봐주는 AI 케어 서비스입니다.
+국내 반려동물 양육 인구 **1,546만 명** — 그중 반려동물과 이별을 경험한 보호자의 **83%가 우울감**을 겪고, 16%는 1년 이상 펫로스 증후군을 앓습니다. 그러나 이 시간을 함께 버텨주는 서비스는 없었습니다.
 
-**비즈니스 모델: 연계형(B2B2C)**
-장례업체·동물병원이 채널·지불자, 보호자는 무료로 이용합니다.
+레인보우 브릿지는 수의사의 **시한부 선고** 시점부터 진입해, 남은 시간의 추억 기록 → 장례 안내 → 펫로스 회복까지를 하나의 흐름으로 잇는 AI 케어 서비스입니다.
+
+**비즈니스 모델: 연계형(B2B2C)** — 장례업체·동물병원이 채널·지불자, 보호자는 무료
 
 | 단계 | 우리가 하는 것 | 우리가 안 하는 것 |
 |------|----------------|-------------------|
@@ -82,35 +83,57 @@
 
 ---
 
+## 🏆 핵심 성과 지표
+
+> 3주 프로토타입 기간(2026-06-01 ~ 06-19) 자체 측정 기준
+
+| 지표 | 결과 | 목표 | 판정 |
+|------|------|------|------|
+| 위기 감지 정확도 (골든셋 40건) | **100%** (40/40) | ≥ 90% | ✅ |
+| G-Eval 대화 품질 (일관성·유용성·자연스러움) | **4.76 ~ 4.83 / 5.0** | ≥ 4.0 | ✅ |
+| G-Eval 윤리 준수 | **4.61 / 5.0** | ≥ 4.0 | ✅ |
+| TTS CER — 3인칭 편지 | **1.0%** | ≤ 10% | ✅ |
+| TTS CER — 1인칭 편지 | **5.5%** | ≤ 10% | ✅ |
+| 립싱크 상관계수 (동물 아바타 기준) | **0.896** | ≥ 0.7 | ✅ |
+| 립싱크 지연 | **+40ms** | ±100ms | ✅ |
+
+상세 평가 리포트: [docs/AI휴먼_정량평가_리포트.md](docs/AI휴먼_정량평가_리포트.md)
+
+---
+
+## 🔧 기술적 도전
+
+### 1. 동물 얼굴 립싱크 — SyncNet 사용 불가 문제
+기존 립싱크 평가 지표(SyncNet, LSE)는 사람 얼굴 전용 모델로 동물 아바타에 적용 불가. **입 벌림 keypoint ↔ 오디오 RMS 상관계수/지연** 방식을 직접 설계해 동물 전용 평가 지표로 대체.
+
+### 2. 위기 감정 안전 라우팅
+LLM 응답 생성 전 별도 safety 레이어(L0~L3)를 통과시키는 이중 구조 설계. L2 이상 감지 시 콘텐츠 생성 차단 + 1393 즉시 안내. 골든셋 40건 전수 통과.
+
+### 3. TTS 감정 표현 품질
+Google Cloud TTS 기본 톤으로는 감정선 부재 문제 → LLM 히든 워드(감정 지시어)를 프롬프트에 주입해 warm·calm·hopeful 3단계 톤 분화 구현. 4단계 폴백(WaveSpeedAI → Qwen3 → Google → gTTS)으로 장애 내성 확보.
+
+### 4. 회복 게이트 설계
+단순 점수 임계값이 아닌 **체크인 이력 전체 구간 분석** 방식 채택. recovery_score(0~100) 기반 콘텐츠 순차 해금(GIF→3인칭→1인칭→패키지), 1인칭 콘텐츠는 최근 체크인 전체 risk=0 조건 충족 시에만 노출.
+
+---
+
 ## 🗺️ 시스템 아키텍처
 
-```
-              [ 보호자 (React Native + Expo) ]
-                            │ HTTPS
-                            ▼
-             ┌──────────────────────────────┐
-             │  rainbow-bridge.duckdns.org  │
-             │  nginx + Let's Encrypt SSL   │
-             └──────────────┬───────────────┘
-                            │ /api/ 프록시
-                            ▼
-       ┌──────────────────────────────────────────┐
-       │         Backend (FastAPI, Docker)         │
-       │   api/ → services/ → schemas/ → db/       │
-       └───┬──────────────┬──────────────┬─────────┘
-           │              │              │
-    ┌──────┴─────┐  ┌─────┴──────┐  ┌───┴──────────────────┐
-    │  MongoDB   │  │ SQLite RDB │  │    외부 AI API         │
-    │ (Docker)   │  │ (users 인증)│  │  Gemini API (LLM)     │
-    │  Redis     │  └────────────┘  │  WaveSpeedAI TTS      │
-    └────────────┘                  │  Google Cloud TTS      │
-                                    └───────────┬────────────┘
-                                                │
-                               ┌────────────────┴───────────────┐
-                               │         AI / 멀티모달           │
-                               │  ChromaDB (RAG)                │
-                               │  LivePortrait (GPU, Cloudflare) │
-                               └────────────────────────────────┘
+```mermaid
+graph TD
+    A["📱 보호자 앱<br/>(React Native + Expo)"] -->|HTTPS| B
+
+    B["🌐 NCP Cloud Server<br/>nginx + Let's Encrypt"]
+    B -->|/api/ 프록시| C
+
+    C["⚙️ Backend<br/>(FastAPI + Docker)<br/>api → services → schemas → db"]
+
+    C --> D["🍃 MongoDB<br/>(감정·미션·미디어)"]
+    C --> E["🗄️ SQLite<br/>(사용자 인증)"]
+    C --> F["⚡ Redis<br/>(체크인 캐시)"]
+    C --> G["🤖 외부 AI API<br/>Gemini · WaveSpeedAI<br/>Google Cloud TTS"]
+    C --> H["📚 ChromaDB<br/>(RAG 4 컬렉션)"]
+    C -->|Cloudflare Tunnel| I["🎬 GPU 서버<br/>LivePortrait<br/>(RTX 5060)"]
 ```
 
 ---
@@ -179,15 +202,17 @@ docker compose ps
 docker exec rainbow_backend python scripts/seed_scenario.py
 ```
 
-| 계정 | 시나리오 | 비밀번호 |
-|------|----------|----------|
-| demo00@demo.com | locked — 이별 4일차, 회복 전 비교용 | js1234 |
-| demo01@demo.com | teaser — 회복 진행 중, 삼성헬스 리포트 | js1234 |
-| demo02@demo.com | open — 3인칭 편지·GIF 해금 | js1234 |
-| demo03@demo.com | open — 슬라이드쇼 영상 해금 | js1234 |
-| demo04@demo.com | open — 1인칭 편지 + LP 발화 영상 | js1234 |
-| demo05@demo.com | teaser — 20일차 회복, 비교용 | js1234 |
-| super@super.com | **전체 기능 해금** — 녹화 데모용 (score 94) | 123456 |
+| 계정 | 시나리오 |
+|------|----------|
+| demo00@demo.com | locked — 이별 4일차, 회복 전 비교용 |
+| demo01@demo.com | teaser — 회복 진행 중, 삼성헬스 리포트 |
+| demo02@demo.com | open — 3인칭 편지·GIF 해금 |
+| demo03@demo.com | open — 슬라이드쇼 영상 해금 |
+| demo04@demo.com | open — 1인칭 편지 + LP 발화 영상 |
+| demo05@demo.com | teaser — 20일차 회복, 비교용 |
+| super@super.com | **전체 기능 해금** — 데모용 (score 94) |
+
+> 비밀번호는 시드 스크립트(`scripts/seed_scenario.py`) 실행 후 확인하세요.
 
 ### 5. 프론트엔드 (로컬 개발)
 
@@ -215,7 +240,7 @@ uvicorn app.main:app --reload   # http://localhost:8000/docs
 cd backend && ruff check . --fix && black . && pytest -q
 ```
 
-> 실서버: **https://rainbow-bridge.duckdns.org**
+> ⚠️ 프로토타입 발표(2026-06-19) 종료 후 서버 운영이 중단되었습니다. 로컬 실행 방법은 위 가이드를 참고하세요.
 
 ---
 
@@ -223,7 +248,7 @@ cd backend && ruff check . --fix && black . && pytest -q
 
 ```
 rainbow-bridge/
-├── backend/                  # FastAPI 백엔드 (모세종, 김윤한)
+├── backend/                  # FastAPI 백엔드
 │   ├── app/
 │   │   ├── api/              # 라우터 (엔드포인트)
 │   │   ├── services/         # 비즈니스 로직
@@ -232,14 +257,14 @@ rainbow-bridge/
 │   │   └── db/               # DB 연결 (MongoDB, Redis, SQLite)
 │   ├── scripts/              # 시드·운영 스크립트
 │   └── tests/                # pytest 테스트
-├── frontend-rn/              # React Native + Expo 앱 (민경이) ← 현행
+├── frontend-rn/              # React Native + Expo 앱
 │   ├── app/                  # 화면 (Expo Router)
 │   ├── api/                  # 백엔드 API 호출
 │   └── components/           # 공통 컴포넌트
-├── ai/                       # AI 엔진 (반소람, 정환주)
+├── ai/                       # AI 엔진
 │   ├── llm/                  # 추모 메시지·위기 감지·케어 모듈
 │   ├── tts/                  # 음성 합성 (WaveSpeed·Qwen3·Google)
-│   ├── liveportrait/         # 사진→영상 파이프라인 (장민수)
+│   ├── liveportrait/         # 사진→영상 파이프라인
 │   └── evaluation/           # 평가 리포트·회복 지수 산출
 ├── docs/                     # 📚 문서
 │   ├── ARCHITECTURE.md       # 시스템 구조
@@ -247,11 +272,8 @@ rainbow-bridge/
 │   ├── RECOVERY_SCORE_DESIGN.md  # 회복 지수 설계
 │   ├── SERVICE_FRAME.md      # 서비스 범위·기능 틀
 │   ├── ETHICS_추모표현_가이드.md   # 추모 표현 허용/금지 경계
-│   ├── CONTRIBUTING.md       # 협업 규칙
-│   ├── GIT_GUIDE.md          # Git 사용법
-│   ├── SETUP.md              # 개발 환경 셋업
 │   ├── scrum/                # 스크럼 회의록
-│   └── devlog/               # 개발일지 (통합 + 팀원별)
+│   └── devlog/               # 개발일지
 ├── docker-compose.yml        # 통합 실행 설정
 └── .env.example              # 환경 변수 템플릿
 ```
@@ -316,8 +338,8 @@ rainbow-bridge/
 
 | 항목 | 링크 |
 |------|------|
-| 실서버 (앱) | https://rainbow-bridge.duckdns.org |
-| API 문서 (Swagger) | https://rainbow-bridge.duckdns.org/api/docs |
+| ~~실서버 (앱)~~ | ~~https://rainbow-bridge.duckdns.org~~ (서버 종료) |
+| ~~API 문서 (Swagger)~~ | ~~https://rainbow-bridge.duckdns.org/api/docs~~ (서버 종료) |
 | 회복 지수 설계 | [docs/RECOVERY_SCORE_DESIGN.md](docs/RECOVERY_SCORE_DESIGN.md) |
 | 서비스 범위 기획 | [docs/SERVICE_FRAME.md](docs/SERVICE_FRAME.md) |
 | 윤리 가이드라인 | [docs/ETHICS_추모표현_가이드.md](docs/ETHICS_추모표현_가이드.md) |
@@ -327,7 +349,6 @@ rainbow-bridge/
 
 ## 📜 안내
 
-- 교육 과정 팀 프로젝트입니다.
-- 위기 상황 안내 번호(**1393**)는 임의로 변경하지 마세요.
 - AI 생성 콘텐츠는 "AI가 보호자가 전해준 추억을 바탕으로 재해석한 내용"임을 명시합니다.
+- 위기 감정 안내 번호 **1393**은 임의로 변경하지 마세요.
 - 상세 윤리 기준: [docs/ETHICS_추모표현_가이드.md](docs/ETHICS_추모표현_가이드.md)
